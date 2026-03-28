@@ -6,7 +6,7 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-10 specialized AI subagents for every phase of authorized penetration testing — from scoping to reporting.
+10 specialized AI subagents for every phase of authorized penetration testing from scoping to reporting.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Agents: 10](https://img.shields.io/badge/Agents-10-green.svg)](#agents)
@@ -46,7 +46,7 @@
 
 ## What Is This?
 
-pentest-ai is a collection of Claude Code subagents — specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
+pentest-ai is a collection of Claude Code subagents specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
 
 You don't need to be an expert to use these agents. They communicate at whatever level you need — from explaining what Kerberoasting is to providing exact Impacket command syntax for a senior operator.
 
