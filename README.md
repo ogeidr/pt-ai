@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/banner.jpeg" alt="pentest-ai" width="800">
+
 # pentest-ai
 
 **Turn Claude Code into your offensive security research assistant.**
