@@ -6,12 +6,15 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-6 specialized AI subagents for every phase of authorized penetration testing — from scoping to reporting.
+10 specialized AI subagents for every phase of authorized penetration testing — from scoping to reporting.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Agents: 6](https://img.shields.io/badge/Agents-6-green.svg)](#agents)
+[![Agents: 10](https://img.shields.io/badge/Agents-10-green.svg)](#agents)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://docs.anthropic.com/en/docs/claude-code)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-red.svg)](https://attack.mitre.org/)
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux-yellow.svg)]()
+[![Platform: macOS](https://img.shields.io/badge/Platform-macOS-yellow.svg)]()
+[![Platform: Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-yellow.svg)]()
 [![GitHub stars](https://img.shields.io/github/stars/0xSteph/pentest-ai?style=social)](https://github.com/0xSteph/pentest-ai/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/0xSteph/pentest-ai?style=social)](https://github.com/0xSteph/pentest-ai/network/members)
 [![Last Commit](https://img.shields.io/github/last-commit/0xSteph/pentest-ai)](https://github.com/0xSteph/pentest-ai/commits/main)
@@ -29,6 +32,7 @@
 - [Agents](#agents)
 - [Workflow](#workflow)
 - [pentest-ai vs. Manual Research](#pentest-ai-vs-manual-research)
+- [Use Cases](#use-cases)
 - [Quick Start](#quick-start)
 - [How Agent Routing Works](#how-agent-routing-works)
 - [Examples](#examples)
@@ -66,6 +70,10 @@ No configuration, no commands to memorize. Just describe what you need.
 | **Detection Engineer** | Produces deployment-ready detection rules in Sigma, Splunk SPL, Elastic KQL, and Sentinel KQL with false positive tuning guidance | *"Create a detection rule for DCSync with Sigma and Splunk SPL"* |
 | **STIG Analyst** | DISA STIG compliance analysis with GPO remediation paths, risk scores, verification commands, and keep-open justification templates | *"Analyze V-220768 — what breaks if I apply it, and write a keep-open justification"* |
 | **Report Generator** | Transforms raw findings into professional pentest reports with executive summaries, CVSS scoring, evidence formatting, and remediation roadmaps | *"Compile these 12 findings into a professional report with an executive summary"* |
+| **CTF Solver** | Methodical challenge-solving partner for HackTheBox, TryHackMe, and competitive CTFs. Covers web exploitation, binary exploitation, reverse engineering, cryptography, forensics, and OSINT | *"I'm stuck on this HackTheBox machine — I have a low-priv shell. Help me enumerate for privesc"* |
+| **Cloud Security** | AWS, Azure, and GCP penetration testing methodology. IAM privilege escalation, container escape, serverless exploitation, and cloud-native attack paths | *"I have read-only AWS access with this IAM policy. Find privilege escalation paths"* |
+| **Privilege Escalation** | Systematic Linux and Windows privilege escalation methodology. SUID abuse, token impersonation, service exploitation, kernel exploits, and container escape | *"Here's my linpeas output — what's the fastest path to root?"* |
+| **API Security** | REST, GraphQL, and WebSocket security testing. OWASP API Top 10, JWT attacks, OAuth exploitation, BOLA/BFLA testing, and API discovery | *"Test this API for BOLA — here's the Swagger doc and a valid JWT"* |
 
 ### Agent Capabilities at a Glance
 
@@ -95,6 +103,22 @@ report-generator ──── PTES/OWASP/SANS report format
                       Executive summaries for non-technical leadership
                       CVSS v3.1 scoring and CWE mapping
                       Remediation roadmaps with priority timelines
+
+ctf-solver ────────── HackTheBox, TryHackMe, PicoCTF, OverTheWire
+                      Web, Pwn, Rev, Crypto, Forensics, OSINT
+                      Methodology-first guidance with learning focus
+
+cloud-security ────── AWS (Pacu, ScoutSuite), Azure (ROADtools, AzureHound), GCP
+                      IAM privilege escalation and role chaining
+                      Container escape and Kubernetes attacks
+
+privesc-advisor ───── Linux (SUID, capabilities, cron, kernel exploits)
+                      Windows (tokens, services, UAC bypass, DLL hijacking)
+                      GTFOBins and LOLBAS reference for every binary
+
+api-security ──────── OWASP API Top 10 (2023) full coverage
+                      JWT, OAuth 2.0, GraphQL, WebSocket testing
+                      BOLA/BFLA methodology with HTTP request examples
 ```
 
 ---
@@ -131,13 +155,21 @@ graph TD
     Claude -->|"Build a detection rule"| DE[Detection Engineer]
     Claude -->|"Check this STIG"| SA[STIG Analyst]
     Claude -->|"Write the report"| RG[Report Generator]
+    Claude -->|"Solve this CTF"| CS[CTF Solver]
+    Claude -->|"Test this cloud env"| CL[Cloud Security]
+    Claude -->|"Escalate privileges"| PE[Privesc Advisor]
+    Claude -->|"Test this API"| AP[API Security]
 
-    EP -->|MITRE ATT&CK| KB[Knowledge Base]
-    RA -->|CVE Mapping| KB
-    EG -->|Dual Perspective| KB
-    DE -->|Sigma Rules| KB
-    SA -->|NIST 800-53| KB
-    RG -->|PTES Format| KB
+    EP --> KB[Knowledge Base]
+    RA --> KB
+    EG --> KB
+    DE --> KB
+    SA --> KB
+    RG --> KB
+    CS --> KB
+    CL --> KB
+    PE --> KB
+    AP --> KB
 
     style User fill:#e94560,stroke:#e94560,color:#fff
     style Claude fill:#0f3460,stroke:#e94560,color:#fff
@@ -148,6 +180,10 @@ graph TD
     style DE fill:#1a1a2e,stroke:#e94560,color:#fff
     style SA fill:#1a1a2e,stroke:#e94560,color:#fff
     style RG fill:#1a1a2e,stroke:#e94560,color:#fff
+    style CS fill:#1a1a2e,stroke:#e94560,color:#fff
+    style CL fill:#1a1a2e,stroke:#e94560,color:#fff
+    style PE fill:#1a1a2e,stroke:#e94560,color:#fff
+    style AP fill:#1a1a2e,stroke:#e94560,color:#fff
 ```
 
 ---
@@ -162,6 +198,25 @@ graph TD
 | **Write detection rules** | Translate ATT&CK techniques into Sigma/SPL manually, test for false positives | Deployment-ready rules in multiple formats with tuning guidance |
 | **STIG compliance** | Search DISA PDFs, manually map controls, write justifications from scratch | Full analysis with GPO paths, verification commands, and keep-open templates |
 | **Write the report** | Days formatting findings, writing executive summaries, calculating CVSS | Professional report structure with consistent formatting in minutes |
+
+---
+
+## Use Cases
+
+### Internal Network Penetration Test
+Start with the **engagement planner** to build a phased plan with ATT&CK mappings. Run your scans and feed output to the **recon advisor** for prioritized attack vectors. Use the **exploit guide** for AD attack methodology and **privilege escalation advisor** for local privesc. Generate detection rules with the **detection engineer** so the client can monitor for the techniques you used. Compile everything with the **report generator**.
+
+### Cloud Security Assessment
+Use the **cloud security** agent to enumerate IAM policies and find privilege escalation paths across AWS, Azure, or GCP. Combine with the **API security** agent for testing cloud-hosted APIs and serverless functions. Feed findings to the **detection engineer** for CloudTrail/Activity Log detection rules. Document everything with the **report generator** including cloud-specific remediation guidance.
+
+### CTF Competition
+Load the **CTF solver** for methodical challenge guidance across all categories. Use the **recon advisor** for network challenge enumeration, the **exploit guide** for complex exploitation chains, and the **privilege escalation advisor** when you have a low-privilege shell and need to escalate.
+
+### Compliance Audit
+Use the **STIG analyst** to assess systems against DISA STIG baselines, generate GPO remediation paths, and write keep-open justifications. Feed identified gaps to the **detection engineer** to build monitoring rules for unmitigated findings. Generate the compliance report with the **report generator**.
+
+### Purple Team Exercise
+Run offensive techniques through the **exploit guide** (which provides the defensive perspective for every technique), then use the **detection engineer** to build detection rules for each technique used. Validate detection coverage against the MITRE ATT&CK matrix. This workflow validates both the red team's methodology and the blue team's detection capabilities.
 
 ---
 
@@ -222,6 +277,8 @@ See real agent output in the [examples/](examples/) directory:
 | [Detection Rule](examples/example-detection-rule.md) | detection-engineer | Kerberoasting detection in Sigma, Splunk SPL, and Elastic KQL |
 | [STIG Finding](examples/example-stig-finding.md) | stig-analyst | V-220768 analysis with GPO path, verification, and keep-open template |
 | [Report Excerpt](examples/example-report-excerpt.md) | report-generator | SQL injection finding formatted for a professional pentest report |
+
+> More example outputs coming soon for the CTF solver, cloud security, privilege escalation, and API security agents.
 
 ---
 
