@@ -4,24 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pentest-ai -- Offensive Security Research Assistant for Claude Code</title>
-  <meta name="description" content="6 specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
+  <meta name="description" content="Specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
   <meta name="keywords" content="pentest, penetration testing, ai, claude code, red team, offensive security, mitre attack, security testing">
   <meta property="og:title" content="pentest-ai -- Offensive Security Research Assistant for Claude Code">
-  <meta property="og:description" content="6 specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
+  <meta property="og:description" content="Specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    #matrix-bg {
-      position: absolute;
+    #particle-bg {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       z-index: -1;
-      opacity: 0.15;
       pointer-events: none;
+    }
+
+    /* Scroll-driven dimension shift overlay */
+    .dimension-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      background: radial-gradient(circle at center, rgba(233,69,96,0.3) 0%, transparent 70%);
+    }
+
+    .dimension-flash.active {
+      opacity: 1;
+    }
+
+    /* Scanline overlay for hacker feel */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 998;
     }
 
     *, *::before, *::after {
@@ -90,13 +126,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(255,255,255,0.008) 2px,
-        rgba(255,255,255,0.008) 4px
-      );
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(10,10,10,0.6) 100%);
       pointer-events: none;
       z-index: 1;
     }
@@ -488,8 +518,9 @@
 </head>
 <body>
 
-  <!-- ========== MATRIX RAIN BACKGROUND ========== -->
-  <canvas id="matrix-bg"></canvas>
+  <!-- ========== PARTICLE NETWORK BACKGROUND ========== -->
+  <canvas id="particle-bg"></canvas>
+  <div class="dimension-flash" id="dimension-flash"></div>
 
   <!-- ========== HERO ========== -->
   <section class="hero">
@@ -510,7 +541,7 @@
       <h2 class="section-title">What is pentest-ai?</h2>
       <p class="intro">
         pentest-ai turns Claude Code into a full offensive security research environment.
-        Instead of one general-purpose assistant, you get six focused subagents -- each an
+        Instead of one general-purpose assistant, you get specialized subagents -- each an
         expert in a specific phase of penetration testing. Ask Claude anything security-related
         and it automatically routes your request to the right specialist. Whether you are
         scoping your first engagement or writing a final report, every response is mapped
@@ -730,55 +761,253 @@
   </footer>
 
   <script>
-    // Matrix rain background — scrolls with page
+    // ========== INTERACTIVE PARTICLE NETWORK + DIMENSION SHIFT ==========
     (function() {
-      var canvas = document.getElementById('matrix-bg');
+      var canvas = document.getElementById('particle-bg');
       var ctx = canvas.getContext('2d');
-      var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>/{}[]|;:'.split('');
-      var fontSize = 14;
-      var columns;
-      var drops;
+      var flash = document.getElementById('dimension-flash');
+      var W, H;
+      var mouse = { x: -9999, y: -9999 };
+      var scrollY = 0;
+      var lastSection = -1;
+      var particles = [];
+      var PARTICLE_COUNT = 120;
+      var CONNECTION_DIST = 150;
+      var MOUSE_RADIUS = 200;
+
+      // Color phases — shifts as you scroll through sections
+      var phases = [
+        { r: 233, g: 69,  b: 96  },  // red (hero)
+        { r: 15,  g: 52,  b: 96  },  // blue
+        { r: 83,  g: 52,  b: 131 },  // purple
+        { r: 233, g: 69,  b: 96  },  // red
+        { r: 0,   g: 200, b: 150 },  // teal/cyber green
+        { r: 233, g: 69,  b: 96  },  // red (install)
+      ];
+
+      var currentColor = { r: 233, g: 69, b: 96 };
+      var targetColor  = { r: 233, g: 69, b: 96 };
+      var warpIntensity = 0; // 0-1, spikes during section transitions
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      function createParticle() {
+        return {
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          size: Math.random() * 2 + 0.5,
+          pulse: Math.random() * Math.PI * 2
+        };
+      }
 
       function init() {
-        var docHeight = Math.max(
-          document.body.scrollHeight,
-          document.documentElement.scrollHeight,
-          window.innerHeight
-        );
-        canvas.width = window.innerWidth;
-        canvas.height = docHeight;
-        columns = Math.floor(canvas.width / fontSize);
-        drops = [];
-        for (var i = 0; i < columns; i++) {
-          drops[i] = Math.random() * -100;
+        resize();
+        particles = [];
+        for (var i = 0; i < PARTICLE_COUNT; i++) {
+          particles.push(createParticle());
         }
       }
 
-      // Wait for full page render before sizing
-      window.addEventListener('load', init);
-      init();
+      // Detect current section based on scroll position
+      function getCurrentSection() {
+        var sections = document.querySelectorAll('section');
+        var current = 0;
+        for (var i = 0; i < sections.length; i++) {
+          if (scrollY >= sections[i].offsetTop - H * 0.5) {
+            current = i;
+          }
+        }
+        return current;
+      }
+
+      // Lerp helper
+      function lerp(a, b, t) { return a + (b - a) * t; }
+
+      function update() {
+        scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        // Section-based color shifting
+        var section = getCurrentSection();
+        var phase = phases[Math.min(section, phases.length - 1)];
+        targetColor.r = phase.r;
+        targetColor.g = phase.g;
+        targetColor.b = phase.b;
+
+        // Dimension flash on section change
+        if (section !== lastSection && lastSection !== -1) {
+          warpIntensity = 1;
+          flash.classList.add('active');
+          setTimeout(function() { flash.classList.remove('active'); }, 300);
+        }
+        lastSection = section;
+
+        // Smooth color transition
+        currentColor.r = lerp(currentColor.r, targetColor.r, 0.03);
+        currentColor.g = lerp(currentColor.g, targetColor.g, 0.03);
+        currentColor.b = lerp(currentColor.b, targetColor.b, 0.03);
+
+        // Warp decay
+        warpIntensity *= 0.95;
+
+        // Update particles
+        for (var i = 0; i < particles.length; i++) {
+          var p = particles[i];
+
+          // Mouse interaction — particles get pushed away
+          var dx = p.x - mouse.x;
+          var dy = p.y - mouse.y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS && dist > 0) {
+            var force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
+            p.vx += (dx / dist) * force * 0.5;
+            p.vy += (dy / dist) * force * 0.5;
+          }
+
+          // Warp effect — during section transitions, particles rush toward center then scatter
+          if (warpIntensity > 0.1) {
+            var cx = W / 2 - p.x;
+            var cy = H / 2 - p.y;
+            var cdist = Math.sqrt(cx * cx + cy * cy);
+            if (cdist > 0) {
+              p.vx += (cx / cdist) * warpIntensity * 2;
+              p.vy += (cy / cdist) * warpIntensity * 2;
+            }
+          }
+
+          // Damping
+          p.vx *= 0.98;
+          p.vy *= 0.98;
+
+          // Base drift
+          p.vx += (Math.random() - 0.5) * 0.05;
+          p.vy += (Math.random() - 0.5) * 0.05;
+
+          p.x += p.vx;
+          p.y += p.vy;
+
+          // Wrap around edges
+          if (p.x < -20) p.x = W + 20;
+          if (p.x > W + 20) p.x = -20;
+          if (p.y < -20) p.y = H + 20;
+          if (p.y > H + 20) p.y = -20;
+
+          // Pulse animation
+          p.pulse += 0.02;
+        }
+      }
 
       function draw() {
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.06)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#e94560';
-        ctx.font = fontSize + 'px JetBrains Mono, monospace';
-        for (var i = 0; i < drops.length; i++) {
-          var char = chars[Math.floor(Math.random() * chars.length)];
-          ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-            drops[i] = 0;
+        ctx.clearRect(0, 0, W, H);
+
+        var cr = Math.round(currentColor.r);
+        var cg = Math.round(currentColor.g);
+        var cb = Math.round(currentColor.b);
+
+        // Draw connections
+        for (var i = 0; i < particles.length; i++) {
+          for (var j = i + 1; j < particles.length; j++) {
+            var dx = particles[i].x - particles[j].x;
+            var dy = particles[i].y - particles[j].y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < CONNECTION_DIST) {
+              var alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+              ctx.beginPath();
+              ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + alpha + ')';
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
           }
-          drops[i]++;
+        }
+
+        // Draw mouse connections (brighter)
+        if (mouse.x > 0 && mouse.y > 0) {
+          for (var i = 0; i < particles.length; i++) {
+            var dx = particles[i].x - mouse.x;
+            var dy = particles[i].y - mouse.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < MOUSE_RADIUS) {
+              var alpha = (1 - dist / MOUSE_RADIUS) * 0.3;
+              ctx.beginPath();
+              ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + alpha + ')';
+              ctx.lineWidth = 0.8;
+              ctx.moveTo(mouse.x, mouse.y);
+              ctx.lineTo(particles[i].x, particles[i].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw particles
+        for (var i = 0; i < particles.length; i++) {
+          var p = particles[i];
+          var glow = 0.3 + Math.sin(p.pulse) * 0.2;
+          var size = p.size + warpIntensity * 3;
+
+          // Glow
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (glow * 0.1) + ')';
+          ctx.fill();
+
+          // Core
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + glow + ')';
+          ctx.fill();
+        }
+
+        // Vignette overlay — darkens edges for depth
+        var vignette = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.9);
+        vignette.addColorStop(0, 'rgba(10,10,10,0)');
+        vignette.addColorStop(1, 'rgba(10,10,10,0.4)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, W, H);
+
+        // Warp ring effect during transitions
+        if (warpIntensity > 0.05) {
+          var ringRadius = (1 - warpIntensity) * Math.max(W, H) * 0.6;
+          ctx.beginPath();
+          ctx.arc(W/2, H/2, ringRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (warpIntensity * 0.4) + ')';
+          ctx.lineWidth = 2 + warpIntensity * 8;
+          ctx.stroke();
         }
       }
-      setInterval(draw, 50);
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // Events
+      window.addEventListener('mousemove', function(e) {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      window.addEventListener('mouseleave', function() {
+        mouse.x = -9999;
+        mouse.y = -9999;
+      });
 
       var resizeTimeout;
       window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(init, 200);
+        resizeTimeout = setTimeout(function() {
+          resize();
+        }, 150);
       });
+
+      init();
+      loop();
     })();
 
     // Smooth scroll
@@ -791,6 +1020,25 @@
         }
       });
     });
+
+    // Scroll-triggered section reveals
+    (function() {
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.feature-card, .agent-card, .workflow-step').forEach(function(el) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+      });
+    })();
   </script>
 
 </body>
