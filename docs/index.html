@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pentest-ai -- Offensive Security Research Assistant for Claude Code</title>
+  <meta name="description" content="6 specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
+  <meta name="keywords" content="pentest, penetration testing, ai, claude code, red team, offensive security, mitre attack, security testing">
+  <meta property="og:title" content="pentest-ai -- Offensive Security Research Assistant for Claude Code">
+  <meta property="og:description" content="6 specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    #matrix-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --red: #e94560;
+      --blue: #0f3460;
+      --purple: #533483;
+      --text: #c8c8c8;
+      --text-bright: #e8e8e8;
+      --text-dim: #6a6a6a;
+      --surface: #111111;
+      --surface-light: #1a1a1a;
+      --border: #222222;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    a {
+      color: var(--red);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    a:hover {
+      color: #ff6b81;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.008) 2px,
+        rgba(255,255,255,0.008) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 7vw, 4.5rem);
+      font-weight: 700;
+      color: var(--red);
+      text-shadow:
+        0 0 10px rgba(233, 69, 96, 0.4),
+        0 0 40px rgba(233, 69, 96, 0.15),
+        0 0 80px rgba(233, 69, 96, 0.08);
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 span {
+      color: var(--text-dim);
+      font-weight: 300;
+    }
+
+    .hero .subtitle {
+      font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+      color: var(--text-bright);
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    .hero .tagline {
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      color: var(--text-dim);
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 32px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 4px;
+      transition: all 0.25s;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(233, 69, 96, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #ff6b81;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(233, 69, 96, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-bright);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--red);
+      color: var(--red);
+      transform: translateY(-1px);
+    }
+
+    /* ---- SECTIONS ---- */
+    section {
+      padding: 80px 0;
+    }
+
+    .section-title {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 48px;
+      max-width: 640px;
+    }
+
+    /* ---- WHAT IS THIS ---- */
+    .what-section .intro {
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 48px;
+      max-width: 720px;
+      line-height: 1.8;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 28px 24px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: #333;
+    }
+
+    .feature-card h3 {
+      font-size: 0.95rem;
+      color: var(--red);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .feature-card p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ---- AGENTS ---- */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .agent-card:hover {
+      border-color: var(--red);
+      box-shadow: 0 0 20px rgba(233, 69, 96, 0.08);
+    }
+
+    .agent-card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+
+    .agent-card .agent-desc {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+
+    .agent-card .agent-prompt {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      color: var(--text);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .agent-card .agent-prompt::before {
+      content: '> ';
+      color: var(--red);
+    }
+
+    /* ---- WORKFLOW ---- */
+    .workflow-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 48px 0 0;
+    }
+
+    .workflow-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px 24px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      text-align: center;
+      min-width: 100px;
+      transition: border-color 0.3s;
+    }
+
+    .workflow-step:hover {
+      border-color: var(--red);
+    }
+
+    .workflow-step .step-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-weight: 400;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .workflow-arrow {
+      color: var(--red);
+      font-size: 1.2rem;
+      padding: 0 8px;
+      user-select: none;
+    }
+
+    /* ---- COMPARISON TABLE ---- */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 32px;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: var(--surface);
+      color: var(--text-dim);
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comparison-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .comparison-table tr:hover td {
+      background: var(--surface);
+    }
+
+    .comparison-table .label-col {
+      color: var(--text-bright);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .comparison-table .before-col {
+      color: var(--text-dim);
+    }
+
+    .comparison-table .after-col {
+      color: var(--text);
+    }
+
+    /* ---- INSTALL ---- */
+    .install-section .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+
+    .install-section .code-block .label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .install-section .code-block code {
+      font-family: inherit;
+      font-size: 0.82rem;
+      color: var(--text-bright);
+      display: block;
+      white-space: pre;
+    }
+
+    .install-section .code-block code .comment {
+      color: var(--text-dim);
+    }
+
+    .install-section .code-block code .cmd {
+      color: var(--red);
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    footer .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    footer .footer-links a {
+      color: var(--text-dim);
+      transition: color 0.2s;
+    }
+
+    footer .footer-links a:hover {
+      color: var(--red);
+    }
+
+    footer .footer-warn {
+      color: var(--red);
+      font-weight: 500;
+      margin: 12px 0;
+      font-size: 0.72rem;
+    }
+
+    footer p {
+      margin-top: 8px;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 768px) {
+      section {
+        padding: 56px 0;
+      }
+
+      .agents-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-flow {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .workflow-arrow {
+        transform: rotate(90deg);
+        padding: 4px 0;
+      }
+
+      .comparison-table {
+        font-size: 0.72rem;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 10px 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== MATRIX RAIN BACKGROUND ========== -->
+  <canvas id="matrix-bg"></canvas>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>pentest<span>-</span>ai</h1>
+      <p class="subtitle">Offensive Security Research Assistant for Claude Code</p>
+      <p class="tagline">6 specialized AI subagents for every phase of authorized penetration testing</p>
+      <div class="cta-group">
+        <a href="#install" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/0xSteph/pentest-ai" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== WHAT IS THIS ========== -->
+  <section class="what-section">
+    <div class="container">
+      <h2 class="section-title">What is pentest-ai?</h2>
+      <p class="intro">
+        pentest-ai turns Claude Code into a full offensive security research environment.
+        Instead of one general-purpose assistant, you get six focused subagents -- each an
+        expert in a specific phase of penetration testing. Ask Claude anything security-related
+        and it automatically routes your request to the right specialist. Whether you are
+        scoping your first engagement or writing a final report, every response is mapped
+        to MITRE ATT&amp;CK and paired with defensive guidance.
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Automatic Routing</h3>
+          <p>Claude delegates to the right specialist based on your task. No manual agent selection required -- just describe what you need.</p>
+        </div>
+        <div class="feature-card">
+          <h3>MITRE ATT&amp;CK Mapped</h3>
+          <p>Every technique is cross-referenced with ATT&amp;CK IDs. Know exactly where each finding sits in the adversary framework.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Dual Perspective</h3>
+          <p>Offensive methodology paired with defensive detection in every response. Attack and defend in a single workflow.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== AGENTS ========== -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">The Agents</h2>
+      <p class="section-subtitle">Six specialists, each tuned for a distinct phase of the engagement lifecycle.</p>
+
+      <div class="agents-grid">
+        <div class="agent-card">
+          <h3>engagement-planner</h3>
+          <p class="agent-desc">Scopes engagements, defines rules of engagement, and builds structured test plans.</p>
+          <div class="agent-prompt">Plan a web app pentest for a financial services API</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>recon-analyst</h3>
+          <p class="agent-desc">Analyzes reconnaissance data, maps attack surfaces, and identifies high-value targets.</p>
+          <div class="agent-prompt">Analyze this nmap scan and prioritize targets</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>exploit-researcher</h3>
+          <p class="agent-desc">Researches vulnerabilities, suggests exploit chains, and maps techniques to ATT&amp;CK.</p>
+          <div class="agent-prompt">Research exploit options for Apache 2.4.49 path traversal</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>detection-engineer</h3>
+          <p class="agent-desc">Builds detection rules, writes Sigma/YARA signatures, and designs monitoring strategies.</p>
+          <div class="agent-prompt">Write a Sigma rule to detect Kerberoasting</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>stig-checker</h3>
+          <p class="agent-desc">Validates configurations against DISA STIGs and CIS benchmarks for compliance gaps.</p>
+          <div class="agent-prompt">Check this sshd_config against RHEL 9 STIG</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>report-writer</h3>
+          <p class="agent-desc">Generates professional pentest reports with findings, risk ratings, and remediation steps.</p>
+          <div class="agent-prompt">Write a finding for the SQL injection in /api/users</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== WORKFLOW ========== -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Engagement Workflow</h2>
+      <p class="section-subtitle">A natural pipeline from scoping through delivery. Each phase maps to a dedicated agent.</p>
+
+      <div class="workflow-flow">
+        <div class="workflow-step">
+          Scope
+          <span class="step-label">engagement-planner</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
+        <div class="workflow-step">
+          Recon
+          <span class="step-label">recon-analyst</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
+        <div class="workflow-step">
+          Exploit
+          <span class="step-label">exploit-researcher</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
+        <div class="workflow-step">
+          Detect
+          <span class="step-label">detection-engineer</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
+        <div class="workflow-step">
+          Report
+          <span class="step-label">report-writer</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== COMPARISON ========== -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Before &amp; After</h2>
+      <p class="section-subtitle">What changes when you add pentest-ai to your Claude Code workflow.</p>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Without pentest-ai</th>
+            <th>With pentest-ai</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label-col">Engagement scoping</td>
+            <td class="before-col">Manual checklist, easy to miss items</td>
+            <td class="after-col">Structured plan with RoE, scope boundaries, and methodology</td>
+          </tr>
+          <tr>
+            <td class="label-col">Recon analysis</td>
+            <td class="before-col">Read raw tool output yourself</td>
+            <td class="after-col">Prioritized targets with attack surface mapping</td>
+          </tr>
+          <tr>
+            <td class="label-col">Exploit research</td>
+            <td class="before-col">Search CVE databases manually</td>
+            <td class="after-col">Curated exploit chains mapped to ATT&amp;CK with PoC guidance</td>
+          </tr>
+          <tr>
+            <td class="label-col">Detection rules</td>
+            <td class="before-col">Write Sigma/YARA from scratch</td>
+            <td class="after-col">Auto-generated signatures with detection logic explained</td>
+          </tr>
+          <tr>
+            <td class="label-col">STIG compliance</td>
+            <td class="before-col">Cross-reference configs vs. PDF checklists</td>
+            <td class="after-col">Automated check with fix commands and rationale</td>
+          </tr>
+          <tr>
+            <td class="label-col">Reporting</td>
+            <td class="before-col">Start from a blank document</td>
+            <td class="after-col">Professional findings with CVSS, evidence, and remediation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========== INSTALL ========== -->
+  <section id="install" class="install-section">
+    <div class="container">
+      <h2 class="section-title">Installation</h2>
+      <p class="section-subtitle">Three ways to get started. Pick whichever fits your workflow.</p>
+
+      <div class="code-block">
+        <div class="label">Option 1 -- Clone the repository</div>
+        <code><span class="cmd">git clone</span> https://github.com/0xSteph/pentest-ai.git
+<span class="cmd">cd</span> pentest-ai</code>
+      </div>
+
+      <div class="code-block">
+        <div class="label">Option 2 -- Install globally via npm</div>
+        <code><span class="cmd">npm install</span> -g pentest-ai</code>
+      </div>
+
+      <div class="code-block">
+        <div class="label">Option 3 -- Add to an existing project</div>
+        <code><span class="cmd">npm install</span> pentest-ai
+<span class="comment"># Then add to your Claude Code configuration</span></code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/0xSteph/pentest-ai" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/0xSteph/pentest-ai#readme" target="_blank" rel="noopener noreferrer">Documentation</a>
+        <a href="https://github.com/0xSteph/pentest-ai/blob/main/DISCLAIMER.md" target="_blank" rel="noopener noreferrer">Disclaimer</a>
+      </div>
+      <p class="footer-warn">For authorized security testing only.</p>
+      <p>Built by <a href="https://github.com/0xSteph" target="_blank" rel="noopener noreferrer">0xSteph</a></p>
+      <p>MIT License</p>
+    </div>
+  </footer>
+
+  <script>
+    // Matrix rain background — scrolls with page
+    (function() {
+      var canvas = document.getElementById('matrix-bg');
+      var ctx = canvas.getContext('2d');
+      var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>/{}[]|;:'.split('');
+      var fontSize = 14;
+      var columns;
+      var drops;
+
+      function init() {
+        var docHeight = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight,
+          window.innerHeight
+        );
+        canvas.width = window.innerWidth;
+        canvas.height = docHeight;
+        columns = Math.floor(canvas.width / fontSize);
+        drops = [];
+        for (var i = 0; i < columns; i++) {
+          drops[i] = Math.random() * -100;
+        }
+      }
+
+      // Wait for full page render before sizing
+      window.addEventListener('load', init);
+      init();
+
+      function draw() {
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.06)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e94560';
+        ctx.font = fontSize + 'px JetBrains Mono, monospace';
+        for (var i = 0; i < drops.length; i++) {
+          var char = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 50);
+
+      var resizeTimeout;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(init, 200);
+      });
+    })();
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
