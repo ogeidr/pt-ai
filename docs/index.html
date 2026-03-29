@@ -605,9 +605,21 @@
         </div>
 
         <div class="agent-card">
+          <h3>osint-collector</h3>
+          <p class="agent-desc">Open source intelligence gathering. Domain recon, email harvesting, social media profiling, breach data analysis.</p>
+          <div class="agent-prompt">Build an OSINT profile on this target domain</div>
+        </div>
+
+        <div class="agent-card">
           <h3>recon-advisor</h3>
           <p class="agent-desc">Parses output from Nmap, Nessus, BloodHound, and 20+ tools. Prioritizes targets and maps CVEs.</p>
           <div class="agent-prompt">Analyze this Nmap scan and tell me what to hit first</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>threat-modeler</h3>
+          <p class="agent-desc">STRIDE/DREAD threat modeling, attack tree construction, data flow analysis, and architecture-specific threat enumeration.</p>
+          <div class="agent-prompt">Build a STRIDE threat model for our API gateway</div>
         </div>
 
         <div class="agent-card">
@@ -617,9 +629,57 @@
         </div>
 
         <div class="agent-card">
+          <h3>privesc-advisor</h3>
+          <p class="agent-desc">Systematic Linux and Windows privilege escalation. SUID abuse, token impersonation, GTFOBins, and LOLBAS.</p>
+          <div class="agent-prompt">Here's my linpeas output. What's the fastest path to root?</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>cloud-security</h3>
+          <p class="agent-desc">AWS, Azure, and GCP penetration testing. IAM privilege escalation, container escape, and cloud-native attack paths.</p>
+          <div class="agent-prompt">I have read-only AWS access. Find privilege escalation paths</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>api-security</h3>
+          <p class="agent-desc">REST, GraphQL, and WebSocket testing. OWASP API Top 10, JWT attacks, OAuth exploitation, BOLA/BFLA testing.</p>
+          <div class="agent-prompt">Test this API for BOLA. Here's the Swagger doc and a valid JWT</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>mobile-pentester</h3>
+          <p class="agent-desc">Android and iOS app security. APK/IPA analysis, Frida hooking, SSL pinning bypass, OWASP MASTG/MASVS.</p>
+          <div class="agent-prompt">Decompile this APK and check for hardcoded secrets</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>wireless-pentester</h3>
+          <p class="agent-desc">WiFi and Bluetooth penetration testing. WPA2/WPA3 attacks, evil twin, rogue AP, and BLE security.</p>
+          <div class="agent-prompt">Capture a WPA2 handshake and set up an evil twin</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>social-engineer</h3>
+          <p class="agent-desc">Phishing campaigns, pretexting, vishing, and physical social engineering for authorized red team engagements.</p>
+          <div class="agent-prompt">Design a phishing campaign using GoPhish for this engagement</div>
+        </div>
+
+        <div class="agent-card">
           <h3>detection-engineer</h3>
           <p class="agent-desc">Produces deployment-ready detection rules in Sigma, Splunk SPL, Elastic KQL with false positive tuning.</p>
           <div class="agent-prompt">Create a detection rule for DCSync with Sigma and Splunk SPL</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>malware-analyst</h3>
+          <p class="agent-desc">Binary analysis, reverse engineering, sandbox methodology, YARA rule writing, and IOC extraction.</p>
+          <div class="agent-prompt">Analyze this suspicious PE file with static analysis then Ghidra</div>
+        </div>
+
+        <div class="agent-card">
+          <h3>forensics-analyst</h3>
+          <p class="agent-desc">Digital forensics and incident response. Memory forensics, disk analysis, timeline construction, evidence handling.</p>
+          <div class="agent-prompt">Walk me through a Volatility 3 workflow for this memory dump</div>
         </div>
 
         <div class="agent-card">
@@ -638,24 +698,6 @@
           <h3>ctf-solver</h3>
           <p class="agent-desc">Methodical CTF challenge partner for HackTheBox, TryHackMe, and competitions. Web, pwn, rev, crypto, forensics.</p>
           <div class="agent-prompt">I have a low-priv shell on this HTB machine. Help me enumerate</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>cloud-security</h3>
-          <p class="agent-desc">AWS, Azure, and GCP penetration testing. IAM privilege escalation, container escape, and cloud-native attack paths.</p>
-          <div class="agent-prompt">I have read-only AWS access. Find privilege escalation paths</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>privesc-advisor</h3>
-          <p class="agent-desc">Systematic Linux and Windows privilege escalation. SUID abuse, token impersonation, GTFOBins, and LOLBAS.</p>
-          <div class="agent-prompt">Here's my linpeas output — what's the fastest path to root?</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>api-security</h3>
-          <p class="agent-desc">REST, GraphQL, and WebSocket testing. OWASP API Top 10, JWT attacks, OAuth exploitation, BOLA/BFLA testing.</p>
-          <div class="agent-prompt">Test this API for BOLA — here's the Swagger doc and a valid JWT</div>
         </div>
       </div>
     </div>
