@@ -4,16 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pentest-ai | AI-Powered Offensive Security Research Assistant for Claude Code</title>
-  <meta name="description" content="Open-source AI subagents for penetration testing with Claude Code. Plan engagements, analyze recon, research exploits, build detection rules, audit STIG compliance, and write professional reports. MITRE ATT&CK mapped.">
-  <meta name="keywords" content="pentest ai, penetration testing tools, claude code agents, red team ai, offensive security automation, mitre attack, security testing ai, pentest report generator, detection engineering, STIG compliance, bug bounty tools, ethical hacking ai, cybersecurity ai tools, oscp tools">
+  <meta name="description" content="17 open-source AI subagents for penetration testing with Claude Code. Plan engagements, analyze recon, research exploits, build detection rules, audit STIG compliance, and write professional reports. MITRE ATT&CK mapped.">
+  <meta name="keywords" content="pentest ai, penetration testing tools, claude code agents, red team ai, offensive security automation, mitre attack, security testing ai, pentest report generator, detection engineering, STIG compliance, bug bounty tools, ethical hacking ai, cybersecurity ai tools, oscp tools, claude code subagents, AI penetration testing, security research assistant, purple team tools, threat modeling ai, digital forensics ai">
   <meta property="og:title" content="pentest-ai | AI-Powered Offensive Security Research Assistant">
-  <meta property="og:description" content="Open-source AI subagents for penetration testing with Claude Code. MITRE ATT&CK mapped. Plan, scan, exploit, detect, report.">
+  <meta property="og:description" content="17 open-source AI subagents for every phase of authorized penetration testing with Claude Code. MITRE ATT&CK mapped. Plan, scan, exploit, detect, report.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://0xsteph.github.io/pentest-ai/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/0xSteph/pentest-ai/main/assets/social-post.jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="pentest-ai">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="pentest-ai | AI-Powered Offensive Security Research Assistant">
-  <meta name="twitter:description" content="Open-source Claude Code subagents for every phase of authorized penetration testing. MITRE ATT&CK mapped.">
+  <meta name="twitter:description" content="17 open-source Claude Code subagents for every phase of authorized penetration testing. MITRE ATT&CK mapped.">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/0xSteph/pentest-ai/main/assets/social-post.jpeg">
   <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#e94560">
+  <meta name="author" content="0xSteph">
   <link rel="canonical" href="https://0xsteph.github.io/pentest-ai/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +36,6 @@
       pointer-events: none;
     }
 
-    /* Scroll-driven dimension shift overlay */
     .dimension-flash {
       position: fixed;
       top: 0;
@@ -47,7 +53,6 @@
       opacity: 1;
     }
 
-    /* Scanline overlay for hacker feel */
     body::after {
       content: '';
       position: fixed;
@@ -115,6 +120,97 @@
       max-width: 1100px;
       margin: 0 auto;
       padding: 0 24px;
+    }
+
+    /* ---- NAV ---- */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0 24px;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .nav.scrolled {
+      background: rgba(10, 10, 10, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+
+    .nav-logo {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo:hover {
+      color: var(--red);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-bright);
+    }
+
+    .nav-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: var(--text-dim) !important;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .nav-github:hover {
+      border-color: var(--red);
+      color: var(--red) !important;
+    }
+
+    .nav-github svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* Mobile nav toggle */
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px;
     }
 
     /* ---- HERO ---- */
@@ -220,6 +316,41 @@
       transform: translateY(-1px);
     }
 
+    /* ---- STATS BAR ---- */
+    .stats-bar {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 32px 0;
+    }
+
+    .stats-grid {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--red);
+      display: block;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
     /* ---- SECTIONS ---- */
     section {
       padding: 80px 0;
@@ -280,6 +411,36 @@
     }
 
     /* ---- AGENTS ---- */
+    .agent-category {
+      margin-bottom: 40px;
+    }
+
+    .agent-category:last-child {
+      margin-bottom: 0;
+    }
+
+    .category-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .category-label.offensive {
+      color: var(--red);
+    }
+
+    .category-label.defense {
+      color: #0fa;
+    }
+
+    .category-label.reporting {
+      color: #a78bfa;
+    }
+
     .agents-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -306,6 +467,21 @@
       margin-bottom: 6px;
     }
 
+    .agent-card .agent-tag {
+      display: inline-block;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .agent-tag.off { background: rgba(233,69,96,0.12); color: var(--red); }
+    .agent-tag.def { background: rgba(0,255,170,0.08); color: #0fa; }
+    .agent-tag.rep { background: rgba(167,139,250,0.12); color: #a78bfa; }
+
     .agent-card .agent-desc {
       font-size: 0.78rem;
       color: var(--text-dim);
@@ -326,6 +502,65 @@
     .agent-card .agent-prompt::before {
       content: '> ';
       color: var(--red);
+    }
+
+    /* ---- DEMO ---- */
+    .demo-section .demo-terminal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 700px;
+    }
+
+    .demo-terminal .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-bar .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .terminal-bar .dot:nth-child(1) { background: #ff5f57; }
+    .terminal-bar .dot:nth-child(2) { background: #febc2e; }
+    .terminal-bar .dot:nth-child(3) { background: #28c840; }
+
+    .terminal-bar .terminal-title {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      margin-left: 8px;
+    }
+
+    .demo-terminal pre {
+      padding: 20px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+
+    .demo-terminal .prompt-text {
+      color: var(--text-dim);
+    }
+
+    .demo-terminal .user-input {
+      color: var(--text-bright);
+    }
+
+    .demo-terminal .agent-route {
+      color: var(--red);
+    }
+
+    .demo-terminal .agent-output {
+      color: var(--text);
     }
 
     /* ---- WORKFLOW ---- */
@@ -422,6 +657,7 @@
       padding: 20px 24px;
       margin-bottom: 16px;
       overflow-x: auto;
+      position: relative;
     }
 
     .install-section .code-block .label {
@@ -445,6 +681,115 @@
     }
 
     .install-section .code-block code .cmd {
+      color: var(--red);
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: inherit;
+      font-size: 0.65rem;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .copy-btn.copied {
+      border-color: #0fa;
+      color: #0fa;
+    }
+
+    /* ---- FAQ ---- */
+    .faq-list {
+      max-width: 760px;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+
+    .faq-item:first-child {
+      border-top: 1px solid var(--border);
+    }
+
+    .faq-question {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      user-select: none;
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-size: 1.1rem;
+      color: var(--red);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .faq-item.open .faq-question::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding-top: 12px;
+    }
+
+    /* ---- BACK TO TOP ---- */
+    .back-to-top {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, border-color 0.2s, color 0.2s;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .back-to-top:hover {
+      border-color: var(--red);
       color: var(--red);
     }
 
@@ -491,6 +836,29 @@
         padding: 56px 0;
       }
 
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 56px;
+        left: 0;
+        right: 0;
+        background: rgba(10, 10, 10, 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        flex-direction: column;
+        padding: 16px 24px;
+        gap: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-toggle {
+        display: block;
+      }
+
       .agents-grid {
         grid-template-columns: 1fr;
       }
@@ -513,11 +881,23 @@
       .comparison-table td {
         padding: 10px 10px;
       }
+
+      .stats-grid {
+        gap: 24px;
+      }
     }
 
     @media (max-width: 480px) {
       .feature-grid {
         grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        gap: 20px;
+      }
+
+      .stat-number {
+        font-size: 1.4rem;
       }
     }
   </style>
@@ -526,11 +906,16 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "pentest-ai",
-    "description": "Open-source AI subagents for penetration testing with Claude Code. MITRE ATT&CK mapped agents for engagement planning, recon analysis, exploit methodology, detection engineering, STIG compliance, and professional report writing.",
+    "description": "17 open-source AI subagents for penetration testing with Claude Code. MITRE ATT&CK mapped agents for engagement planning, recon analysis, exploit methodology, detection engineering, STIG compliance, and professional report writing.",
     "url": "https://0xsteph.github.io/pentest-ai/",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Linux, macOS, Windows WSL",
     "license": "https://opensource.org/licenses/MIT",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
     "author": {
       "@type": "Person",
       "name": "0xSteph",
@@ -541,19 +926,87 @@
     "keywords": "penetration testing, red team, MITRE ATT&CK, Claude Code, AI security tools, offensive security"
   }
   </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Do I need security certifications to use pentest-ai?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No certifications are required to install and explore the agents. However, for real engagements, you should have proper training and authorization. The agents adapt to your skill level — beginners get explanations, experienced operators get exact command syntax."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does pentest-ai execute attacks or access systems?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. pentest-ai agents provide methodology guidance, analysis, and report generation. They do not execute exploits, access remote systems, or generate functional exploit code. You remain in full control of all actions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which Claude subscription do I need?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You need Claude Pro or Max with Claude Code enabled. The agents use the Sonnet model by default, which is included with both subscription tiers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I customize the agents or create new ones?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Agents are plain Markdown files with YAML frontmatter. You can modify existing agents, change their model, add tools, or create entirely new agents. See the Customization guide for details."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does automatic agent routing work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude Code reads the description field in each agent's YAML frontmatter. When you describe a task, Claude matches your intent to the most relevant agent and delegates automatically. You can also invoke agents by name for direct control."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
   <!-- ========== PARTICLE NETWORK BACKGROUND ========== -->
-  <canvas id="particle-bg"></canvas>
-  <div class="dimension-flash" id="dimension-flash"></div>
+  <canvas id="particle-bg" aria-hidden="true"></canvas>
+  <div class="dimension-flash" id="dimension-flash" aria-hidden="true"></div>
+
+  <!-- ========== NAV ========== -->
+  <nav class="nav" id="nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">pentest-ai</a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+      <div class="nav-links" id="nav-links">
+        <a href="#about">About</a>
+        <a href="#agents">Agents</a>
+        <a href="#demo">Demo</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#faq">FAQ</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/0xSteph/pentest-ai" class="nav-github" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
 
   <!-- ========== HERO ========== -->
   <section class="hero">
     <div class="hero-content">
       <h1>pentest<span>-</span>ai</h1>
-      <p class="subtitle">Offensive Security Research Assistant for Claude Code</p>
-      <p class="tagline">Specialized AI subagents for every phase of authorized penetration testing</p>
+      <p class="subtitle">Turn Claude Code into your offensive security research assistant</p>
+      <p class="tagline">17 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting</p>
       <div class="cta-group">
         <a href="#install" class="btn btn-primary">Get Started</a>
         <a href="https://github.com/0xSteph/pentest-ai" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
@@ -561,13 +1014,37 @@
     </div>
   </section>
 
+  <!-- ========== STATS BAR ========== -->
+  <div class="stats-bar">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number">17</span>
+          <span class="stat-label">Specialist Agents</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">25+</span>
+          <span class="stat-label">Tool Integrations</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">MITRE ATT&amp;CK Mapped</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">MIT</span>
+          <span class="stat-label">Open Source</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== WHAT IS THIS ========== -->
-  <section class="what-section">
+  <section class="what-section" id="about">
     <div class="container">
       <h2 class="section-title">What is pentest-ai?</h2>
       <p class="intro">
         pentest-ai turns Claude Code into a full offensive security research environment.
-        Instead of one general-purpose assistant, you get specialized subagents, each an
+        Instead of one general-purpose assistant, you get specialized subagents &mdash; each an
         expert in a specific phase of penetration testing. Ask Claude anything security-related
         and it automatically routes your request to the right specialist. Whether you are
         scoping your first engagement or writing a final report, every response is mapped
@@ -587,129 +1064,220 @@
           <h3>Dual Perspective</h3>
           <p>Offensive methodology paired with defensive detection in every response. Attack and defend in a single workflow.</p>
         </div>
+        <div class="feature-card">
+          <h3>Adapts to Your Level</h3>
+          <p>From explaining what Kerberoasting is to providing exact Impacket command syntax. Every agent meets you where you are.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Plain Markdown</h3>
+          <p>Agents are simple Markdown files. No dependencies, no build tools, no lock-in. Fork, modify, and extend freely.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Full Engagement Coverage</h3>
+          <p>OSINT, planning, recon, exploitation, cloud, mobile, wireless, social engineering, forensics, compliance, and reporting.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ========== AGENTS ========== -->
-  <section>
+  <section id="agents">
     <div class="container">
       <h2 class="section-title">The Agents</h2>
-      <p class="section-subtitle">Specialized agents, each tuned for a distinct phase of the engagement lifecycle.</p>
+      <p class="section-subtitle">17 specialists, each tuned for a distinct phase of the engagement lifecycle.</p>
 
-      <div class="agents-grid">
-        <div class="agent-card">
-          <h3>engagement-planner</h3>
-          <p class="agent-desc">Plans penetration tests with phased methodology, MITRE ATT&amp;CK mapping, and rules of engagement templates.</p>
-          <div class="agent-prompt">Plan an internal network pentest for a 500-endpoint AD environment</div>
+      <!-- Offensive Operations -->
+      <div class="agent-category">
+        <div class="category-label offensive">Offensive Operations</div>
+        <div class="agents-grid">
+          <div class="agent-card">
+            <h3>engagement-planner</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Plans penetration tests with phased methodology, MITRE ATT&amp;CK mapping, and rules of engagement templates.</p>
+            <div class="agent-prompt">Plan an internal network pentest for a 500-endpoint AD environment</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>osint-collector</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Open source intelligence gathering. Domain recon, email harvesting, social media profiling, breach data analysis.</p>
+            <div class="agent-prompt">Build an OSINT profile on this target domain</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>recon-advisor</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Parses output from Nmap, Nessus, BloodHound, and 20+ tools. Prioritizes targets and maps CVEs.</p>
+            <div class="agent-prompt">Analyze this Nmap scan and tell me what to hit first</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>exploit-guide</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Exploitation methodology covering AD attacks, web apps, cloud, and post-exploitation with defensive perspective.</p>
+            <div class="agent-prompt">Walk me through AS-REP Roasting and how defenders detect it</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>privesc-advisor</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Systematic Linux and Windows privilege escalation. SUID abuse, token impersonation, GTFOBins, and LOLBAS.</p>
+            <div class="agent-prompt">Here's my linpeas output. What's the fastest path to root?</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>cloud-security</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">AWS, Azure, and GCP penetration testing. IAM privilege escalation, container escape, and cloud-native attack paths.</p>
+            <div class="agent-prompt">I have read-only AWS access. Find privilege escalation paths</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>api-security</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">REST, GraphQL, and WebSocket testing. OWASP API Top 10, JWT attacks, OAuth exploitation, BOLA/BFLA testing.</p>
+            <div class="agent-prompt">Test this API for BOLA. Here's the Swagger doc and a valid JWT</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>mobile-pentester</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Android and iOS app security. APK/IPA analysis, Frida hooking, SSL pinning bypass, OWASP MASTG/MASVS.</p>
+            <div class="agent-prompt">Decompile this APK and check for hardcoded secrets</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>wireless-pentester</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">WiFi and Bluetooth penetration testing. WPA2/WPA3 attacks, evil twin, rogue AP, and BLE security.</p>
+            <div class="agent-prompt">Capture a WPA2 handshake and set up an evil twin</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>social-engineer</h3>
+            <span class="agent-tag off">Offensive</span>
+            <p class="agent-desc">Phishing campaigns, pretexting, vishing, and physical social engineering for authorized red team engagements.</p>
+            <div class="agent-prompt">Design a phishing campaign using GoPhish for this engagement</div>
+          </div>
         </div>
+      </div>
 
-        <div class="agent-card">
-          <h3>osint-collector</h3>
-          <p class="agent-desc">Open source intelligence gathering. Domain recon, email harvesting, social media profiling, breach data analysis.</p>
-          <div class="agent-prompt">Build an OSINT profile on this target domain</div>
+      <!-- Defense & Analysis -->
+      <div class="agent-category">
+        <div class="category-label defense">Defense &amp; Analysis</div>
+        <div class="agents-grid">
+          <div class="agent-card">
+            <h3>detection-engineer</h3>
+            <span class="agent-tag def">Defense</span>
+            <p class="agent-desc">Produces deployment-ready detection rules in Sigma, Splunk SPL, Elastic KQL with false positive tuning.</p>
+            <div class="agent-prompt">Create a detection rule for DCSync with Sigma and Splunk SPL</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>threat-modeler</h3>
+            <span class="agent-tag def">Defense</span>
+            <p class="agent-desc">STRIDE/DREAD threat modeling, attack tree construction, data flow analysis, and architecture-specific threat enumeration.</p>
+            <div class="agent-prompt">Build a STRIDE threat model for our API gateway</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>forensics-analyst</h3>
+            <span class="agent-tag def">Defense</span>
+            <p class="agent-desc">Digital forensics and incident response. Memory forensics, disk analysis, timeline construction, evidence handling.</p>
+            <div class="agent-prompt">Walk me through a Volatility 3 workflow for this memory dump</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>malware-analyst</h3>
+            <span class="agent-tag def">Defense</span>
+            <p class="agent-desc">Binary analysis, reverse engineering, sandbox methodology, YARA rule writing, and IOC extraction.</p>
+            <div class="agent-prompt">Analyze this suspicious PE file with static analysis then Ghidra</div>
+          </div>
+
+          <div class="agent-card">
+            <h3>stig-analyst</h3>
+            <span class="agent-tag def">Defense</span>
+            <p class="agent-desc">DISA STIG compliance analysis with GPO remediation paths, risk scores, and keep-open justification templates.</p>
+            <div class="agent-prompt">Analyze V-220768 and write a keep-open justification</div>
+          </div>
         </div>
+      </div>
 
-        <div class="agent-card">
-          <h3>recon-advisor</h3>
-          <p class="agent-desc">Parses output from Nmap, Nessus, BloodHound, and 20+ tools. Prioritizes targets and maps CVEs.</p>
-          <div class="agent-prompt">Analyze this Nmap scan and tell me what to hit first</div>
-        </div>
+      <!-- Reporting & Learning -->
+      <div class="agent-category">
+        <div class="category-label reporting">Reporting &amp; Learning</div>
+        <div class="agents-grid">
+          <div class="agent-card">
+            <h3>report-generator</h3>
+            <span class="agent-tag rep">Reporting</span>
+            <p class="agent-desc">Professional pentest reports with executive summaries, CVSS scoring, evidence formatting, and remediation roadmaps.</p>
+            <div class="agent-prompt">Compile these findings into a professional report</div>
+          </div>
 
-        <div class="agent-card">
-          <h3>threat-modeler</h3>
-          <p class="agent-desc">STRIDE/DREAD threat modeling, attack tree construction, data flow analysis, and architecture-specific threat enumeration.</p>
-          <div class="agent-prompt">Build a STRIDE threat model for our API gateway</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>exploit-guide</h3>
-          <p class="agent-desc">Exploitation methodology covering AD attacks, web apps, cloud, and post-exploitation with defensive perspective.</p>
-          <div class="agent-prompt">Walk me through AS-REP Roasting and how defenders detect it</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>privesc-advisor</h3>
-          <p class="agent-desc">Systematic Linux and Windows privilege escalation. SUID abuse, token impersonation, GTFOBins, and LOLBAS.</p>
-          <div class="agent-prompt">Here's my linpeas output. What's the fastest path to root?</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>cloud-security</h3>
-          <p class="agent-desc">AWS, Azure, and GCP penetration testing. IAM privilege escalation, container escape, and cloud-native attack paths.</p>
-          <div class="agent-prompt">I have read-only AWS access. Find privilege escalation paths</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>api-security</h3>
-          <p class="agent-desc">REST, GraphQL, and WebSocket testing. OWASP API Top 10, JWT attacks, OAuth exploitation, BOLA/BFLA testing.</p>
-          <div class="agent-prompt">Test this API for BOLA. Here's the Swagger doc and a valid JWT</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>mobile-pentester</h3>
-          <p class="agent-desc">Android and iOS app security. APK/IPA analysis, Frida hooking, SSL pinning bypass, OWASP MASTG/MASVS.</p>
-          <div class="agent-prompt">Decompile this APK and check for hardcoded secrets</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>wireless-pentester</h3>
-          <p class="agent-desc">WiFi and Bluetooth penetration testing. WPA2/WPA3 attacks, evil twin, rogue AP, and BLE security.</p>
-          <div class="agent-prompt">Capture a WPA2 handshake and set up an evil twin</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>social-engineer</h3>
-          <p class="agent-desc">Phishing campaigns, pretexting, vishing, and physical social engineering for authorized red team engagements.</p>
-          <div class="agent-prompt">Design a phishing campaign using GoPhish for this engagement</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>detection-engineer</h3>
-          <p class="agent-desc">Produces deployment-ready detection rules in Sigma, Splunk SPL, Elastic KQL with false positive tuning.</p>
-          <div class="agent-prompt">Create a detection rule for DCSync with Sigma and Splunk SPL</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>malware-analyst</h3>
-          <p class="agent-desc">Binary analysis, reverse engineering, sandbox methodology, YARA rule writing, and IOC extraction.</p>
-          <div class="agent-prompt">Analyze this suspicious PE file with static analysis then Ghidra</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>forensics-analyst</h3>
-          <p class="agent-desc">Digital forensics and incident response. Memory forensics, disk analysis, timeline construction, evidence handling.</p>
-          <div class="agent-prompt">Walk me through a Volatility 3 workflow for this memory dump</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>stig-analyst</h3>
-          <p class="agent-desc">DISA STIG compliance analysis with GPO remediation paths, risk scores, and keep-open justification templates.</p>
-          <div class="agent-prompt">Analyze V-220768 and write a keep-open justification</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>report-generator</h3>
-          <p class="agent-desc">Professional pentest reports with executive summaries, CVSS scoring, evidence formatting, and remediation roadmaps.</p>
-          <div class="agent-prompt">Compile these findings into a professional report</div>
-        </div>
-
-        <div class="agent-card">
-          <h3>ctf-solver</h3>
-          <p class="agent-desc">Methodical CTF challenge partner for HackTheBox, TryHackMe, and competitions. Web, pwn, rev, crypto, forensics.</p>
-          <div class="agent-prompt">I have a low-priv shell on this HTB machine. Help me enumerate</div>
+          <div class="agent-card">
+            <h3>ctf-solver</h3>
+            <span class="agent-tag rep">Learning</span>
+            <p class="agent-desc">Methodical CTF challenge partner for HackTheBox, TryHackMe, and competitions. Web, pwn, rev, crypto, forensics.</p>
+            <div class="agent-prompt">I have a low-priv shell on this HTB machine. Help me enumerate</div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- ========== DEMO ========== -->
+  <section class="demo-section" id="demo">
+    <div class="container">
+      <h2 class="section-title">See It in Action</h2>
+      <p class="section-subtitle">Describe your task naturally. Claude routes to the right agent automatically.</p>
+
+      <div class="demo-terminal">
+        <div class="terminal-bar">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="terminal-title">claude</span>
+        </div>
+        <pre><span class="prompt-text">$</span> <span class="user-input">claude</span>
+
+<span class="prompt-text">You:</span> <span class="user-input">Analyze this Nmap scan and prioritize targets for our internal pentest</span>
+
+<span class="agent-route">&#9656; Routing to recon-advisor agent...</span>
+
+<span class="agent-output">## Prioritized Target Summary
+
+### Critical Priority (Exploit Immediately)
+| Host           | Port  | Service        | Finding                    |
+|----------------|-------|----------------|----------------------------|
+| 10.10.1.5      | 445   | SMB            | SMBv1 enabled, MS17-010    |
+| 10.10.1.20     | 3389  | RDP            | BlueKeep (CVE-2019-0708)  |
+
+### High Priority (Investigate Next)
+| Host           | Port  | Service        | Finding                    |
+|----------------|-------|----------------|----------------------------|
+| 10.10.1.100    | 88    | Kerberos       | Domain Controller          |
+| 10.10.1.15     | 1433  | MSSQL          | sa login, weak password    |
+
+### Recommended Next Steps
+1. Run: <span style="color:var(--red)">nmap -sV --script smb-vuln* 10.10.1.5</span>
+2. Run: <span style="color:var(--red)">crackmapexec smb 10.10.1.0/24</span>
+3. Enumerate AD: <span style="color:var(--red)">bloodhound-python -d corp.local</span></span></pre>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== WORKFLOW ========== -->
-  <section>
+  <section id="workflow">
     <div class="container">
       <h2 class="section-title">Engagement Workflow</h2>
       <p class="section-subtitle">A natural pipeline from scoping through delivery. Each phase maps to a dedicated agent.</p>
 
       <div class="workflow-flow">
+        <div class="workflow-step">
+          OSINT
+          <span class="step-label">osint-collector</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
         <div class="workflow-step">
           Scope
           <span class="step-label">engagement-planner</span>
@@ -723,6 +1291,11 @@
         <div class="workflow-step">
           Exploit
           <span class="step-label">exploit-guide</span>
+        </div>
+        <span class="workflow-arrow">&rarr;</span>
+        <div class="workflow-step">
+          Escalate
+          <span class="step-label">privesc-advisor</span>
         </div>
         <span class="workflow-arrow">&rarr;</span>
         <div class="workflow-step">
@@ -771,7 +1344,7 @@
           <tr>
             <td class="label-col">Detection rules</td>
             <td class="before-col">Write Sigma/YARA from scratch</td>
-            <td class="after-col">Auto-generated signatures with detection logic explained</td>
+            <td class="after-col">Deployment-ready rules with detection logic explained</td>
           </tr>
           <tr>
             <td class="label-col">STIG compliance</td>
@@ -788,22 +1361,59 @@
     </div>
   </section>
 
+  <!-- ========== FAQ ========== -->
+  <section id="faq">
+    <div class="container">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-subtitle">Common questions about pentest-ai.</p>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question">Do I need security certifications to use pentest-ai?</div>
+          <div class="faq-answer">No certifications are required to install and explore the agents. However, for real engagements, you should have proper training and authorization. The agents adapt to your skill level &mdash; beginners get explanations, experienced operators get exact command syntax.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Does pentest-ai execute attacks or access systems?</div>
+          <div class="faq-answer">No. pentest-ai agents provide methodology guidance, analysis, and report generation. They do not execute exploits, access remote systems, or generate functional exploit code. You remain in full control of all actions.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Which Claude subscription do I need?</div>
+          <div class="faq-answer">You need Claude Pro or Max with Claude Code enabled. The agents use the Sonnet model by default, which is included with both subscription tiers.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Can I customize the agents or create new ones?</div>
+          <div class="faq-answer">Yes. Agents are plain Markdown files with YAML frontmatter. You can modify existing agents, change their model, add tools, or create entirely new agents. See the <a href="https://github.com/0xSteph/pentest-ai/blob/main/docs/CUSTOMIZATION.md">Customization guide</a> for details.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">How does automatic agent routing work?</div>
+          <div class="faq-answer">Claude Code reads the description field in each agent's YAML frontmatter. When you describe a task, Claude matches your intent to the most relevant agent and delegates automatically. You can also invoke agents by name for direct control.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question">Can I use pentest-ai for bug bounty programs?</div>
+          <div class="faq-answer">Yes, within the program's scope and rules. Use the recon-advisor and exploit-guide for vulnerability research, the api-security agent for web/API testing, and the report-generator for professional write-ups. Always operate within the program's rules of engagement.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== INSTALL ========== -->
   <section id="install" class="install-section">
     <div class="container">
       <h2 class="section-title">Installation</h2>
-      <p class="section-subtitle">Three ways to get started. Pick whichever fits your workflow.</p>
+      <p class="section-subtitle">Three commands. No dependencies. No build tools.</p>
 
       <div class="code-block">
         <div class="label">Option 1: Clone and install globally</div>
         <code><span class="cmd">git clone</span> https://github.com/0xSteph/pentest-ai.git
 <span class="cmd">cp</span> pentest-ai/agents/*.md ~/.claude/agents/</code>
+        <button class="copy-btn" data-code="git clone https://github.com/0xSteph/pentest-ai.git&#10;cp pentest-ai/agents/*.md ~/.claude/agents/">Copy</button>
       </div>
 
       <div class="code-block">
         <div class="label">Option 2: Install for a specific project</div>
         <code><span class="cmd">mkdir -p</span> .claude/agents/
 <span class="cmd">cp</span> pentest-ai/agents/*.md .claude/agents/</code>
+        <button class="copy-btn" data-code="mkdir -p .claude/agents/&#10;cp pentest-ai/agents/*.md .claude/agents/">Copy</button>
       </div>
 
       <div class="code-block">
@@ -811,6 +1421,10 @@
         <code><span class="comment"># Just describe your task naturally</span>
 "Plan an internal pentest for a mid-size company with Active Directory"</code>
       </div>
+
+      <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 24px;">
+        See <a href="https://github.com/0xSteph/pentest-ai/blob/main/INSTALL.md">INSTALL.md</a> for detailed instructions and troubleshooting.
+      </p>
     </div>
   </section>
 
@@ -819,7 +1433,9 @@
     <div class="container">
       <div class="footer-links">
         <a href="https://github.com/0xSteph/pentest-ai" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="https://github.com/0xSteph/pentest-ai#readme" target="_blank" rel="noopener noreferrer">Documentation</a>
+        <a href="https://github.com/0xSteph/pentest-ai/blob/main/docs/AGENT-GUIDE.md" target="_blank" rel="noopener noreferrer">Agent Guide</a>
+        <a href="https://github.com/0xSteph/pentest-ai/blob/main/docs/CUSTOMIZATION.md" target="_blank" rel="noopener noreferrer">Customization</a>
+        <a href="https://github.com/0xSteph/pentest-ai/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a>
         <a href="https://github.com/0xSteph/pentest-ai/blob/main/DISCLAIMER.md" target="_blank" rel="noopener noreferrer">Disclaimer</a>
       </div>
       <p class="footer-warn">For authorized security testing only.</p>
@@ -827,6 +1443,9 @@
       <p>MIT License</p>
     </div>
   </footer>
+
+  <!-- ========== BACK TO TOP ========== -->
+  <button class="back-to-top" id="back-to-top" aria-label="Back to top">&uarr;</button>
 
   <script>
     // ========== INTERACTIVE PARTICLE NETWORK + DIMENSION SHIFT ==========
@@ -843,20 +1462,22 @@
       var CONNECTION_DIST = 150;
       var MOUSE_RADIUS = 200;
 
-      // Color phases — shifts as you scroll through sections
       var phases = [
-        { r: 233, g: 69,  b: 96  },  // red (hero)
-        { r: 15,  g: 52,  b: 96  },  // blue
-        { r: 83,  g: 52,  b: 131 },  // purple
-        { r: 233, g: 69,  b: 96  },  // red
-        { r: 0,   g: 200, b: 150 },  // teal/cyber green
-        { r: 233, g: 69,  b: 96  },  // red (install)
+        { r: 233, g: 69,  b: 96  },
+        { r: 15,  g: 52,  b: 96  },
+        { r: 83,  g: 52,  b: 131 },
+        { r: 233, g: 69,  b: 96  },
+        { r: 0,   g: 200, b: 150 },
+        { r: 233, g: 69,  b: 96  },
+        { r: 83,  g: 52,  b: 131 },
+        { r: 0,   g: 200, b: 150 },
+        { r: 233, g: 69,  b: 96  },
       ];
 
       var currentColor = { r: 233, g: 69, b: 96 };
       var targetColor  = { r: 233, g: 69, b: 96 };
-      var warpIntensity = 0; // 0-1, spikes during section transitions
-      var warpCooldown = 0; // prevents rapid-fire flashes
+      var warpIntensity = 0;
+      var warpCooldown = 0;
 
       function resize() {
         W = canvas.width = window.innerWidth;
@@ -882,7 +1503,6 @@
         }
       }
 
-      // Detect current section based on scroll position
       function getCurrentSection() {
         var sections = document.querySelectorAll('section');
         var current = 0;
@@ -894,42 +1514,35 @@
         return current;
       }
 
-      // Lerp helper
       function lerp(a, b, t) { return a + (b - a) * t; }
 
       function update() {
         scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        // Section-based color shifting
         var section = getCurrentSection();
         var phase = phases[Math.min(section, phases.length - 1)];
         targetColor.r = phase.r;
         targetColor.g = phase.g;
         targetColor.b = phase.b;
 
-        // Gentle flash on section change (with cooldown to avoid spam)
         if (warpCooldown > 0) warpCooldown--;
         if (section !== lastSection && lastSection !== -1 && warpCooldown <= 0) {
           warpIntensity = 0.4;
-          warpCooldown = 60; // ~1 second cooldown at 60fps
+          warpCooldown = 60;
           flash.classList.add('active');
           setTimeout(function() { flash.classList.remove('active'); }, 500);
         }
         lastSection = section;
 
-        // Smooth color transition (slow and subtle)
         currentColor.r = lerp(currentColor.r, targetColor.r, 0.015);
         currentColor.g = lerp(currentColor.g, targetColor.g, 0.015);
         currentColor.b = lerp(currentColor.b, targetColor.b, 0.015);
 
-        // Warp decay (fast falloff so it doesn't linger)
         warpIntensity *= 0.92;
 
-        // Update particles
         for (var i = 0; i < particles.length; i++) {
           var p = particles[i];
 
-          // Mouse interaction — particles get pushed away
           var dx = p.x - mouse.x;
           var dy = p.y - mouse.y;
           var dist = Math.sqrt(dx * dx + dy * dy);
@@ -939,7 +1552,6 @@
             p.vy += (dy / dist) * force * 0.5;
           }
 
-          // Warp effect — during section transitions, particles rush toward center then scatter
           if (warpIntensity > 0.1) {
             var cx = W / 2 - p.x;
             var cy = H / 2 - p.y;
@@ -950,24 +1562,19 @@
             }
           }
 
-          // Damping
           p.vx *= 0.98;
           p.vy *= 0.98;
-
-          // Base drift
           p.vx += (Math.random() - 0.5) * 0.05;
           p.vy += (Math.random() - 0.5) * 0.05;
 
           p.x += p.vx;
           p.y += p.vy;
 
-          // Wrap around edges
           if (p.x < -20) p.x = W + 20;
           if (p.x > W + 20) p.x = -20;
           if (p.y < -20) p.y = H + 20;
           if (p.y > H + 20) p.y = -20;
 
-          // Pulse animation
           p.pulse += 0.02;
         }
       }
@@ -979,7 +1586,6 @@
         var cg = Math.round(currentColor.g);
         var cb = Math.round(currentColor.b);
 
-        // Draw connections
         for (var i = 0; i < particles.length; i++) {
           for (var j = i + 1; j < particles.length; j++) {
             var dx = particles[i].x - particles[j].x;
@@ -997,7 +1603,6 @@
           }
         }
 
-        // Draw mouse connections (brighter)
         if (mouse.x > 0 && mouse.y > 0) {
           for (var i = 0; i < particles.length; i++) {
             var dx = particles[i].x - mouse.x;
@@ -1015,33 +1620,28 @@
           }
         }
 
-        // Draw particles
         for (var i = 0; i < particles.length; i++) {
           var p = particles[i];
           var glow = 0.3 + Math.sin(p.pulse) * 0.2;
           var size = p.size + warpIntensity * 3;
 
-          // Glow
           ctx.beginPath();
           ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (glow * 0.1) + ')';
           ctx.fill();
 
-          // Core
           ctx.beginPath();
           ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + glow + ')';
           ctx.fill();
         }
 
-        // Vignette overlay — darkens edges for depth
         var vignette = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.9);
         vignette.addColorStop(0, 'rgba(10,10,10,0)');
         vignette.addColorStop(1, 'rgba(10,10,10,0.4)');
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, W, H);
 
-        // Warp ring effect during transitions
         if (warpIntensity > 0.05) {
           var ringRadius = (1 - warpIntensity) * Math.max(W, H) * 0.6;
           ctx.beginPath();
@@ -1058,7 +1658,6 @@
         requestAnimationFrame(loop);
       }
 
-      // Events
       window.addEventListener('mousemove', function(e) {
         mouse.x = e.clientX;
         mouse.y = e.clientY;
@@ -1081,7 +1680,35 @@
       loop();
     })();
 
-    // Smooth scroll
+    // ========== NAV SCROLL EFFECT ==========
+    (function() {
+      var nav = document.getElementById('nav');
+      var toggle = document.getElementById('nav-toggle');
+      var links = document.getElementById('nav-links');
+
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 80) {
+          nav.classList.add('scrolled');
+        } else {
+          nav.classList.remove('scrolled');
+        }
+      });
+
+      toggle.addEventListener('click', function() {
+        var isOpen = links.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen);
+      });
+
+      // Close mobile nav on link click
+      links.querySelectorAll('a').forEach(function(a) {
+        a.addEventListener('click', function() {
+          links.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+
+    // ========== SMOOTH SCROLL ==========
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
       anchor.addEventListener('click', function(e) {
         e.preventDefault();
@@ -1092,7 +1719,44 @@
       });
     });
 
-    // Scroll-triggered section reveals
+    // ========== BACK TO TOP ==========
+    (function() {
+      var btn = document.getElementById('back-to-top');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 600) {
+          btn.classList.add('visible');
+        } else {
+          btn.classList.remove('visible');
+        }
+      });
+      btn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+
+    // ========== COPY BUTTONS ==========
+    document.querySelectorAll('.copy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var code = this.getAttribute('data-code');
+        navigator.clipboard.writeText(code).then(function() {
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(function() {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+    });
+
+    // ========== FAQ ACCORDION ==========
+    document.querySelectorAll('.faq-question').forEach(function(q) {
+      q.addEventListener('click', function() {
+        this.parentElement.classList.toggle('open');
+      });
+    });
+
+    // ========== SCROLL-TRIGGERED REVEALS ==========
     (function() {
       var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
@@ -1103,7 +1767,7 @@
         });
       }, { threshold: 0.1 });
 
-      document.querySelectorAll('.feature-card, .agent-card, .workflow-step').forEach(function(el) {
+      document.querySelectorAll('.feature-card, .agent-card, .workflow-step, .stat-item, .faq-item, .demo-terminal').forEach(function(el) {
         el.style.opacity = '0';
         el.style.transform = 'translateY(30px)';
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';

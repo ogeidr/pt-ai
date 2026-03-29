@@ -6,11 +6,12 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-Specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting.
+17 specialized AI subagents for every phase of authorized penetration testing &mdash; from scoping to reporting. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://docs.anthropic.com/en/docs/claude-code)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-red.svg)](https://attack.mitre.org/)
+[![Agents](https://img.shields.io/badge/Agents-17-green.svg)]()
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-yellow.svg)]()
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS-yellow.svg)]()
 [![Platform: Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-yellow.svg)]()
@@ -56,6 +57,29 @@ You don't need to be an expert to use these agents. They communicate at whatever
 3. **Claude automatically routes** to the right specialist agent
 
 No configuration, no commands to memorize. Just describe what you need.
+
+### Quick Demo
+
+```
+$ claude
+
+You: Analyze this Nmap scan and prioritize targets for our internal pentest
+
+▸ Routing to recon-advisor agent...
+
+## Prioritized Target Summary
+
+### Critical Priority (Exploit Immediately)
+| Host       | Port | Service | Finding                  |
+|------------|------|---------|--------------------------|
+| 10.10.1.5  | 445  | SMB     | SMBv1 enabled, MS17-010  |
+| 10.10.1.20 | 3389 | RDP     | BlueKeep (CVE-2019-0708) |
+
+### Recommended Next Steps
+1. nmap -sV --script smb-vuln* 10.10.1.5
+2. crackmapexec smb 10.10.1.0/24
+3. bloodhound-python -d corp.local
+```
 
 ---
 
