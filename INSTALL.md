@@ -1,5 +1,84 @@
 # Installation Guide
 
+## New to Claude? Start Here
+
+If you haven't used Claude Code before, here's what you need and how to set it up.
+
+### What is Claude Code?
+
+Claude Code is a command-line tool from Anthropic that lets you work with Claude directly in your terminal. You type natural language, and Claude reads files, writes code, runs commands, and answers questions in context. pentest-ai adds 17 security-focused agents on top of this.
+
+### Step 1: Get a Claude Account
+
+1. Go to [claude.ai](https://claude.ai) and create an account
+2. Subscribe to **Claude Pro** ($20/month) or **Claude Max** ($100/month). Claude Code requires a paid subscription. The free tier does not include CLI access.
+
+### Step 2: Install Claude Code
+
+Claude Code runs on Linux, macOS, and Windows (via WSL). You need Node.js 18+ installed first.
+
+```bash
+# Install Node.js if you don't have it (check with: node --version)
+# macOS
+brew install node
+
+# Ubuntu/Debian
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Windows: Install WSL first (wsl --install), then use the Ubuntu instructions above
+```
+
+Then install Claude Code:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### Step 3: Authenticate
+
+```bash
+# Run claude for the first time. It will open a browser window to log in.
+claude
+```
+
+Follow the prompts to connect your Claude account. Once authenticated, you'll see the Claude Code prompt in your terminal. Type `exit` to close it for now.
+
+### Step 4: Install pentest-ai
+
+Follow the installation methods below to add the security agents.
+
+### Step 5: Verify It Works
+
+```bash
+# Start Claude Code
+claude
+
+# Try a simple prompt
+> What agents do you have available?
+```
+
+Claude should list the pentest-ai agents. Try a real task:
+
+```
+> Plan a basic external penetration test for a small web application
+```
+
+If Claude routes to the engagement-planner agent, you're all set.
+
+### Troubleshooting Setup
+
+| Problem | Fix |
+|---------|-----|
+| `npm: command not found` | Install Node.js first (see Step 2) |
+| `claude: command not found` | Run `npm install -g @anthropic-ai/claude-code` again, or check that your npm global bin is in your PATH |
+| "Authentication required" | Run `claude` and complete the browser login flow |
+| "Subscription required" | You need Claude Pro or Max. The free tier does not include Claude Code |
+
+For more details, see the [official Claude Code docs](https://docs.anthropic.com/en/docs/claude-code).
+
+---
+
 ## Prerequisites
 
 Before installing pentest-ai, ensure you have the following:

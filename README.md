@@ -354,7 +354,9 @@ The engagement window is 2 weeks."
 
 Claude automatically routes to the engagement planner agent and produces a full phased plan.
 
-See [INSTALL.md](INSTALL.md) for detailed installation instructions and troubleshooting.
+**New to Claude?** See the [step-by-step setup guide](INSTALL.md#new-to-claude-start-here) in INSTALL.md. It walks you through creating an account, installing the CLI, and getting your first agent response.
+
+See [INSTALL.md](INSTALL.md) for all installation methods and troubleshooting.
 
 ---
 
