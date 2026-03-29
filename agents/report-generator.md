@@ -36,7 +36,7 @@ Distribution: [DISTRIBUTION LIST]
 - Overall risk rating with justification
 - Key statistics: total findings by severity, systems tested, critical issues
 - Top 3-5 findings summarized in business impact terms
-- Strategic recommendations (not technical -- business decisions)
+- Strategic recommendations (not technical, but business decisions)
 - Comparison to previous assessment if applicable
 
 ### 3. Scope and Methodology

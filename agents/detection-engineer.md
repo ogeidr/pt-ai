@@ -66,7 +66,7 @@ level: critical | high | medium | low | informational
 Along with:
 - **Line-by-line comments** explaining the detection logic
 - **Required log sources**: What must be enabled and configured for this rule to work
-- **False positive analysis**: Specific, actionable tuning guidance -- not generic "legitimate admin activity"
+- **False positive analysis**: Specific, actionable tuning guidance, not generic "legitimate admin activity"
 - **Confidence level**: How likely a trigger represents a true positive
 - **Response actions**: What an analyst should do when this fires
 - **Testing guidance**: How to validate the rule triggers correctly (atomic red team test, manual simulation)

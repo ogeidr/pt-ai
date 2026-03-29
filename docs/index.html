@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>pentest-ai -- Offensive Security Research Assistant for Claude Code</title>
-  <meta name="description" content="Specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
-  <meta name="keywords" content="pentest, penetration testing, ai, claude code, red team, offensive security, mitre attack, security testing">
-  <meta property="og:title" content="pentest-ai -- Offensive Security Research Assistant for Claude Code">
-  <meta property="og:description" content="Specialized AI subagents for penetration testing. Plan engagements, analyze recon, research exploits, build detections, check STIGs, and write reports -- all through Claude Code.">
+  <title>pentest-ai | AI-Powered Offensive Security Research Assistant for Claude Code</title>
+  <meta name="description" content="Open-source AI subagents for penetration testing with Claude Code. Plan engagements, analyze recon, research exploits, build detection rules, audit STIG compliance, and write professional reports. MITRE ATT&CK mapped.">
+  <meta name="keywords" content="pentest ai, penetration testing tools, claude code agents, red team ai, offensive security automation, mitre attack, security testing ai, pentest report generator, detection engineering, STIG compliance, bug bounty tools, ethical hacking ai, cybersecurity ai tools, oscp tools">
+  <meta property="og:title" content="pentest-ai | AI-Powered Offensive Security Research Assistant">
+  <meta property="og:description" content="Open-source AI subagents for penetration testing with Claude Code. MITRE ATT&CK mapped. Plan, scan, exploit, detect, report.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://0xsteph.github.io/pentest-ai/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="pentest-ai | AI-Powered Offensive Security Research Assistant">
+  <meta name="twitter:description" content="Open-source Claude Code subagents for every phase of authorized penetration testing. MITRE ATT&CK mapped.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://0xsteph.github.io/pentest-ai/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -33,8 +39,8 @@
       z-index: 999;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.15s ease-out;
-      background: radial-gradient(circle at center, rgba(233,69,96,0.3) 0%, transparent 70%);
+      transition: opacity 0.4s ease-out;
+      background: radial-gradient(circle at center, rgba(233,69,96,0.12) 0%, transparent 70%);
     }
 
     .dimension-flash.active {
@@ -515,6 +521,26 @@
       }
     }
   </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "pentest-ai",
+    "description": "Open-source AI subagents for penetration testing with Claude Code. MITRE ATT&CK mapped agents for engagement planning, recon analysis, exploit methodology, detection engineering, STIG compliance, and professional report writing.",
+    "url": "https://0xsteph.github.io/pentest-ai/",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Linux, macOS, Windows WSL",
+    "license": "https://opensource.org/licenses/MIT",
+    "author": {
+      "@type": "Person",
+      "name": "0xSteph",
+      "url": "https://github.com/0xSteph"
+    },
+    "codeRepository": "https://github.com/0xSteph/pentest-ai",
+    "programmingLanguage": "Markdown",
+    "keywords": "penetration testing, red team, MITRE ATT&CK, Claude Code, AI security tools, offensive security"
+  }
+  </script>
 </head>
 <body>
 
@@ -541,7 +567,7 @@
       <h2 class="section-title">What is pentest-ai?</h2>
       <p class="intro">
         pentest-ai turns Claude Code into a full offensive security research environment.
-        Instead of one general-purpose assistant, you get specialized subagents -- each an
+        Instead of one general-purpose assistant, you get specialized subagents, each an
         expert in a specific phase of penetration testing. Ask Claude anything security-related
         and it automatically routes your request to the right specialist. Whether you are
         scoping your first engagement or writing a final report, every response is mapped
@@ -551,7 +577,7 @@
       <div class="feature-grid">
         <div class="feature-card">
           <h3>Automatic Routing</h3>
-          <p>Claude delegates to the right specialist based on your task. No manual agent selection required -- just describe what you need.</p>
+          <p>Claude delegates to the right specialist based on your task. No manual agent selection needed. Just describe what you need.</p>
         </div>
         <div class="feature-card">
           <h3>MITRE ATT&amp;CK Mapped</h3>
@@ -727,13 +753,13 @@
       <p class="section-subtitle">Three ways to get started. Pick whichever fits your workflow.</p>
 
       <div class="code-block">
-        <div class="label">Option 1 -- Clone and install globally</div>
+        <div class="label">Option 1: Clone and install globally</div>
         <code><span class="cmd">git clone</span> https://github.com/0xSteph/pentest-ai.git
 <span class="cmd">cp</span> pentest-ai/agents/*.md ~/.claude/agents/</code>
       </div>
 
       <div class="code-block">
-        <div class="label">Option 2 -- Install for a specific project</div>
+        <div class="label">Option 2: Install for a specific project</div>
         <code><span class="cmd">mkdir -p</span> .claude/agents/
 <span class="cmd">cp</span> pentest-ai/agents/*.md .claude/agents/</code>
       </div>
@@ -788,6 +814,7 @@
       var currentColor = { r: 233, g: 69, b: 96 };
       var targetColor  = { r: 233, g: 69, b: 96 };
       var warpIntensity = 0; // 0-1, spikes during section transitions
+      var warpCooldown = 0; // prevents rapid-fire flashes
 
       function resize() {
         W = canvas.width = window.innerWidth;
@@ -838,21 +865,23 @@
         targetColor.g = phase.g;
         targetColor.b = phase.b;
 
-        // Dimension flash on section change
-        if (section !== lastSection && lastSection !== -1) {
-          warpIntensity = 1;
+        // Gentle flash on section change (with cooldown to avoid spam)
+        if (warpCooldown > 0) warpCooldown--;
+        if (section !== lastSection && lastSection !== -1 && warpCooldown <= 0) {
+          warpIntensity = 0.4;
+          warpCooldown = 60; // ~1 second cooldown at 60fps
           flash.classList.add('active');
-          setTimeout(function() { flash.classList.remove('active'); }, 300);
+          setTimeout(function() { flash.classList.remove('active'); }, 500);
         }
         lastSection = section;
 
-        // Smooth color transition
-        currentColor.r = lerp(currentColor.r, targetColor.r, 0.03);
-        currentColor.g = lerp(currentColor.g, targetColor.g, 0.03);
-        currentColor.b = lerp(currentColor.b, targetColor.b, 0.03);
+        // Smooth color transition (slow and subtle)
+        currentColor.r = lerp(currentColor.r, targetColor.r, 0.015);
+        currentColor.g = lerp(currentColor.g, targetColor.g, 0.015);
+        currentColor.b = lerp(currentColor.b, targetColor.b, 0.015);
 
-        // Warp decay
-        warpIntensity *= 0.95;
+        // Warp decay (fast falloff so it doesn't linger)
+        warpIntensity *= 0.92;
 
         // Update particles
         for (var i = 0; i < particles.length; i++) {
@@ -874,8 +903,8 @@
             var cy = H / 2 - p.y;
             var cdist = Math.sqrt(cx * cx + cy * cy);
             if (cdist > 0) {
-              p.vx += (cx / cdist) * warpIntensity * 2;
-              p.vy += (cy / cdist) * warpIntensity * 2;
+              p.vx += (cx / cdist) * warpIntensity * 0.8;
+              p.vy += (cy / cdist) * warpIntensity * 0.8;
             }
           }
 
@@ -975,8 +1004,8 @@
           var ringRadius = (1 - warpIntensity) * Math.max(W, H) * 0.6;
           ctx.beginPath();
           ctx.arc(W/2, H/2, ringRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (warpIntensity * 0.4) + ')';
-          ctx.lineWidth = 2 + warpIntensity * 8;
+          ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (warpIntensity * 0.2) + ')';
+          ctx.lineWidth = 1 + warpIntensity * 4;
           ctx.stroke();
         }
       }

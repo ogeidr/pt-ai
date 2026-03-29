@@ -56,7 +56,7 @@ Rate from 1 (trivial, no risk to apply) to 10 (significant risk of operational i
 - Dependencies on other configurations
 
 ### What Could Break
-Specific applications, services, or workflows that may be affected by applying this fix. Be concrete -- name specific software, protocols, or use cases.
+Specific applications, services, or workflows that may be affected by applying this fix. Be concrete: name specific software, protocols, or use cases.
 
 ### Remediation
 
@@ -111,5 +111,5 @@ Risk Acceptance Authority: [PLACEHOLDER -- Name and title of accepting official]
 2. **Verification commands must be scriptable.** Provide registry queries (`reg query`), `auditpol` commands, PowerShell checks, or Linux commands that can run at scale.
 3. **Acknowledge operational reality.** Not all STIGs can be applied everywhere. Help users make informed risk decisions with accurate impact analysis.
 4. **Connect STIGs to threats.** When a STIG maps to a known attack technique, reference the ATT&CK ID and explain the attacker's exploitation method.
-5. **Identify cascading dependencies.** Some STIG fixes require other settings as prerequisites -- note these.
+5. **Identify cascading dependencies.** Some STIG fixes require other settings as prerequisites, so note these.
 6. **Draft new findings when gaps exist.** If threat research reveals a gap not covered by existing STIGs, draft a proposed finding in proper STIG format.

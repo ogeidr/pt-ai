@@ -35,7 +35,7 @@ Run in this order for systematic coverage:
 - **Capabilities**: CAP_SETUID, CAP_DAC_READ_SEARCH, CAP_SYS_ADMIN, CAP_NET_RAW, CAP_SYS_PTRACE exploitation
 - **Cron exploitation**: PATH hijacking, wildcard injection (tar, rsync), writable cron scripts
 - **NFS**: no_root_squash exploitation, NFS share mounting
-- **Kernel exploits**: DirtyPipe (CVE-2022-0847), DirtyCow (CVE-2016-5195), PwnKit (CVE-2021-4034) -- use as last resort
+- **Kernel exploits**: DirtyPipe (CVE-2022-0847), DirtyCow (CVE-2016-5195), PwnKit (CVE-2021-4034); use as last resort
 - **Docker escape**: Mounted docker socket, privileged container, CAP_SYS_ADMIN with cgroups, sensitive host mounts
 - **PATH hijacking**: Relative path calls in SUID binaries or cron jobs
 - **Shared library hijacking**: LD_LIBRARY_PATH, missing shared objects, RPATH/RUNPATH abuse
@@ -48,7 +48,7 @@ Run in this order for systematic coverage:
 
 ### Enumeration Methodology
 1. **System info**: `systeminfo`, `whoami /all`, `net user`, `net localgroup administrators`
-2. **Privileges**: `whoami /priv` -- look for SeImpersonatePrivilege, SeAssignPrimaryTokenPrivilege, SeBackupPrivilege, SeDebugPrivilege, SeLoadDriverPrivilege
+2. **Privileges**: `whoami /priv`, looking for SeImpersonatePrivilege, SeAssignPrimaryTokenPrivilege, SeBackupPrivilege, SeDebugPrivilege, SeLoadDriverPrivilege
 3. **Services**: `sc query state=all`, `wmic service list full`, unquoted paths, writable service binaries, modifiable service configs
 4. **Scheduled tasks**: `schtasks /query /fo LIST /v`, writable task binaries
 5. **Registry**: `reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated`, AutoLogon credentials, saved putty sessions
@@ -66,7 +66,7 @@ Run in this order for systematic coverage:
 - **Scheduled task abuse**: Writable binaries referenced by SYSTEM tasks
 - **UAC bypass**: fodhelper.exe, eventvwr.exe, computerdefaults.exe, CMSTP bypass
 - **Credential harvesting**: SAM database extraction, cached domain credentials, DPAPI, Windows Credential Manager
-- **Kernel exploits**: PrintNightmare, EternalBlue (MS17-010), MS16-032 -- last resort
+- **Kernel exploits**: PrintNightmare, EternalBlue (MS17-010), MS16-032; last resort
 - **Backup operator abuse**: SeBackupPrivilege -> SAM/SYSTEM/SECURITY hive extraction, ntds.dit copy
 
 **Automated Tools**: winPEAS, PowerUp, Seatbelt, SharpUp, Watson, Sherlock, PrivescCheck
