@@ -348,7 +348,7 @@ Check these locations for persistence (maps to MITRE ATT&CK T1547, T1053, T1543)
 
 ### Super Timeline Creation
 
-Build a comprehensive timeline from all available evidence sources using Plaso/log2timeline:
+Build a complete timeline from all available evidence sources using Plaso/log2timeline:
 
 ```bash
 # Create a Plaso storage file from a disk image

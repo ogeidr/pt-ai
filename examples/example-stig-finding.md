@@ -23,7 +23,7 @@
 
 ### Why This Matters
 
-PowerShell is the most commonly abused living-off-the-land binary (LOLBin) in modern Windows attacks. Adversaries leverage PowerShell for virtually every stage of the kill chain:
+PowerShell is the most commonly abused living-off-the-land binary (LOLBin) in modern Windows attacks. Adversaries use PowerShell at virtually every stage of the kill chain:
 
 | Attack Phase | PowerShell Usage | ATT&CK ID |
 |-------------|-----------------|-----------|
@@ -112,7 +112,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
 
 ### Additional Recommended Logging Settings
 
-For comprehensive PowerShell visibility, enable all three logging mechanisms:
+For full PowerShell visibility, enable all three logging mechanisms:
 
 | Setting | GPO Path | Registry Key | Event IDs |
 |---------|----------|-------------|-----------|

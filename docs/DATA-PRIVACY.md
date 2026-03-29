@@ -2,7 +2,7 @@
 
 ## How pentest-ai Handles Data
 
-pentest-ai agents are **plain Markdown files**. They contain no code, make no network calls, and collect no telemetry. The agents themselves are fully auditable — open any `.md` file and read exactly what the agent knows and does.
+pentest-ai agents are **plain Markdown files**. They contain no code, make no network calls, and collect no telemetry. The agents themselves are fully auditable. Open any `.md` file and read exactly what the agent knows and does.
 
 However, when you use these agents through Claude Code, your prompts and any data you paste are sent to an LLM provider (Anthropic by default) for processing. This is important to understand for professional engagements.
 
@@ -34,15 +34,15 @@ If you paste scan output, IP addresses, credentials, or client-specific data int
 Before using pentest-ai on a client engagement:
 
 1. **Check your ROE/SOW** for restrictions on third-party data processing or AI tool usage
-2. **Understand your provider's data policy** — review Anthropic's [data retention policy](https://www.anthropic.com/privacy) or your API provider's terms
-3. **Redact sensitive data** before pasting — remove or obfuscate client IPs, hostnames, credentials, PII, and proprietary information when possible
+2. **Understand your provider's data policy.** Review Anthropic's [data retention policy](https://www.anthropic.com/privacy) or your API provider's terms
+3. **Redact sensitive data** before pasting. Remove or obfuscate client IPs, hostnames, credentials, PII, and proprietary information when possible
 4. **Get explicit approval** from your client if their data will be processed by a third-party LLM
 
 ## Options for Sensitive Engagements
 
 ### Option 1: Anthropic API with Your Own Key (Recommended)
 
-Use your own Anthropic API key instead of a Claude Pro/Max subscription. API usage has different data handling terms — Anthropic does not train on API inputs by default.
+Use your own Anthropic API key instead of a Claude Pro/Max subscription. API usage has different data handling terms. Anthropic does not train on API inputs by default.
 
 ```bash
 # Set your API key
@@ -63,7 +63,7 @@ Strip sensitive identifiers before pasting tool output:
 - Remove credentials, tokens, and API keys entirely
 - Redact client names and internal project identifiers
 
-The agents work on methodology and patterns — they don't need real IPs to give you useful guidance.
+The agents work on methodology and patterns. They don't need real IPs to give you useful guidance.
 
 ### Option 3: Local Models (Maximum Privacy)
 
@@ -71,7 +71,7 @@ For the highest data sensitivity, run a local LLM that never sends data off-mach
 
 ```bash
 # Example: Use a local model via Ollama with an OpenAI-compatible endpoint
-# (Requires a compatible local model setup — agent quality will vary with model capability)
+# (Requires a compatible local model setup. Agent quality will vary with model capability)
 
 # Install Ollama (https://ollama.ai)
 ollama pull llama3

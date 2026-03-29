@@ -69,12 +69,12 @@ All actions on target systems are performed by the user using their own tools an
 
 ## Data Privacy & LLM Processing
 
-When you use pentest-ai through Claude Code, your prompts and any data you provide are processed by a third-party LLM provider (Anthropic by default). **pentest-ai agents do not add any additional data transmission** — the data flow is identical to using Claude Code without these agents installed.
+When you use pentest-ai through Claude Code, your prompts and any data you provide are processed by a third-party LLM provider (Anthropic by default). **pentest-ai agents do not add any additional data transmission.** The data flow is identical to using Claude Code without these agents installed.
 
 However, users must be aware:
 
 - **Third-party processing:** Any data included in your prompts (scan output, IP addresses, findings) is sent to the LLM provider for processing
-- **Sensitive data:** Users are responsible for redacting PII, internal credentials, client-identifiable information, and proprietary data before submission — unless they have verified the LLM provider's data retention and training policies
+- **Sensitive data:** Users are responsible for redacting PII, internal credentials, client-identifiable information, and proprietary data before submission, unless they have verified the LLM provider's data retention and training policies
 - **Client policies:** Check your rules of engagement and client NDAs for restrictions on third-party AI data processing before using this toolkit on professional engagements
 - **Compliance:** Ensure usage complies with applicable regulations (HIPAA, PCI-DSS, FedRAMP, etc.)
 

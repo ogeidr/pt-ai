@@ -89,7 +89,7 @@ For each test prompt, verify that the agent's output:
 
 This project is for authorized security testing only. The following types of contributions will be rejected:
 
-- Content designed to facilitate unauthorized access to systems or data
+- Content designed to enable unauthorized access to systems or data
 - Functional malware, ransomware, or destructive payloads
 - Modifications that remove or weaken safety guardrails
 - Content that encourages or normalizes unauthorized hacking

@@ -6,7 +6,7 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-17 specialized AI subagents for every phase of authorized penetration testing &mdash; from scoping to reporting. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
+17 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://docs.anthropic.com/en/docs/claude-code)

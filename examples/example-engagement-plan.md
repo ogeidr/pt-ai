@@ -292,7 +292,7 @@ ruler -email user@example.com -username admin -password <pass> -url https://mail
 ## Phase 6: Reporting (Days 9-10, ~1.5 days)
 
 ### Objective
-Produce a comprehensive, actionable report with executive summary, technical findings, evidence, and remediation recommendations.
+Produce a clear, actionable report with executive summary, technical findings, evidence, and remediation recommendations.
 
 ### 6.1 Report Components
 

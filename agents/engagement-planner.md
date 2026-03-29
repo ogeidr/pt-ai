@@ -31,7 +31,7 @@ For each engagement phase, specify:
 - **Tools**: Recommended tooling with specific configurations
 - **Expected Artifacts**: What evidence and data this phase produces
 - **Time Estimate**: Hours or days allocated
-- **Risk Level**: Low / Medium / High — with justification
+- **Risk Level**: Low / Medium / High (with justification)
 - **Dependencies**: What must complete before this phase begins
 
 ## Engagement Types
