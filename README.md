@@ -407,6 +407,7 @@ See real agent output in the [examples/](examples/) directory:
 | [Agent Guide](docs/AGENT-GUIDE.md) | How each agent works, when to use it, and example prompts |
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
+| [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
 | [Disclaimer](DISCLAIMER.md) | Legal and ethical use terms |
 
 ---
