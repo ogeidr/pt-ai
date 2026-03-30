@@ -6,13 +6,13 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-23 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting. 4 Tier 2 agents that execute tools directly with your approval. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
+28 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting. 6 Tier 2 agents that execute tools directly with your approval. Autonomous exploit chaining. PoC-validated findings. Agentic swarm orchestration. Business logic flaw detection. CI/CD pipeline integration. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://docs.anthropic.com/en/docs/claude-code)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-red.svg)](https://attack.mitre.org/)
-[![Agents](https://img.shields.io/badge/Agents-23-green.svg)]()
-[![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)](CHANGELOG.md)
+[![Agents](https://img.shields.io/badge/Agents-28-green.svg)]()
+[![Version](https://img.shields.io/badge/Version-3.0.0-blue.svg)](CHANGELOG.md)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-yellow.svg)]()
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS-yellow.svg)]()
 [![Platform: Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-yellow.svg)]()
@@ -50,7 +50,7 @@
 
 ## What Is This?
 
-pentest-ai is a collection of 23 Claude Code subagents: specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Need to Kerberoast an AD environment? The AD attacker agent builds and runs the Impacket commands for you. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
+pentest-ai is a collection of 28 Claude Code subagents: specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Need to Kerberoast an AD environment? The AD attacker agent builds and runs the Impacket commands for you. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
 
 You don't need to be an expert to use these agents. They communicate at whatever level you need, from explaining what Kerberoasting is to providing exact Impacket command syntax for a senior operator.
 
@@ -148,6 +148,11 @@ Evidence saved. Want me to run SMB vulnerability scripts on 10.10.1.5 next?
 | **Attack Planner** | Correlates findings from all other agents into multi-step attack chains. Scores paths by probability, stealth, and business impact. Builds lateral movement maps and chain comparison matrices | *"I have Nmap results, BloodHound data, and some cracked hashes. Build me the best attack chain to DA"* |
 | **Bug Bounty Hunter** | Bug bounty methodology for HackerOne, Bugcrowd, and Intigriti. Target selection, recon automation, duplicate avoidance strategies, and professional report writing that gets bounties paid | *"Help me write a P1 report for this IDOR I found on HackerOne"* |
 | **AD Attacker** | Active Directory attack execution with BloodHound, Impacket, CrackMapExec, Certipy, and Kerbrute. Kerberos attacks, delegation abuse, ACL exploitation, and certificate abuse. **Tier 2: executes AD tools directly with your approval.** | *"Kerberoast all service accounts in corp.local and crack the hashes"* |
+| **Exploit Chainer** | Autonomous exploit chaining that takes isolated low-severity findings and pivots them into full system compromise. Executes each step with your approval, adapting when paths are blocked. Finds the info leak, chains it with a weak permission, and walks you through gaining admin access. **Tier 2: executes exploit chains step-by-step with your approval.** | *"I have these 15 findings from the scan. Chain them into the shortest path to Domain Admin"* |
+| **PoC Validator** | Automatically generates and safely executes Proof of Concept scripts to validate findings. Kills false positives before they waste anyone's time. Every confirmed bug comes with reproducible evidence. **Tier 2: executes safe, non-destructive PoCs with your approval.** | *"Validate these 47 Nuclei findings and tell me which ones are real"* |
+| **Swarm Orchestrator** | Manager agent that coordinates all other agents as a red team swarm. Delegates recon, scanning, exploitation, and reporting to specialists. Runs parallel workstreams, tracks progress, and compiles results into a unified engagement picture. Mirrors how a real human red team operates. | *"Run a full automated red team assessment against my staging environment"* |
+| **Business Logic Hunter** | Finds vulnerabilities that standard scanners miss: price manipulation, workflow bypasses, race conditions, authorization logic flaws, and feature abuse. Understands the intended application workflow and actively looks for ways to break the business rules. **Tier 2: executes business logic tests with your approval.** | *"Test this e-commerce checkout flow for price manipulation and race conditions"* |
+| **CI/CD Red Team** | Integrates red teaming directly into CI/CD pipelines. Generates ready-to-use configs for GitHub Actions, GitLab CI, and Jenkins. Automated security scans on every code push with configurable security gates that block deploys when critical issues are found. | *"Generate a GitHub Actions workflow that runs security scans on every PR"* |
 
 ### Defense & Analysis
 
@@ -240,6 +245,34 @@ ad-attacker ───────── BloodHound, Impacket, CrackMapExec, Cert
                       ACL exploitation and certificate abuse (ESC1-ESC8)
                       [Tier 2: executes AD tools with user approval]
 
+exploit-chainer ───── Autonomous multi-step exploit chain execution
+                      Chains low-severity findings into full compromise
+                      Step-by-step pivoting with approval at each gate
+                      Chain scoring: reach x reliability x stealth x speed
+                      [Tier 2: executes chain steps with user approval]
+
+poc-validator ─────── Automatic PoC generation and safe execution
+                      False positive elimination via verified exploitation
+                      Batch validation of scanner output (Critical first)
+                      Non-destructive canary-based proof of concept
+                      [Tier 2: executes safe PoCs with user approval]
+
+swarm-orchestrator ── Red team swarm coordination and task delegation
+                      Parallel agent workstreams with progress tracking
+                      7-phase engagement lifecycle management
+                      Agent conflict resolution and handoff orchestration
+
+bizlogic-hunter ───── Price manipulation and payment tampering detection
+                      Workflow bypass and state machine abuse
+                      Race condition testing (double-spend, concurrent claims)
+                      Authorization logic and multi-tenant isolation testing
+                      [Tier 2: executes logic tests with user approval]
+
+cicd-redteam ──────── GitHub Actions, GitLab CI, Jenkins pipeline configs
+                      3-tier scanning: per-push, per-PR, scheduled
+                      Security gates with configurable thresholds
+                      Trend tracking across pipeline runs
+
 DEFENSE & ANALYSIS
 detection-engineer ── Sigma, Splunk SPL, Elastic KQL, Sentinel KQL, YARA
                       False positive analysis and tuning guidance
@@ -283,14 +316,18 @@ graph LR
     A[OSINT] -->|osint-collector| B[Scope & Plan]
     B -->|engagement-planner| C[Reconnaissance]
     C -->|recon-advisor| D[Vuln Scanning]
-    D -->|vuln-scanner| E[Web Testing]
-    E -->|web-hunter| F[Attack Chains]
-    F -->|attack-planner| G[Exploitation]
+    D -->|vuln-scanner| D2[PoC Validation]
+    D2 -->|poc-validator| E[Web Testing]
+    E -->|web-hunter| E2[Business Logic]
+    E2 -->|bizlogic-hunter| F[Attack Chains]
+    F -->|exploit-chainer| G[Exploitation]
     G -->|exploit-guide / ad-attacker| H[Credential Attacks]
     H -->|credential-tester| I[Escalation]
     I -->|privesc-advisor| J[Detection Rules]
     J -->|detection-engineer| K[Final Report]
     I -->|report-generator| K
+    L[CI/CD Pipeline] -->|cicd-redteam| D
+    M[Swarm Manager] -->|swarm-orchestrator| C
 
     style A fill:#1a1a2e,stroke:#e94560,color:#fff
     style B fill:#1a1a2e,stroke:#e94560,color:#fff
@@ -326,6 +363,11 @@ graph TD
     Claude -->|"Build attack chain"| AP2[Attack Planner]
     Claude -->|"Bug bounty report"| BB[Bug Bounty Hunter]
     Claude -->|"Attack this AD"| AD[AD Attacker]
+    Claude -->|"Chain exploits"| EC[Exploit Chainer]
+    Claude -->|"Validate findings"| PV[PoC Validator]
+    Claude -->|"Run full red team"| SO[Swarm Orchestrator]
+    Claude -->|"Test business logic"| BH[BizLogic Hunter]
+    Claude -->|"CI/CD security"| CR[CI/CD Red Team]
     Claude -->|"Model threats"| TM[Threat Modeler]
     Claude -->|"Build a detection rule"| DE[Detection Engineer]
     Claude -->|"Analyze this binary"| MA[Malware Analyst]
@@ -350,6 +392,11 @@ graph TD
     AP2 --> KB
     BB --> KB
     AD --> KB
+    EC --> KB
+    PV --> KB
+    SO --> KB
+    BH --> KB
+    CR --> KB
     TM --> KB
     DE --> KB
     MA --> KB
@@ -377,6 +424,11 @@ graph TD
     style AP2 fill:#1a1a2e,stroke:#e94560,color:#fff
     style BB fill:#1a1a2e,stroke:#e94560,color:#fff
     style AD fill:#1a1a2e,stroke:#e94560,color:#fff
+    style EC fill:#1a1a2e,stroke:#e94560,color:#fff
+    style PV fill:#1a1a2e,stroke:#e94560,color:#fff
+    style SO fill:#1a1a2e,stroke:#e94560,color:#fff
+    style BH fill:#1a1a2e,stroke:#e94560,color:#fff
+    style CR fill:#1a1a2e,stroke:#e94560,color:#fff
     style TM fill:#1a1a2e,stroke:#e94560,color:#fff
     style DE fill:#1a1a2e,stroke:#e94560,color:#fff
     style MA fill:#1a1a2e,stroke:#e94560,color:#fff
@@ -418,12 +470,17 @@ There are other AI security tools out there (HexStrike AI, CAI, and various comm
 
 **Accessible to all skill levels.** You don't need to be a senior operator. Ask basic questions and get clear explanations. Ask advanced questions and get exact command syntax with OPSEC considerations. The agents meet you where you are.
 
-| | pentest-ai v2.0 | Tool-Heavy Frameworks |
+| | pentest-ai v3.0 | Tool-Heavy Frameworks |
 |---|---|---|
 | **Setup** | `./install.sh --global`, done | Python env, Docker, API keys, dependencies |
-| **Agents** | 23 specialists, 4 with execution | Monolithic codebase, 150+ tool wrappers |
+| **Agents** | 28 specialists, 6 with execution | Monolithic codebase, 150+ tool wrappers |
 | **Approach** | Methodology + execution with per-command approval | AI executes tools directly, often without context |
-| **Attack chains** | Dedicated attack-planner correlates all findings | Manual correlation or not included |
+| **Exploit chaining** | Autonomous multi-step chains from low-sev to full compromise | Manual correlation or not included |
+| **False positives** | PoC-validated findings only | Scanner output with noise |
+| **Swarm mode** | Manager agent coordinates parallel specialist teams | Single agent doing everything |
+| **Business logic** | Dedicated agent for logic flaws scanners miss | Not covered |
+| **CI/CD integration** | Ready-to-use pipeline configs with security gates | External tool integration required |
+| **Attack chains** | Dedicated attack-planner + exploit-chainer for execution | Manual correlation or not included |
 | **Learning** | You learn the techniques as you go | Tool output without context |
 | **Safety model** | Two-layer: scope enforcement + Claude Code permission gate | Varies, often autonomous |
 | **Dependencies** | Claude Code only | Custom frameworks, orchestration layers, tool installs |

@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-VERSION="2.0.0"
+VERSION="3.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENTS_SRC="${SCRIPT_DIR}/agents"
 GLOBAL_DIR="${HOME}/.claude/agents"
