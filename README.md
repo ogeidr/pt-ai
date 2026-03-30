@@ -32,11 +32,14 @@
 - [Agents](#agents)
 - [Workflow](#workflow)
 - [pentest-ai vs. Manual Research](#pentest-ai-vs-manual-research)
+- [How pentest-ai Is Different](#how-pentest-ai-is-different)
 - [Use Cases](#use-cases)
 - [Quick Start](#quick-start)
+- [Running Tools in a Container](#running-tools-in-a-container)
 - [How Agent Routing Works](#how-agent-routing-works)
 - [Examples](#examples)
 - [Prerequisites](#prerequisites)
+- [FAQ](#faq)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Legal](#legal)
@@ -302,7 +305,36 @@ graph TD
 
 ---
 
+## How pentest-ai Is Different
+
+There are other AI security tools out there (HexStrike AI, CAI, and various commercial platforms). Here's where pentest-ai sits:
+
+**Methodology over machinery.** Most AI pentesting frameworks focus on wrapping 150+ security tools behind an AI layer. pentest-ai takes the opposite approach: it gives you a knowledgeable research partner, not a tool runner. The agents teach you what to do, why it works, and how defenders catch it. You run the tools yourself, which means you actually learn.
+
+**Zero infrastructure.** No Python environments, no Docker containers, no API keys beyond your Claude subscription. Copy some markdown files and you're working. Other frameworks require dedicated infrastructure, dependency management, and setup time before you can start.
+
+**Built for Claude Code natively.** These agents use Claude Code's built-in subagent routing. There's no middleware, no custom framework, no orchestration layer to maintain. When Claude Code improves, your agents improve with it.
+
+**Dual perspective by default.** Every offensive technique comes with the defensive side: how it gets detected, what logs it generates, what Sigma rules catch it. This isn't a separate mode or add-on. It's built into every agent response.
+
+**Accessible to all skill levels.** You don't need to be a senior operator. Ask basic questions and get clear explanations. Ask advanced questions and get exact command syntax with OPSEC considerations. The agents meet you where you are.
+
+| | pentest-ai | Tool-Heavy Frameworks |
+|---|---|---|
+| **Setup** | Copy markdown files, done | Python env, Docker, API keys, dependencies |
+| **Approach** | Methodology guidance, you run the tools | AI executes tools directly |
+| **Learning** | You learn the techniques as you go | Tool output without context |
+| **Dependencies** | Claude Code only | Custom frameworks, orchestration layers, tool installs |
+| **Defensive view** | Built into every response | Separate module or not included |
+| **Maintenance** | Update agent files | Track framework updates, tool compatibility, API changes |
+
+---
+
 ## Use Cases
+
+### New to Security / SCA Representatives
+
+If you're starting a new role in security assessment or compliance (SCA, IA analyst, security auditor), pentest-ai gives you a head start. Use the **STIG analyst** to learn how compliance controls work and what breaks when you apply them. Use the **engagement planner** to understand how professional assessments are structured. Use the **threat modeler** to learn how to think about risk systematically. These agents explain concepts at whatever depth you need, so you can grow into the role faster than studying documentation alone.
 
 ### Internal Network Penetration Test
 Start with the **OSINT collector** for pre-engagement reconnaissance. Use the **engagement planner** to build a phased plan with ATT&CK mappings. Run your scans and feed output to the **recon advisor** for prioritized attack vectors. Use the **exploit guide** for AD attack methodology and **privilege escalation advisor** for local privesc. Generate detection rules with the **detection engineer** so the client can monitor for the techniques you used. Compile everything with the **report generator**.
@@ -360,6 +392,42 @@ See [INSTALL.md](INSTALL.md) for all installation methods and troubleshooting.
 
 ---
 
+## Running Tools in a Container
+
+Community suggestion: run your actual security tools inside a Docker container with Kali Linux instead of installing them on your host. This keeps your workstation clean and avoids endpoint protection flagging your toolset.
+
+```bash
+# Pull the Kali Linux Docker image
+docker pull kalilinux/kali-rolling
+
+# Start an interactive Kali container with network access
+docker run -it --name pentest-lab kalilinux/kali-rolling /bin/bash
+
+# Inside the container, install the tools you need
+apt update && apt install -y nmap nikto sqlmap metasploit-framework bloodhound
+
+# To reconnect later
+docker start -ai pentest-lab
+```
+
+**The workflow:** Use pentest-ai agents in Claude Code on your host to get methodology guidance, analyze output, and plan your approach. Run the actual tools inside the Kali container. Copy tool output back into Claude Code for analysis.
+
+```
+Host (Claude Code + pentest-ai agents)
+  ├── Get methodology from agents
+  ├── Paste tool output for analysis
+  └── Generate reports and detection rules
+
+Docker Container (Kali + security tools)
+  ├── Run Nmap, Nessus, BloodHound, etc.
+  ├── Execute authorized testing
+  └── Capture output for agent analysis
+```
+
+This separation means your host stays clean, your EDR doesn't flag your dev machine, and your tools live in a disposable environment you can rebuild anytime.
+
+---
+
 ## How Agent Routing Works
 
 Claude Code reads the `description` field in each agent's YAML frontmatter to decide when to delegate. You don't need to specify which agent to use. Just describe your task naturally.
@@ -398,6 +466,38 @@ See real agent output in the [examples/](examples/) directory:
 - Claude Pro or Max subscription
 - For authorized security testing: signed rules of engagement and defined scope
 - Recommended certifications: OSCP, GPEN, PenTest+, CEH, CPTS (or equivalent experience)
+
+---
+
+## FAQ
+
+### Will Anthropic ban my account for using this?
+
+No. These agents provide methodology guidance, analysis, and documentation. They don't generate working exploits, access systems, or bypass security controls. The agents operate within Claude's acceptable use policy because they function as a knowledgeable research assistant, not an attack tool. Anthropic's guidelines allow security research, authorized penetration testing, and defensive security work. If you're using these agents for authorized engagements with proper written authorization, you're fine.
+
+That said, Claude does have safety guardrails. If you ask it to write actual malware or attack unauthorized systems, it will refuse, and that's true with or without these agents installed. The agents don't change Claude's safety behavior. They add domain expertise on top of it.
+
+### Does my data go to a third party?
+
+When you use Claude Code, your prompts go to Anthropic for processing. pentest-ai agents don't add any extra data transmission. The data flow is identical to using Claude Code without agents installed.
+
+For sensitive engagements:
+- Use Anthropic's API with your own key (API inputs aren't used for training by default)
+- Redact client-specific data before pasting tool output
+- Check your ROE and client NDAs for restrictions on AI data processing
+- See [DATA-PRIVACY.md](docs/DATA-PRIVACY.md) for detailed guidance and a client communication template
+
+### How is this different from HexStrike AI or CAI?
+
+See [How pentest-ai Is Different](#how-pentest-ai-is-different) above. The short version: those tools wrap 150+ security tools behind an AI execution layer. pentest-ai is a methodology advisor. You run the tools, the agents tell you what to run, why, and what defenders see. Different philosophy, different use case. They can actually complement each other.
+
+### I'm new to security. Is this useful for me?
+
+Yes. The agents explain concepts at whatever level you need. Ask "what is Kerberoasting?" and you'll get a clear explanation. Ask "walk me through AS-REP Roasting against this specific AD configuration" and you'll get exact commands with OPSEC notes. If you're starting a role in security assessment or compliance, see the [New to Security use case](#new-to-security--sca-representatives) above.
+
+### Can I use a local model instead of Claude?
+
+The agents are markdown files with system prompts. They're designed for Claude Code's subagent routing, but the methodology content works with any LLM that supports system prompts. You'd lose the automatic routing feature, but you could paste the agent content as context into any model. For fully local operation, see the local model options in [DATA-PRIVACY.md](docs/DATA-PRIVACY.md).
 
 ---
 
