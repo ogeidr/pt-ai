@@ -55,17 +55,28 @@ These certifications are recommended, not required, but users should possess a s
 
 ## What These Agents Do and Do Not Do
 
-These agents provide methodology guidance, analysis, and documentation assistance. They are designed to help experienced security professionals work more efficiently during authorized engagements.
+These agents provide methodology guidance, analysis, documentation assistance, and (for select agents) direct tool execution with user approval. They are designed to help experienced security professionals work more efficiently during authorized engagements.
 
-These agents do **not**:
+### Tier 1 Agents (Advisory Mode)
 
-- Execute attacks or exploits
-- Access systems or networks
-- Generate functional exploit code autonomously
-- Bypass security controls
-- Perform any actions on target systems
+Most agents provide methodology guidance only. They analyze output you paste, suggest commands, and generate documentation. They do not execute commands or interact with target systems.
 
-All actions on target systems are performed by the user using their own tools and expertise. The agents serve as advisory and documentation resources.
+### Tier 2 Agents (Execution Mode)
+
+Some agents (marked with `Bash` in their tool list) can compose and execute reconnaissance, enumeration, and analysis commands against targets you have authorized. Every command requires your explicit approval through Claude Code's permission prompt. You see the full command before it runs. You are responsible for verifying that each command targets only in-scope systems.
+
+Tier 2 agents enforce scope boundaries: they require you to declare an authorized scope before executing any commands, and they refuse to target anything outside that scope. This is a prompt-level safety check. Claude Code's per-command permission prompt is the hard safety gate.
+
+### No agent, in any tier, will:
+
+- Generate functional standalone exploit code or malware
+- Bypass Claude Code's permission system
+- Execute commands without showing them to you first
+- Target systems outside the scope you declared
+- Perform destructive actions (DoS, data deletion) unless explicitly authorized
+- Run commands requiring elevated privileges without flagging it first
+
+All offensive actions on target systems remain under your control. In Tier 2, the agent composes and executes commands, but you approve every one. In Tier 1, you run the tools yourself.
 
 ## Data Privacy & LLM Processing
 

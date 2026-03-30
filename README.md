@@ -61,7 +61,7 @@ You don't need to be an expert to use these agents. They communicate at whatever
 
 No configuration, no commands to memorize. Just describe what you need.
 
-### Quick Demo
+### Quick Demo: Advisory Mode (Tier 1)
 
 ```
 $ claude
@@ -84,6 +84,45 @@ You: Analyze this Nmap scan and prioritize targets for our internal pentest
 3. bloodhound-python -d corp.local
 ```
 
+### Quick Demo: Execution Mode (Tier 2)
+
+```
+$ claude
+
+You: My authorized scope is 10.10.1.0/24. Internal network pentest.
+     Run a service scan on the subnet.
+
+▸ Routing to recon-advisor agent...
+
+Scope recorded: 10.10.1.0/24 (internal)
+
+I'll start with host discovery, then do targeted service detection
+on live hosts.
+
+[MODERATE] Host discovery scan:
+  nmap -sn 10.10.1.0/24 -oN nmap_10.10.1.0_discovery_20260330_140000.txt
+
+▸ Allow Bash command? [y/n]
+
+Found 47 live hosts. Running service detection on the top ports...
+
+[MODERATE] Service scan on live hosts:
+  nmap -sT -sV -sC --top-ports 1000 --min-rate 100 --max-rate 1000
+    --host-timeout 300s -iL live_hosts.txt
+    -oN nmap_10.10.1.0_services_20260330_140215.txt
+
+▸ Allow Bash command? [y/n]
+
+## Prioritized Target Summary
+| Priority | Host       | Port | Service        | Finding               |
+|----------|------------|------|----------------|-----------------------|
+| Critical | 10.10.1.5  | 445  | SMB 1.0        | MS17-010 likely       |
+| Critical | 10.10.1.20 | 3389 | RDP 10.0.17763 | BlueKeep candidate    |
+| High     | 10.10.1.12 | 8080 | Jenkins 2.289  | Pre-auth RCE range    |
+
+Evidence saved. Want me to run SMB vulnerability scripts on 10.10.1.5 next?
+```
+
 ---
 
 ## Agents
@@ -93,7 +132,7 @@ You: Analyze this Nmap scan and prioritize targets for our internal pentest
 | Agent | What It Does | Example Prompt |
 |-------|-------------|----------------|
 | **Engagement Planner** | Plans penetration tests with phased methodology, MITRE ATT&CK technique mapping, time estimates, and rules of engagement templates | *"Plan an internal network pentest for a 500-endpoint Active Directory environment with a 2-week window"* |
-| **Recon Advisor** | Parses output from Nmap, Nessus, BloodHound, and 20+ tools. Prioritizes targets, maps CVEs, and recommends specific next commands | *"Analyze this Nmap scan and tell me what to hit first"* |
+| **Recon Advisor** | Parses output from Nmap, Nessus, BloodHound, and 20+ tools. Prioritizes targets, maps CVEs, and recommends specific next commands. **Tier 2: can execute recon tools directly with your approval.** | *"Scan 10.10.1.0/24 and tell me what to hit first"* |
 | **OSINT Collector** | Open source intelligence gathering: domain recon, email harvesting, social media profiling, breach data analysis, and infrastructure mapping | *"Build an OSINT profile on this target domain before our external engagement"* |
 | **Exploit Guide** | Detailed exploitation methodology covering AD attacks, web apps, cloud, and post-exploitation. Every technique includes the defensive perspective | *"Walk me through AS-REP Roasting and how defenders detect it"* |
 | **Privilege Escalation** | Systematic Linux and Windows privilege escalation methodology. SUID abuse, token impersonation, service exploitation, kernel exploits, and container escape | *"Here's my linpeas output, what's the fastest path to root?"* |
@@ -309,11 +348,11 @@ graph TD
 
 There are other AI security tools out there (HexStrike AI, CAI, and various commercial platforms). Here's where pentest-ai sits:
 
-**Methodology over machinery.** Most AI pentesting frameworks focus on wrapping 150+ security tools behind an AI layer. pentest-ai takes the opposite approach: it gives you a knowledgeable research partner, not a tool runner. The agents teach you what to do, why it works, and how defenders catch it. You run the tools yourself, which means you actually learn.
+**Methodology first, execution when you want it.** Most AI pentesting frameworks wrap 150+ tools behind an AI execution layer and call it a day. pentest-ai starts with methodology: what to do, why it works, how defenders catch it. Select agents (Tier 2) can also execute recon and enumeration commands directly, with your approval on every command. You stay in control and you learn the techniques.
 
 **Zero infrastructure.** No Python environments, no Docker containers, no API keys beyond your Claude subscription. Copy some markdown files and you're working. Other frameworks require dedicated infrastructure, dependency management, and setup time before you can start.
 
-**Built for Claude Code natively.** These agents use Claude Code's built-in subagent routing. There's no middleware, no custom framework, no orchestration layer to maintain. When Claude Code improves, your agents improve with it.
+**Built for Claude Code natively.** These agents use Claude Code's built-in subagent routing and permission system. There's no middleware, no custom framework, no orchestration layer to maintain. When Claude Code improves, your agents improve with it.
 
 **Dual perspective by default.** Every offensive technique comes with the defensive side: how it gets detected, what logs it generates, what Sigma rules catch it. This isn't a separate mode or add-on. It's built into every agent response.
 
@@ -322,8 +361,9 @@ There are other AI security tools out there (HexStrike AI, CAI, and various comm
 | | pentest-ai | Tool-Heavy Frameworks |
 |---|---|---|
 | **Setup** | Copy markdown files, done | Python env, Docker, API keys, dependencies |
-| **Approach** | Methodology guidance, you run the tools | AI executes tools directly |
+| **Approach** | Methodology + optional execution with approval | AI executes tools directly, often without context |
 | **Learning** | You learn the techniques as you go | Tool output without context |
+| **Safety model** | User approves every command via Claude Code | Varies, often autonomous |
 | **Dependencies** | Claude Code only | Custom frameworks, orchestration layers, tool installs |
 | **Defensive view** | Built into every response | Separate module or not included |
 | **Maintenance** | Update agent files | Track framework updates, tool compatibility, API changes |
@@ -436,13 +476,55 @@ Claude Code reads the `description` field in each agent's YAML frontmatter to de
 ---
 name: recon-advisor
 description: Delegates to this agent when the user pastes scan output
-             (Nmap, Nessus, Nikto, masscan, etc.)...
-tools: [Read, Write, Edit, Grep, Glob]
+             (Nmap, Nessus, Nikto, masscan, etc.)... Can execute
+             reconnaissance commands directly with user approval.
+tools: [Bash, Read, Write, Edit, Grep, Glob]
 model: sonnet
 ---
 ```
 
 Claude matches your intent to the agent description and routes automatically. You can also invoke agents explicitly if you prefer direct control.
+
+---
+
+## Tier 1 vs. Tier 2 Agents
+
+Agents operate in one of two tiers:
+
+### Tier 1: Advisory (all agents)
+
+Every agent works in advisory mode. You paste tool output, ask methodology questions, or request documentation. The agent analyzes, advises, and generates artifacts. You run the tools yourself.
+
+### Tier 2: Execution (select agents)
+
+Some agents can also compose and execute commands directly. When you ask the recon advisor to "scan 10.10.1.0/24," it builds the nmap command, explains what it does, tags the noise level, and runs it after you approve. Then it parses the output and recommends next steps.
+
+**How it works:**
+1. You declare your authorized scope (IP ranges, domains, URLs)
+2. The agent validates every target against your scope before composing a command
+3. Claude Code shows you the full command and asks for approval
+4. The agent executes, saves evidence, analyzes results, and suggests the next step
+
+**Safety model:** The agent enforces scope at the prompt level (refuses out-of-scope targets). Claude Code enforces approval at the system level (you see and approve every command). Both layers must pass before anything runs.
+
+**Tier 2 agents:**
+
+| Agent | What It Executes | Risk Level |
+|-------|-----------------|------------|
+| **Recon Advisor** | nmap, dig, whois, curl, netcat, traceroute, whatweb, nikto | Low (read-only scanning) |
+
+More agents will be promoted to Tier 2 as the pattern is validated. See [docs/TIER2-EXECUTION.md](docs/TIER2-EXECUTION.md) for the full roadmap and conversion guide.
+
+**Tier 1 only (will not get execution):**
+
+| Agent | Why |
+|-------|-----|
+| Exploit Guide | Exploitation tools are high-risk. Keep advisory. |
+| Social Engineer | Phishing execution should not be automated by AI. |
+| Wireless Pentester | Requires hardware interaction (WiFi adapters). |
+| Engagement Planner | Produces plans, not commands. |
+| Threat Modeler | Produces analysis, not commands. |
+| Report Generator | Produces documents, not commands. |
 
 ---
 
@@ -473,9 +555,9 @@ See real agent output in the [examples/](examples/) directory:
 
 ### Will Anthropic ban my account for using this?
 
-No. These agents provide methodology guidance, analysis, and documentation. They don't generate working exploits, access systems, or bypass security controls. The agents operate within Claude's acceptable use policy because they function as a knowledgeable research assistant, not an attack tool. Anthropic's guidelines allow security research, authorized penetration testing, and defensive security work. If you're using these agents for authorized engagements with proper written authorization, you're fine.
+No. These agents provide methodology guidance, analysis, and documentation. Tier 2 agents can execute reconnaissance commands, but every command goes through Claude Code's built-in permission prompt, which is Anthropic's own safety mechanism. The agents don't bypass it. Anthropic's guidelines allow security research, authorized penetration testing, and defensive security work. If you're using these agents for authorized engagements with proper written authorization, you're fine.
 
-That said, Claude does have safety guardrails. If you ask it to write actual malware or attack unauthorized systems, it will refuse, and that's true with or without these agents installed. The agents don't change Claude's safety behavior. They add domain expertise on top of it.
+Claude's safety guardrails still apply. If you ask it to write actual malware or attack unauthorized systems, it will refuse, with or without these agents installed. Tier 2 execution is limited to reconnaissance and enumeration tools, not exploitation.
 
 ### Does my data go to a third party?
 
@@ -489,7 +571,7 @@ For sensitive engagements:
 
 ### How is this different from HexStrike AI or CAI?
 
-See [How pentest-ai Is Different](#how-pentest-ai-is-different) above. The short version: those tools wrap 150+ security tools behind an AI execution layer. pentest-ai is a methodology advisor. You run the tools, the agents tell you what to run, why, and what defenders see. Different philosophy, different use case. They can actually complement each other.
+See [How pentest-ai Is Different](#how-pentest-ai-is-different) above. The short version: those tools wrap 150+ security tools behind an AI execution layer with autonomous operation. pentest-ai leads with methodology and adds optional execution with per-command user approval. You understand what's happening at every step. Different philosophy, different use case. They can complement each other.
 
 ### I'm new to security. Is this useful for me?
 
@@ -507,6 +589,7 @@ The agents are markdown files with system prompts. They're designed for Claude C
 |----------|-------------|
 | [INSTALL.md](INSTALL.md) | Step-by-step installation guide with 3 methods and troubleshooting |
 | [Agent Guide](docs/AGENT-GUIDE.md) | How each agent works, when to use it, and example prompts |
+| [Tier 2 Execution](docs/TIER2-EXECUTION.md) | How execution mode works, safety model, and agent conversion guide |
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
 | [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
@@ -526,7 +609,7 @@ Agent submissions must include MITRE ATT&CK mappings and consider both offensive
 
 This toolkit is for **authorized security testing only**. Users must have proper written authorization before using these agents in any engagement. See [DISCLAIMER.md](DISCLAIMER.md) for full terms.
 
-These agents provide methodology guidance and analysis. They do not execute attacks, access systems, or generate functional exploit code.
+Tier 1 agents provide methodology guidance and analysis. Tier 2 agents can execute reconnaissance commands with your approval. No agent executes attacks, generates functional exploit code, or bypasses Claude Code's permission system.
 
 ---
 
