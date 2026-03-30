@@ -6,12 +6,13 @@
 
 **Turn Claude Code into your offensive security research assistant.**
 
-17 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
+23 specialized AI subagents for every phase of authorized penetration testing, from scoping to reporting. 4 Tier 2 agents that execute tools directly with your approval. MITRE ATT&CK mapped. Dual offensive/defensive perspective in every response.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://docs.anthropic.com/en/docs/claude-code)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-red.svg)](https://attack.mitre.org/)
-[![Agents](https://img.shields.io/badge/Agents-17-green.svg)]()
+[![Agents](https://img.shields.io/badge/Agents-23-green.svg)]()
+[![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)](CHANGELOG.md)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-yellow.svg)]()
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS-yellow.svg)]()
 [![Platform: Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-yellow.svg)]()
@@ -20,7 +21,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/0xSteph/pentest-ai)](https://github.com/0xSteph/pentest-ai/commits/main)
 [![GitHub issues](https://img.shields.io/github/issues/0xSteph/pentest-ai)](https://github.com/0xSteph/pentest-ai/issues)
 
-[Getting Started](#quick-start) | [Agents](#agents) | [Examples](#examples) | [Documentation](#documentation) | [Landing Page](https://0xsteph.github.io/pentest-ai/)
+[Getting Started](#quick-start) | [Agents](#agents) | [Examples](#examples) | [Documentation](#documentation) | [Changelog](CHANGELOG.md) | [Landing Page](https://0xsteph.github.io/pentest-ai/)
 
 </div>
 
@@ -49,7 +50,7 @@
 
 ## What Is This?
 
-pentest-ai is a collection of Claude Code subagents: specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
+pentest-ai is a collection of 23 Claude Code subagents: specialized AI assistants that activate automatically based on what you're working on. Ask Claude to plan a pentest, and the engagement planner agent takes over. Paste Nmap output, and the recon advisor analyzes it. Need to Kerberoast an AD environment? The AD attacker agent builds and runs the Impacket commands for you. Each agent carries deep domain knowledge in offensive security methodology, MITRE ATT&CK mappings, and industry-standard frameworks.
 
 You don't need to be an expert to use these agents. They communicate at whatever level you need, from explaining what Kerberoasting is to providing exact Impacket command syntax for a senior operator.
 
@@ -141,6 +142,12 @@ Evidence saved. Want me to run SMB vulnerability scripts on 10.10.1.5 next?
 | **Mobile Pentester** | Android and iOS application security testing. APK/IPA analysis, Frida hooking, SSL pinning bypass, OWASP MASTG/MASVS methodology | *"Decompile this APK and check for hardcoded secrets and certificate pinning"* |
 | **Wireless Pentester** | WiFi and Bluetooth penetration testing. WPA/WPA2/WPA3 attacks, evil twin, rogue AP, enterprise wireless, and Bluetooth security | *"Capture a WPA2 handshake and set up an evil twin for this corporate network"* |
 | **Social Engineer** | Phishing campaigns, pretexting, vishing, physical social engineering, and security awareness assessments for authorized red team engagements | *"Design a phishing campaign for this engagement using GoPhish"* |
+| **Vuln Scanner** | Runs vulnerability scans with Nuclei, Nikto, and Nmap NSE scripts. Parses Nessus and OpenVAS results. Prioritizes by CVSS and exploit availability. **Tier 2: executes scans directly with your approval.** | *"Run a Nuclei scan on 10.10.1.0/24 for critical and high severity CVEs"* |
+| **Web Hunter** | Web application testing with ffuf, gobuster, feroxbuster, sqlmap, and dalfox. Content discovery, parameter fuzzing, virtual host enumeration, and WAF detection. **Tier 2: executes web testing tools directly.** | *"Fuzz directories on https://target.com and check for SQL injection on the login form"* |
+| **Credential Tester** | Password attack methodology covering Hydra, Hashcat, John the Ripper, CrackMapExec spraying, Kerbrute, and custom wordlist generation. Hash identification and cracking strategy | *"I have these NTLM hashes from a SAM dump. What's the fastest cracking approach?"* |
+| **Attack Planner** | Correlates findings from all other agents into multi-step attack chains. Scores paths by probability, stealth, and business impact. Builds lateral movement maps and chain comparison matrices | *"I have Nmap results, BloodHound data, and some cracked hashes. Build me the best attack chain to DA"* |
+| **Bug Bounty Hunter** | Bug bounty methodology for HackerOne, Bugcrowd, and Intigriti. Target selection, recon automation, duplicate avoidance strategies, and professional report writing that gets bounties paid | *"Help me write a P1 report for this IDOR I found on HackerOne"* |
+| **AD Attacker** | Active Directory attack execution with BloodHound, Impacket, CrackMapExec, Certipy, and Kerbrute. Kerberos attacks, delegation abuse, ACL exploitation, and certificate abuse. **Tier 2: executes AD tools directly with your approval.** | *"Kerberoast all service accounts in corp.local and crack the hashes"* |
 
 ### Defense & Analysis
 
@@ -204,6 +211,35 @@ social-engineer ───── GoPhish, King Phisher, Evilginx2
                       Phishing, vishing, SMiShing, physical SE
                       Pretexting frameworks and campaign metrics
 
+vuln-scanner ──────── Nuclei, Nikto, Nmap NSE, Nessus/OpenVAS parsing
+                      CVE mapping with exploit availability assessment
+                      False positive filtering and chain identification
+                      [Tier 2: executes scans with user approval]
+
+web-hunter ────────── ffuf, gobuster, feroxbuster, sqlmap, dalfox
+                      Content discovery, parameter fuzzing, vhost enum
+                      WAF detection and bypass, technology fingerprinting
+                      [Tier 2: executes web tools with user approval]
+
+credential-tester ─── Hydra, Hashcat, John, CrackMapExec, Kerbrute
+                      Password spraying with lockout awareness
+                      Hash identification, wordlist generation, rule attacks
+
+attack-planner ────── Multi-step attack chain correlation
+                      Path scoring: probability x stealth x impact
+                      Lateral movement mapping and chain comparison
+                      Correlates findings from all other agents
+
+bug-bounty ────────── HackerOne, Bugcrowd, Intigriti methodology
+                      Report writing for maximum payout
+                      Duplicate avoidance and recon automation
+                      Business logic flaw hunting methodology
+
+ad-attacker ───────── BloodHound, Impacket, CrackMapExec, Certipy
+                      Kerberoasting, DCSync, delegation abuse, RBCD
+                      ACL exploitation and certificate abuse (ESC1-ESC8)
+                      [Tier 2: executes AD tools with user approval]
+
 DEFENSE & ANALYSIS
 detection-engineer ── Sigma, Splunk SPL, Elastic KQL, Sentinel KQL, YARA
                       False positive analysis and tuning guidance
@@ -246,12 +282,15 @@ Chain agents together for a complete engagement workflow:
 graph LR
     A[OSINT] -->|osint-collector| B[Scope & Plan]
     B -->|engagement-planner| C[Reconnaissance]
-    C -->|recon-advisor| D[Attack Vectors]
-    D -->|exploit-guide| E[Exploitation]
-    E -->|privesc-advisor| F[Escalation]
-    F -->|detection-engineer| G[Detection Rules]
-    F -->|report-generator| H[Final Report]
-    G --> H
+    C -->|recon-advisor| D[Vuln Scanning]
+    D -->|vuln-scanner| E[Web Testing]
+    E -->|web-hunter| F[Attack Chains]
+    F -->|attack-planner| G[Exploitation]
+    G -->|exploit-guide / ad-attacker| H[Credential Attacks]
+    H -->|credential-tester| I[Escalation]
+    I -->|privesc-advisor| J[Detection Rules]
+    J -->|detection-engineer| K[Final Report]
+    I -->|report-generator| K
 
     style A fill:#1a1a2e,stroke:#e94560,color:#fff
     style B fill:#1a1a2e,stroke:#e94560,color:#fff
@@ -261,6 +300,9 @@ graph LR
     style F fill:#1a1a2e,stroke:#e94560,color:#fff
     style G fill:#1a1a2e,stroke:#e94560,color:#fff
     style H fill:#1a1a2e,stroke:#e94560,color:#fff
+    style I fill:#1a1a2e,stroke:#e94560,color:#fff
+    style J fill:#1a1a2e,stroke:#e94560,color:#fff
+    style K fill:#1a1a2e,stroke:#e94560,color:#fff
 ```
 
 ### Architecture
@@ -278,6 +320,12 @@ graph TD
     Claude -->|"Test this app"| MP[Mobile Pentester]
     Claude -->|"Test WiFi security"| WP[Wireless Pentester]
     Claude -->|"Plan phishing campaign"| SE[Social Engineer]
+    Claude -->|"Scan for vulns"| VS[Vuln Scanner]
+    Claude -->|"Fuzz this webapp"| WH[Web Hunter]
+    Claude -->|"Crack these hashes"| CT[Credential Tester]
+    Claude -->|"Build attack chain"| AP2[Attack Planner]
+    Claude -->|"Bug bounty report"| BB[Bug Bounty Hunter]
+    Claude -->|"Attack this AD"| AD[AD Attacker]
     Claude -->|"Model threats"| TM[Threat Modeler]
     Claude -->|"Build a detection rule"| DE[Detection Engineer]
     Claude -->|"Analyze this binary"| MA[Malware Analyst]
@@ -296,6 +344,12 @@ graph TD
     MP --> KB
     WP --> KB
     SE --> KB
+    VS --> KB
+    WH --> KB
+    CT --> KB
+    AP2 --> KB
+    BB --> KB
+    AD --> KB
     TM --> KB
     DE --> KB
     MA --> KB
@@ -317,6 +371,12 @@ graph TD
     style MP fill:#1a1a2e,stroke:#e94560,color:#fff
     style WP fill:#1a1a2e,stroke:#e94560,color:#fff
     style SE fill:#1a1a2e,stroke:#e94560,color:#fff
+    style VS fill:#1a1a2e,stroke:#e94560,color:#fff
+    style WH fill:#1a1a2e,stroke:#e94560,color:#fff
+    style CT fill:#1a1a2e,stroke:#e94560,color:#fff
+    style AP2 fill:#1a1a2e,stroke:#e94560,color:#fff
+    style BB fill:#1a1a2e,stroke:#e94560,color:#fff
+    style AD fill:#1a1a2e,stroke:#e94560,color:#fff
     style TM fill:#1a1a2e,stroke:#e94560,color:#fff
     style DE fill:#1a1a2e,stroke:#e94560,color:#fff
     style MA fill:#1a1a2e,stroke:#e94560,color:#fff
@@ -358,15 +418,17 @@ There are other AI security tools out there (HexStrike AI, CAI, and various comm
 
 **Accessible to all skill levels.** You don't need to be a senior operator. Ask basic questions and get clear explanations. Ask advanced questions and get exact command syntax with OPSEC considerations. The agents meet you where you are.
 
-| | pentest-ai | Tool-Heavy Frameworks |
+| | pentest-ai v2.0 | Tool-Heavy Frameworks |
 |---|---|---|
-| **Setup** | Copy markdown files, done | Python env, Docker, API keys, dependencies |
-| **Approach** | Methodology + optional execution with approval | AI executes tools directly, often without context |
+| **Setup** | `./install.sh --global`, done | Python env, Docker, API keys, dependencies |
+| **Agents** | 23 specialists, 4 with execution | Monolithic codebase, 150+ tool wrappers |
+| **Approach** | Methodology + execution with per-command approval | AI executes tools directly, often without context |
+| **Attack chains** | Dedicated attack-planner correlates all findings | Manual correlation or not included |
 | **Learning** | You learn the techniques as you go | Tool output without context |
-| **Safety model** | User approves every command via Claude Code | Varies, often autonomous |
+| **Safety model** | Two-layer: scope enforcement + Claude Code permission gate | Varies, often autonomous |
 | **Dependencies** | Claude Code only | Custom frameworks, orchestration layers, tool installs |
 | **Defensive view** | Built into every response | Separate module or not included |
-| **Maintenance** | Update agent files | Track framework updates, tool compatibility, API changes |
+| **Maintenance** | Update agent files, semantic versioning | Track framework updates, tool compatibility, API changes |
 
 ---
 
@@ -405,16 +467,17 @@ Run offensive techniques through the **exploit guide** (which provides the defen
 ## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/0xSteph/pentest-ai.git
+# Clone and install with one command
+git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global
 
-# Install globally (available in all projects)
-cp pentest-ai/agents/*.md ~/.claude/agents/
+# Or use the interactive installer
+./install.sh
 
-# Or install for a specific project
-mkdir -p .claude/agents/
-cp pentest-ai/agents/*.md .claude/agents/
+# Or install manually
+cp agents/*.md ~/.claude/agents/
 ```
+
+The install script supports `--global`, `--project`, `--uninstall`, `--update`, and `--status` options. Run `./install.sh --help` for details.
 
 Then open Claude Code and try:
 
@@ -512,19 +575,26 @@ Some agents can also compose and execute commands directly. When you ask the rec
 | Agent | What It Executes | Risk Level |
 |-------|-----------------|------------|
 | **Recon Advisor** | nmap, dig, whois, curl, netcat, traceroute, whatweb, nikto | Low (read-only scanning) |
+| **Vuln Scanner** | nuclei, nikto, nmap NSE scripts | Low-Medium (vulnerability detection) |
+| **Web Hunter** | ffuf, gobuster, feroxbuster, sqlmap, dalfox, whatweb | Medium (active web testing) |
+| **AD Attacker** | BloodHound, Impacket (GetUserSPNs, secretsdump, psexec), CrackMapExec, Certipy, ldapsearch, enum4linux | Medium-High (AD enumeration and attacks) |
 
-More agents will be promoted to Tier 2 as the pattern is validated. See [docs/TIER2-EXECUTION.md](docs/TIER2-EXECUTION.md) for the full roadmap and conversion guide.
+See [docs/TIER2-EXECUTION.md](docs/TIER2-EXECUTION.md) for the full safety model and conversion guide.
 
-**Tier 1 only (will not get execution):**
+**Tier 1 only (advisory, no execution):**
 
 | Agent | Why |
 |-------|-----|
 | Exploit Guide | Exploitation tools are high-risk. Keep advisory. |
 | Social Engineer | Phishing execution should not be automated by AI. |
 | Wireless Pentester | Requires hardware interaction (WiFi adapters). |
+| Mobile Pentester | Requires device connections. |
 | Engagement Planner | Produces plans, not commands. |
 | Threat Modeler | Produces analysis, not commands. |
 | Report Generator | Produces documents, not commands. |
+| Credential Tester | Password attacks need careful human oversight for lockout risk. |
+| Attack Planner | Produces strategy, not commands. Coordinates other agents' findings. |
+| Bug Bounty Hunter | Methodology and report writing. Recon tools covered by other Tier 2 agents. |
 
 ---
 
@@ -593,6 +663,7 @@ The agents are markdown files with system prompts. They're designed for Claude C
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
 | [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
+| [Changelog](CHANGELOG.md) | Version history and release notes |
 | [Disclaimer](DISCLAIMER.md) | Legal and ethical use terms |
 
 ---

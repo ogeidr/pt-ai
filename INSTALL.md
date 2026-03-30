@@ -88,20 +88,36 @@ Before installing pentest-ai, ensure you have the following:
 
 ## Installation Methods
 
-### Method 1: Global Install
+### Method 1: Install Script (Recommended)
+
+The install script handles everything, detects existing installations, and shows you what changed.
+
+```bash
+# Clone and install in one command
+git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global
+
+# Or run the interactive installer (prompts you to choose)
+./install.sh
+
+# Other options
+./install.sh --global      # Install to ~/.claude/agents/ (all projects)
+./install.sh --project     # Install to .claude/agents/ (current project only)
+./install.sh --update      # Update existing global install
+./install.sh --uninstall   # Remove all pentest-ai agents
+./install.sh --status      # Show current installation status
+```
+
+### Method 2: Global Install (Manual)
 
 A global install makes the agents available in all your projects and directories.
 
 ```bash
-# Clone or download the repository
-# Then copy all agent files to your global Claude agents directory
-
 cp agents/*.md ~/.claude/agents/
 ```
 
 This places the agent definition files where Claude Code looks for them by default. The agents will be available in every Claude Code session regardless of your working directory.
 
-### Method 2: Project-Level Install
+### Method 3: Project-Level Install (Manual)
 
 A project-level install makes the agents available only when you are working within a specific project directory. This is useful if you want to keep security tooling isolated to specific engagement workspaces.
 
@@ -116,12 +132,12 @@ mkdir -p .claude/agents/
 cp /path/to/pentest-ai/agents/*.md .claude/agents/
 ```
 
-### Method 3: One-Liner from GitHub
+### Method 4: One-Liner from GitHub
 
 Clone the repository and install globally in a single command:
 
 ```bash
-git clone https://github.com/0xSteph/pentest-ai.git && cp pentest-ai/agents/*.md ~/.claude/agents/
+git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global
 ```
 
 

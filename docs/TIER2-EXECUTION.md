@@ -49,6 +49,9 @@ The safety model is identical to a human operator running tools: someone compose
 | Agent | What It Executes | Risk Profile |
 |-------|-----------------|--------------|
 | **Recon Advisor** | nmap, dig, whois, curl, netcat, traceroute, whatweb, nikto, masscan | Low: read-only network reconnaissance |
+| **Vuln Scanner** | nuclei, nikto, nmap NSE scripts | Low-Medium: vulnerability detection scans |
+| **Web Hunter** | ffuf, gobuster, feroxbuster, sqlmap, dalfox, whatweb, curl | Medium: active web application testing |
+| **AD Attacker** | BloodHound, Impacket suite, CrackMapExec/NetExec, Certipy, ldapsearch, enum4linux, kerbrute | Medium-High: AD enumeration and Kerberos attacks |
 
 ### Planned Tier 2 (by rollout priority)
 
@@ -68,10 +71,13 @@ The safety model is identical to a human operator running tools: someone compose
 
 | Agent | Why |
 |-------|-----|
-| **Exploit Guide** | Running Metasploit, Impacket, or Responder through an AI agent crosses the safety threshold for autonomous execution. Methodology guidance is the right level of assistance for exploitation. |
-| **Social Engineer** | Sending phishing emails or executing social engineering campaigns should not be automated by AI. The agent plans campaigns; humans execute them. |
-| **Wireless Pentester** | Wireless tools require hardware interaction (WiFi adapters in monitor mode, Bluetooth dongles). Not practical for Bash-only execution. |
-| **Mobile Pentester** | Mobile tools require device connections, APK/IPA file handling, and complex environment setup. Doesn't fit the Bash-only model well. |
+| **Exploit Guide** | Exploitation tools are high-risk. Methodology guidance is the right level of assistance. |
+| **Social Engineer** | Phishing execution should not be automated by AI. The agent plans campaigns; humans execute them. |
+| **Wireless Pentester** | Wireless tools require hardware interaction (WiFi adapters in monitor mode). |
+| **Mobile Pentester** | Mobile tools require device connections and complex environment setup. |
+| **Credential Tester** | Password attacks carry high lockout risk. Methodology agent; execution covered by AD Attacker for spraying. |
+| **Attack Planner** | Produces strategy documents, not commands. Coordinates findings from other agents. |
+| **Bug Bounty Hunter** | Methodology and reporting agent. Recon tools covered by other Tier 2 agents. |
 | **Engagement Planner** | Produces planning documents, not commands. |
 | **Threat Modeler** | Produces threat analysis, not commands. |
 | **Report Generator** | Produces written reports, not commands. |
