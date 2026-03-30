@@ -649,7 +649,13 @@ Yes. The agents explain concepts at whatever level you need. Ask "what is Kerber
 
 ### Can I use a local model instead of Claude?
 
-The agents are markdown files with system prompts. They're designed for Claude Code's subagent routing, but the methodology content works with any LLM that supports system prompts. You'd lose the automatic routing feature, but you could paste the agent content as context into any model. For fully local operation, see the local model options in [DATA-PRIVACY.md](docs/DATA-PRIVACY.md).
+Yes. The agents are plain markdown system prompts. The only Claude-specific part is the YAML frontmatter header. Run `./opencode-setup.sh --full` to convert all 23 agents into [OpenCode/Crush](https://github.com/charmbracelet/crush) custom commands that work with Ollama, LM Studio, vLLM, or any local model. No cloud API needed, no keyword filtering, no data leaves your machine.
+
+For full setup instructions, hardware requirements, and model recommendations, see [docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md).
+
+### What if Anthropic or OpenAI changes their terms?
+
+pentest-ai is not locked to any provider. The agent files are plain markdown with methodology content that works with any LLM. The `opencode-setup.sh` adapter strips the Claude Code frontmatter and produces files compatible with OpenCode/Crush, which supports Ollama (local), OpenAI, Google Gemini, Groq, OpenRouter, AWS Bedrock, Azure, and more. If any provider pulls the plug or restricts security content, switch to another provider or run fully local. Your agents and methodology are yours.
 
 ---
 
@@ -657,9 +663,10 @@ The agents are markdown files with system prompts. They're designed for Claude C
 
 | Document | Description |
 |----------|-------------|
-| [INSTALL.md](INSTALL.md) | Step-by-step installation guide with 3 methods and troubleshooting |
+| [INSTALL.md](INSTALL.md) | Step-by-step installation guide with install script and troubleshooting |
 | [Agent Guide](docs/AGENT-GUIDE.md) | How each agent works, when to use it, and example prompts |
 | [Tier 2 Execution](docs/TIER2-EXECUTION.md) | How execution mode works, safety model, and agent conversion guide |
+| [Local Setup](docs/LOCAL-SETUP.md) | Run fully offline with Ollama, OpenCode/Crush, and local GPU |
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
 | [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
