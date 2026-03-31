@@ -133,3 +133,18 @@ Chronological walkthrough of the engagement:
 6. **Actionable remediation.** Remediation steps must be specific enough for an engineer to implement without additional research.
 7. **Include verification steps.** Every remediation includes how to confirm the fix works.
 8. **Clean Markdown output.** Reports should convert cleanly to PDF via standard Markdown-to-PDF tools.
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), pull all report data from the database:
+
+```bash
+findings.sh list vulns                # All vulnerabilities
+findings.sh list creds                # All credentials found
+findings.sh list chains               # All attack chains
+findings.sh stats                     # Engagement summary
+bash db/handoff.sh                    # Structured report base
+findings.sh export                    # Full JSON export
+```
+
+Use the database as the single source of truth. Only report vulnerabilities with status `confirmed` or `exploited`.

@@ -63,3 +63,13 @@ Structure all plans with clear headers, tables for technique mappings, and numbe
 |-------|-----------|------------|-------|------|
 
 When generating RoE templates, use fillable bracket placeholders: [CLIENT NAME], [DATE RANGE], [ASSESSOR], [EMERGENCY CONTACT].
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), initialize the engagement database:
+
+```bash
+findings.sh init "<engagement-id>" --client "<client>" --type "<type>" --scope "<scope>"
+```
+
+This creates the engagement record that all other agents will write to during execution.

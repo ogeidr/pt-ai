@@ -10,6 +10,7 @@ AGENTS_SRC="${SCRIPT_DIR}/agents"
 GLOBAL_DIR="${HOME}/.claude/agents"
 PROJECT_DIR=".claude/agents"
 LITE_MODE=false
+NO_DB=false
 
 # Advisory-only agents safe to run on Haiku (no Bash tool, no execution risk)
 HAIKU_SAFE_AGENTS=(
@@ -86,6 +87,52 @@ check_prereqs() {
     fi
 }
 
+install_db() {
+    if [ "$NO_DB" = true ]; then
+        echo -e "  ${YELLOW}Skipped${NC} findings database (--no-db)"
+        return
+    fi
+
+    local db_src="${SCRIPT_DIR}/db"
+    if [ ! -d "$db_src" ]; then
+        echo -e "  ${YELLOW}Skipped${NC} findings database (db/ not found)"
+        return
+    fi
+
+    local db_dest="${HOME}/.pentest-ai/bin"
+    mkdir -p "$db_dest"
+    mkdir -p "${HOME}/.pentest-ai/bin/lib"
+
+    cp "$db_src/findings.sh" "$db_dest/findings.sh"
+    cp "$db_src/handoff.sh" "$db_dest/handoff.sh"
+    cp "$db_src/migrate.sh" "$db_dest/migrate.sh"
+    cp "$db_src/schema.sql" "$db_dest/schema.sql"
+    cp "$db_src/lib/common.sh" "$db_dest/lib/common.sh"
+    chmod +x "$db_dest/findings.sh" "$db_dest/handoff.sh" "$db_dest/migrate.sh"
+
+    # Add to PATH if not already there
+    local shell_rc=""
+    if [ -f "$HOME/.zshrc" ]; then
+        shell_rc="$HOME/.zshrc"
+    elif [ -f "$HOME/.bashrc" ]; then
+        shell_rc="$HOME/.bashrc"
+    fi
+
+    if [ -n "$shell_rc" ]; then
+        if ! grep -q "pentest-ai/bin" "$shell_rc" 2>/dev/null; then
+            echo "" >> "$shell_rc"
+            echo "# pentest-ai findings database" >> "$shell_rc"
+            echo "export PATH=\"\$HOME/.pentest-ai/bin:\$PATH\"" >> "$shell_rc"
+            echo -e "  ${GREEN}installed${NC} findings database + PATH added to $(basename "$shell_rc")"
+        else
+            echo -e "  ${GREEN}installed${NC} findings database (PATH already configured)"
+        fi
+    else
+        echo -e "  ${GREEN}installed${NC} findings database"
+        echo -e "  ${YELLOW}Note:${NC} Add to your PATH: export PATH=\"\$HOME/.pentest-ai/bin:\$PATH\""
+    fi
+}
+
 install_global() {
     echo -e "${BOLD}Installing agents globally...${NC}"
     [ "$LITE_MODE" = true ] && echo -e "${CYAN}Lite mode:${NC} advisory agents will use Haiku for lower token cost"
@@ -142,6 +189,8 @@ install_global() {
     echo ""
     echo -e "  Location: ${CYAN}${GLOBAL_DIR}${NC}"
     echo "  Agents are available in all Claude Code sessions."
+
+    install_db
 }
 
 install_project() {
@@ -168,6 +217,8 @@ install_project() {
     echo -e "${GREEN}Done.${NC} ${installed} agents installed to ${CYAN}${PROJECT_DIR}${NC}"
     [ "$LITE_MODE" = true ] && echo -e "  ${CYAN}${haiku_count} agents set to Haiku (lite mode)${NC}"
     echo "  Agents are available only in this directory."
+
+    install_db
 }
 
 uninstall() {
@@ -246,6 +297,7 @@ usage() {
     echo "  --update      Update existing global install (same as --global)"
     echo "  --status      Show installation status"
     echo "  --lite        Use Haiku for advisory agents (lower token cost)"
+    echo "  --no-db       Skip findings database installation"
     echo "  --help        Show this help message"
     echo ""
     echo "Examples:"
@@ -288,17 +340,19 @@ interactive() {
 banner
 check_prereqs
 
-# Parse --lite flag from any position
+# Parse flags from any position
 for arg in "$@"; do
     if [ "$arg" = "--lite" ]; then
         LITE_MODE=true
+    elif [ "$arg" = "--no-db" ]; then
+        NO_DB=true
     fi
 done
 
-# Parse primary command (first non-lite argument)
+# Parse primary command (first non-flag argument)
 PRIMARY=""
 for arg in "$@"; do
-    if [ "$arg" != "--lite" ]; then
+    if [ "$arg" != "--lite" ] && [ "$arg" != "--no-db" ]; then
         PRIMARY="$arg"
         break
     fi

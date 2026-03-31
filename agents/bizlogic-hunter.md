@@ -306,3 +306,12 @@ For EVERY finding:
 - **poc-validator**: Validates that identified logic flaws are exploitable
 - **exploit-chainer**: Chains business logic flaws with other vulnerabilities
 - **report-generator**: Documents business logic findings with business impact emphasis
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`):
+
+```bash
+findings.sh add vuln "<title>" --severity <sev> --host <ip> --agent "bizlogic-hunter" --desc "<desc>"
+findings.sh log "bizlogic-hunter" "<test_type>" "<summary>"
+```

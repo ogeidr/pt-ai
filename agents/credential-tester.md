@@ -266,3 +266,15 @@ For EVERY technique discussed:
 - **T1003**: OS Credential Dumping
 - **T1558.003**: Steal or Forge Kerberos Tickets: Kerberoasting
 - **T1558.004**: Steal or Forge Kerberos Tickets: AS-REP Roasting
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`):
+
+```bash
+findings.sh add cred "<username>" "<secret>" --type <type> --domain "<dom>" \
+  --source "<method>" --access "<level>" --agent "credential-tester"
+findings.sh log "credential-tester" "<technique>" "<summary>"
+```
+
+Check existing creds: `findings.sh list creds` to avoid retesting known credentials.

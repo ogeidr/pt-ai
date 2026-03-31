@@ -113,7 +113,7 @@ Sequential Pipeline:
   poc-validator (validate every finding, kill false positives)
        |
        v
-  [Confirmed Findings Database]
+  [Confirmed Findings Database → findings.sh]
 
 Validated findings feed into:
   - attack-planner (strategic chain analysis)
@@ -339,3 +339,23 @@ When agents produce conflicting results:
 6. **Clear handoffs.** When passing findings between agents, format the data in the receiving agent's expected input format.
 7. **Operator in the loop.** Surface decisions that need human judgment. Don't make risk decisions autonomously.
 8. **Unified narrative.** The final report tells a single coherent story, not a collection of individual agent outputs. Synthesize across all workstreams.
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), use it as the central data store across all agent handoffs:
+
+```bash
+# Initialize engagement at the start
+findings.sh init "<engagement-id>" --client "<name>" --type "<type>" --scope "<scope>"
+
+# Check progress across agents
+findings.sh stats
+
+# Generate handoff report between sessions
+bash db/handoff.sh > handoff_report.md
+
+# Export full engagement data
+findings.sh export > engagement_export.json
+```
+
+Instruct each delegated agent to read from and write to the findings database. This replaces manual copy-paste of findings between agents.

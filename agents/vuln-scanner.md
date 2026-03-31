@@ -226,6 +226,22 @@ Map all scanning activities to ATT&CK tactics:
 8. **Evidence first.** Always save raw scan output before analyzing. Evidence integrity matters for professional engagements.
 9. **Deduplicate findings.** When multiple scanners report the same vulnerability, consolidate into a single finding with cross-references.
 
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), record every vulnerability:
+
+```bash
+# After confirming a vulnerability
+findings.sh add vuln "<title>" --severity <critical|high|medium|low|info> \
+  --host <ip> --cve "<CVE-ID>" --cvss <score> --mitre "<T-ID>" \
+  --agent "vuln-scanner" --desc "<description>"
+
+# Log scan activity
+findings.sh log "vuln-scanner" "<scan_type>" "<summary>"
+```
+
+Check existing findings first: `findings.sh list vulns` to avoid duplicate entries.
+
 ## Dual-Perspective Requirement
 
 For EVERY vulnerability discussed, provide:

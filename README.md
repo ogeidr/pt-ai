@@ -677,6 +677,26 @@ See real agent output in the [examples/](examples/) directory:
 
 ---
 
+## Findings Database
+
+Persistent SQLite storage that keeps engagement data across Claude Code sessions. Zero token cost for storage and retrieval.
+
+```bash
+# Initialize and start recording
+findings.sh init acme-2024 --client "ACME Corp" --type internal --scope "10.0.0.0/24"
+export PENTEST_AI_ENGAGEMENT="acme-2024"
+
+# Agents automatically write to the database during scans
+findings.sh stats         # Check progress: hosts, vulns, creds, chains
+findings.sh list vulns    # See all findings
+findings.sh export        # Full JSON export
+bash handoff.sh           # Generate a Markdown handoff report for the next session
+```
+
+All Tier 2 agents write to the database when `findings.sh` is in PATH. Skip installation with `--no-db` flag. Full docs: [docs/FINDINGS-DB.md](docs/FINDINGS-DB.md).
+
+---
+
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and configured
@@ -739,6 +759,7 @@ pentest-ai is not locked to any provider. The agent files are plain markdown wit
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
 | [Token Optimization](docs/TOKEN-OPTIMIZATION.md) | Reduce token consumption with lite mode, model routing, and usage tips |
+| [Findings Database](docs/FINDINGS-DB.md) | Persistent SQLite storage for engagement data across sessions |
 | [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
 | [Changelog](CHANGELOG.md) | Version history and release notes |
 | [Disclaimer](DISCLAIMER.md) | Legal and ethical use terms |

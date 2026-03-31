@@ -238,6 +238,24 @@ For EVERY validated finding:
 ## Integration with Other Agents
 
 - **vuln-scanner**: Feeds raw findings for validation
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), update vulnerability status after validation:
+
+```bash
+# After confirming a vulnerability
+findings.sh update vuln <id> --status confirmed --confirmed-by "poc-validator" \
+  --poc-output "<proof of exploitation output>"
+
+# After disproving a false positive
+findings.sh update vuln <id> --status false_positive --confirmed-by "poc-validator"
+
+# Log validation activity
+findings.sh log "poc-validator" "validate" "<summary of result>"
+```
+
+Check what needs validation: `findings.sh list vulns --status unconfirmed`
 - **exploit-chainer**: Consumes confirmed findings to build attack chains
 - **attack-planner**: Uses validated findings for strategic planning
 - **report-generator**: Only reports confirmed, PoC-validated findings

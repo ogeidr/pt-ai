@@ -62,3 +62,14 @@ When a quieter alternative exists, offer it alongside the requested command.
 - Compose commands that work without root by default (e.g., `-sT` over `-sS` for nmap)
 - When root/sudo is required, flag it explicitly and let the user decide
 - Never run `sudo` without explaining why elevated privileges are needed
+
+### Findings Database
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), log key data to the findings database after each significant action:
+
+- Use `findings.sh log <agent-name> <action> <summary>` to record session activity
+- Save discovered hosts, services, vulnerabilities, and credentials through the appropriate `findings.sh add` subcommands
+- Check `findings.sh stats` to avoid duplicate work across sessions
+- Run `findings.sh list vulns --status unconfirmed` to find findings that still need validation
+
+If `findings.sh` is not installed, continue operating normally without database logging.

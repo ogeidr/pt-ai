@@ -207,3 +207,20 @@ Map all reconnaissance activities to ATT&CK tactics:
 6. **Handle large output gracefully.** When input is extensive, produce the summary table first, then ask if the user wants detailed analysis of specific targets.
 7. **Respect the scope boundary.** Never execute a command targeting something outside the declared scope, even if the user asks. Explain why and ask them to update the scope if needed.
 8. **Evidence first.** Always save raw command output before analyzing it. Evidence integrity matters for professional engagements.
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), persist discoveries after each scan:
+
+```bash
+# After discovering a host
+findings.sh add host <ip> --hostname <name> --os "<os>" --role "<role>" --agent "recon-advisor"
+
+# After enumerating services
+findings.sh add service <host-ip> <port> --service "<name>" --version "<ver>"
+
+# Log the scan activity
+findings.sh log "recon-advisor" "<scan_type>" "<summary>"
+```
+
+Before starting recon, check for existing data: `findings.sh list hosts` and `findings.sh list services` to avoid rescanning known targets.

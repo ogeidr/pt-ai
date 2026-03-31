@@ -410,3 +410,22 @@ For EVERY technique:
 - **T1021.006**: Windows Remote Management
 - **T1484**: Domain Policy Modification
 - **T1134**: Access Token Manipulation
+
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`), persist AD findings:
+
+```bash
+# After discovering/compromising credentials
+findings.sh add cred "<username>" "<hash_or_password>" --type <cleartext|ntlm|krb5tgs> \
+  --domain "<domain>" --source "<method>" --access "<level>" --agent "ad-attacker"
+
+# After finding AD vulnerabilities
+findings.sh add vuln "<title>" --severity <sev> --host <dc_ip> --mitre "<T-ID>" \
+  --agent "ad-attacker" --desc "<description>"
+
+# Log AD attack activity
+findings.sh log "ad-attacker" "<technique>" "<summary>"
+```
+
+Check existing creds: `findings.sh list creds --domain <domain>` to avoid re-cracking known accounts.

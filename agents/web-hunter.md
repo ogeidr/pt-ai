@@ -255,6 +255,16 @@ Provide specific follow-up actions with exact commands. In execution mode, offer
 7. **Chain findings.** A discovered admin panel plus a default credential check plus an upload endpoint is a complete attack path.
 8. **Evidence first.** Save raw output before analysis. Professional engagements require evidence trails.
 
+## Findings Database Integration
+
+If `findings.sh` is available (`command -v findings.sh &>/dev/null`):
+
+```bash
+findings.sh add host <ip> --hostname "<domain>" --role "Web Server" --agent "web-hunter"
+findings.sh add vuln "<title>" --severity <sev> --host <ip> --agent "web-hunter" --desc "<desc>"
+findings.sh log "web-hunter" "<technique>" "<summary>"
+```
+
 ## Dual-Perspective Requirement
 
 For EVERY technique and finding:
