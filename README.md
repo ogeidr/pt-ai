@@ -534,7 +534,15 @@ git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./instal
 cp agents/*.md ~/.claude/agents/
 ```
 
-The install script supports `--global`, `--project`, `--uninstall`, `--update`, and `--status` options. Run `./install.sh --help` for details.
+The install script supports `--global`, `--project`, `--uninstall`, `--update`, `--status`, and `--lite` options. Run `./install.sh --help` for details.
+
+**Token-conscious?** Use lite mode to run advisory agents on Haiku (lower cost, same methodology):
+
+```bash
+./install.sh --global --lite
+```
+
+See [TOKEN-OPTIMIZATION.md](docs/TOKEN-OPTIMIZATION.md) for the full guide on reducing token consumption.
 
 Then open Claude Code and try:
 
@@ -704,6 +712,10 @@ See [How pentest-ai Is Different](#how-pentest-ai-is-different) above. The short
 
 Yes. The agents explain concepts at whatever level you need. Ask "what is Kerberoasting?" and you'll get a clear explanation. Ask "walk me through AS-REP Roasting against this specific AD configuration" and you'll get exact commands with OPSEC notes. If you're starting a role in security assessment or compliance, see the [New to Security use case](#new-to-security--sca-representatives) above.
 
+### The agents use too many tokens. How do I reduce cost?
+
+Install with `--lite` mode: `./install.sh --global --lite`. This switches advisory-only agents to Haiku (roughly 90% of Sonnet's capability at a fraction of the cost) while keeping execution agents on Sonnet where accuracy matters. You can also switch individual agents by changing `model: sonnet` to `model: haiku` in their frontmatter. Keep conversations focused and start new sessions between engagement phases. See [TOKEN-OPTIMIZATION.md](docs/TOKEN-OPTIMIZATION.md) for the full breakdown.
+
 ### Can I use a local model instead of Claude?
 
 Yes. The agents are plain markdown system prompts. The only Claude-specific part is the YAML frontmatter header. Run `./opencode-setup.sh --full` to convert all 23 agents into [OpenCode/Crush](https://github.com/charmbracelet/crush) custom commands that work with Ollama, LM Studio, vLLM, or any local model. No cloud API needed, no keyword filtering, no data leaves your machine.
@@ -726,6 +738,7 @@ pentest-ai is not locked to any provider. The agent files are plain markdown wit
 | [Local Setup](docs/LOCAL-SETUP.md) | Run fully offline with Ollama, OpenCode/Crush, and local GPU |
 | [Customization](docs/CUSTOMIZATION.md) | Modify agents, change models, add tools, create new agents |
 | [Contributing](docs/CONTRIBUTING.md) | How to submit improvements and agent quality standards |
+| [Token Optimization](docs/TOKEN-OPTIMIZATION.md) | Reduce token consumption with lite mode, model routing, and usage tips |
 | [Data Privacy](docs/DATA-PRIVACY.md) | LLM data handling, sensitive engagements, local model options |
 | [Changelog](CHANGELOG.md) | Version history and release notes |
 | [Disclaimer](DISCLAIMER.md) | Legal and ethical use terms |

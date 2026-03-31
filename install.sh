@@ -9,6 +9,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AGENTS_SRC="${SCRIPT_DIR}/agents"
 GLOBAL_DIR="${HOME}/.claude/agents"
 PROJECT_DIR=".claude/agents"
+LITE_MODE=false
+
+# Advisory-only agents safe to run on Haiku (no Bash tool, no execution risk)
+HAIKU_SAFE_AGENTS=(
+    "engagement-planner.md"
+    "report-generator.md"
+    "detection-engineer.md"
+    "threat-modeler.md"
+    "ctf-solver.md"
+    "stig-analyst.md"
+    "exploit-guide.md"
+    "attack-planner.md"
+    "forensics-analyst.md"
+    "malware-analyst.md"
+)
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -34,6 +49,29 @@ count_agents() {
     find "$dir" -maxdepth 1 -name "*.md" ! -name "_*" -type f 2>/dev/null | wc -l
 }
 
+is_haiku_safe() {
+    local name="$1"
+    for safe in "${HAIKU_SAFE_AGENTS[@]}"; do
+        if [ "$name" = "$safe" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+copy_agent() {
+    local src="$1"
+    local dest="$2"
+    local name
+    name=$(basename "$src")
+
+    if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
+        sed 's/^model: sonnet$/model: haiku/' "$src" > "$dest"
+    else
+        cp "$src" "$dest"
+    fi
+}
+
 check_prereqs() {
     if ! command -v claude &>/dev/null; then
         echo -e "${YELLOW}Warning: Claude Code CLI not found in PATH.${NC}"
@@ -50,11 +88,13 @@ check_prereqs() {
 
 install_global() {
     echo -e "${BOLD}Installing agents globally...${NC}"
+    [ "$LITE_MODE" = true ] && echo -e "${CYAN}Lite mode:${NC} advisory agents will use Haiku for lower token cost"
     mkdir -p "$GLOBAL_DIR"
 
     local installed=0
     local updated=0
     local skipped=0
+    local haiku_count=0
 
     for agent in "${AGENTS_SRC}"/*.md; do
         local name
@@ -62,17 +102,32 @@ install_global() {
         local dest="${GLOBAL_DIR}/${name}"
 
         if [ -f "$dest" ]; then
-            if ! diff -q "$agent" "$dest" &>/dev/null; then
-                cp "$agent" "$dest"
+            # Build what the new file would look like, then compare
+            local tmp
+            tmp=$(mktemp)
+            copy_agent "$agent" "$tmp"
+            if ! diff -q "$tmp" "$dest" &>/dev/null; then
+                mv "$tmp" "$dest"
                 ((updated++))
-                echo -e "  ${YELLOW}updated${NC}  ${name}"
+                if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
+                    echo -e "  ${YELLOW}updated${NC}  ${name} ${CYAN}(haiku)${NC}"
+                    ((haiku_count++))
+                else
+                    echo -e "  ${YELLOW}updated${NC}  ${name}"
+                fi
             else
+                rm "$tmp"
                 ((skipped++))
             fi
         else
-            cp "$agent" "$dest"
+            copy_agent "$agent" "$dest"
             ((installed++))
-            echo -e "  ${GREEN}installed${NC} ${name}"
+            if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
+                echo -e "  ${GREEN}installed${NC} ${name} ${CYAN}(haiku)${NC}"
+                ((haiku_count++))
+            else
+                echo -e "  ${GREEN}installed${NC} ${name}"
+            fi
         fi
     done
 
@@ -83,6 +138,7 @@ install_global() {
     [ $installed -gt 0 ] && echo -e "  ${GREEN}${installed} new${NC}"
     [ $updated -gt 0 ] && echo -e "  ${YELLOW}${updated} updated${NC}"
     [ $skipped -gt 0 ] && echo -e "  ${skipped} unchanged"
+    [ "$LITE_MODE" = true ] && echo -e "  ${CYAN}${haiku_count} agents set to Haiku (lite mode)${NC}"
     echo ""
     echo -e "  Location: ${CYAN}${GLOBAL_DIR}${NC}"
     echo "  Agents are available in all Claude Code sessions."
@@ -90,19 +146,27 @@ install_global() {
 
 install_project() {
     echo -e "${BOLD}Installing agents for this project...${NC}"
+    [ "$LITE_MODE" = true ] && echo -e "${CYAN}Lite mode:${NC} advisory agents will use Haiku for lower token cost"
     mkdir -p "$PROJECT_DIR"
 
     local installed=0
+    local haiku_count=0
     for agent in "${AGENTS_SRC}"/*.md; do
         local name
         name=$(basename "$agent")
-        cp "$agent" "${PROJECT_DIR}/${name}"
+        copy_agent "$agent" "${PROJECT_DIR}/${name}"
         ((installed++))
-        echo -e "  ${GREEN}installed${NC} ${name}"
+        if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
+            echo -e "  ${GREEN}installed${NC} ${name} ${CYAN}(haiku)${NC}"
+            ((haiku_count++))
+        else
+            echo -e "  ${GREEN}installed${NC} ${name}"
+        fi
     done
 
     echo ""
     echo -e "${GREEN}Done.${NC} ${installed} agents installed to ${CYAN}${PROJECT_DIR}${NC}"
+    [ "$LITE_MODE" = true ] && echo -e "  ${CYAN}${haiku_count} agents set to Haiku (lite mode)${NC}"
     echo "  Agents are available only in this directory."
 }
 
@@ -173,7 +237,7 @@ show_status() {
 }
 
 usage() {
-    echo -e "${BOLD}Usage:${NC} ./install.sh [option]"
+    echo -e "${BOLD}Usage:${NC} ./install.sh [option] [--lite]"
     echo ""
     echo "Options:"
     echo "  --global      Install agents globally (~/.claude/agents/)"
@@ -181,9 +245,12 @@ usage() {
     echo "  --uninstall   Remove all pentest-ai agents"
     echo "  --update      Update existing global install (same as --global)"
     echo "  --status      Show installation status"
+    echo "  --lite        Use Haiku for advisory agents (lower token cost)"
     echo "  --help        Show this help message"
     echo ""
-    echo "No option: interactive mode (prompts you to choose)"
+    echo "Examples:"
+    echo "  ./install.sh --global              # Standard install (all Sonnet)"
+    echo "  ./install.sh --global --lite       # Lite install (advisory on Haiku)"
     echo ""
     echo "One-liner install from GitHub:"
     echo "  git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global"
@@ -197,6 +264,15 @@ interactive() {
     echo "  3) Uninstall  - remove pentest-ai agents"
     echo "  4) Status     - show current installation"
     echo ""
+
+    if [ "$LITE_MODE" = false ]; then
+        read -rp "Use lite mode? (Haiku for advisory agents, lower token cost) [y/N]: " lite_choice
+        if [[ "$lite_choice" =~ ^[Yy] ]]; then
+            LITE_MODE=true
+        fi
+        echo ""
+    fi
+
     read -rp "Choice [1-4]: " choice
 
     case "$choice" in
@@ -212,12 +288,28 @@ interactive() {
 banner
 check_prereqs
 
-case "${1:-}" in
+# Parse --lite flag from any position
+for arg in "$@"; do
+    if [ "$arg" = "--lite" ]; then
+        LITE_MODE=true
+    fi
+done
+
+# Parse primary command (first non-lite argument)
+PRIMARY=""
+for arg in "$@"; do
+    if [ "$arg" != "--lite" ]; then
+        PRIMARY="$arg"
+        break
+    fi
+done
+
+case "${PRIMARY:-}" in
     --global|--update) install_global ;;
     --project)         install_project ;;
     --uninstall)       uninstall ;;
     --status)          show_status ;;
     --help|-h)         usage ;;
     "")                interactive ;;
-    *)                 echo -e "${RED}Unknown option: $1${NC}"; usage; exit 1 ;;
+    *)                 echo -e "${RED}Unknown option: ${PRIMARY}${NC}"; usage; exit 1 ;;
 esac
