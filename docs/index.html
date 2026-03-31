@@ -1831,9 +1831,35 @@
             var cy = H / 2 - p.y;
             var cdist = Math.sqrt(cx * cx + cy * cy);
             if (cdist > 0) {
-              p.vx += (cx / cdist) * warpIntensity * 0.8;
-              p.vy += (cy / cdist) * warpIntensity * 0.8;
+              p.vx += (cx / cdist) * warpIntensity * 0.4;
+              p.vy += (cy / cdist) * warpIntensity * 0.4;
             }
+          }
+
+          // Repel particles that get too close to each other
+          for (var j = i + 1; j < particles.length; j++) {
+            var other = particles[j];
+            var rx = p.x - other.x;
+            var ry = p.y - other.y;
+            var rdist = Math.sqrt(rx * rx + ry * ry);
+            if (rdist < 30 && rdist > 0) {
+              var repel = (30 - rdist) / 30 * 0.15;
+              p.vx += (rx / rdist) * repel;
+              p.vy += (ry / rdist) * repel;
+              other.vx -= (rx / rdist) * repel;
+              other.vy -= (ry / rdist) * repel;
+            }
+          }
+
+          // Gently push particles back toward their spread if too clustered near center
+          var toCenterX = p.x - W / 2;
+          var toCenterY = p.y - H / 2;
+          var centerDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY);
+          var maxSpread = Math.min(W, H) * 0.35;
+          if (centerDist < maxSpread && centerDist > 0) {
+            var spread = (1 - centerDist / maxSpread) * 0.02;
+            p.vx += (toCenterX / centerDist) * spread;
+            p.vy += (toCenterY / centerDist) * spread;
           }
 
           p.vx *= 0.98;
