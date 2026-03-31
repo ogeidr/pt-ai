@@ -430,19 +430,21 @@
       letter-spacing: 1.5px;
       margin-bottom: 16px;
       padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
     }
 
     .category-label.offensive {
       color: var(--red);
+      border-bottom: 1px solid rgba(233, 69, 96, 0.3);
     }
 
     .category-label.defense {
-      color: #0fa;
+      color: #3b82f6;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.25);
     }
 
     .category-label.reporting {
-      color: #a78bfa;
+      color: #f59e0b;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.25);
     }
 
     .agents-grid {
@@ -459,9 +461,31 @@
       transition: border-color 0.3s, box-shadow 0.3s;
     }
 
-    .agent-card:hover {
+    /* Offensive cards: red */
+    .agent-category:has(.category-label.offensive) .agent-card:hover {
       border-color: var(--red);
       box-shadow: 0 0 20px rgba(233, 69, 96, 0.08);
+    }
+    .agent-category:has(.category-label.offensive) .agent-card .agent-prompt::before {
+      color: var(--red);
+    }
+
+    /* Defense cards: blue */
+    .agent-category:has(.category-label.defense) .agent-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
+    }
+    .agent-category:has(.category-label.defense) .agent-card .agent-prompt::before {
+      color: #3b82f6;
+    }
+
+    /* Reporting cards: amber/gold */
+    .agent-category:has(.category-label.reporting) .agent-card:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.08);
+    }
+    .agent-category:has(.category-label.reporting) .agent-card .agent-prompt::before {
+      color: #f59e0b;
     }
 
     .agent-card h3 {
@@ -483,8 +507,8 @@
     }
 
     .agent-tag.off { background: rgba(233,69,96,0.12); color: var(--red); }
-    .agent-tag.def { background: rgba(0,255,170,0.08); color: #0fa; }
-    .agent-tag.rep { background: rgba(167,139,250,0.12); color: #a78bfa; }
+    .agent-tag.def { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .agent-tag.rep { background: rgba(245,158,11,0.12); color: #f59e0b; }
 
     .agent-card .agent-desc {
       font-size: 0.78rem;
