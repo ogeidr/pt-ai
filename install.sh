@@ -155,23 +155,23 @@ install_global() {
             copy_agent "$agent" "$tmp"
             if ! diff -q "$tmp" "$dest" &>/dev/null; then
                 mv "$tmp" "$dest"
-                ((updated++))
+                updated=$((updated + 1))
                 if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
                     echo -e "  ${YELLOW}updated${NC}  ${name} ${CYAN}(haiku)${NC}"
-                    ((haiku_count++))
+                    haiku_count=$((haiku_count + 1))
                 else
                     echo -e "  ${YELLOW}updated${NC}  ${name}"
                 fi
             else
                 rm "$tmp"
-                ((skipped++))
+                skipped=$((skipped + 1))
             fi
         else
             copy_agent "$agent" "$dest"
-            ((installed++))
+            installed=$((installed + 1))
             if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
                 echo -e "  ${GREEN}installed${NC} ${name} ${CYAN}(haiku)${NC}"
-                ((haiku_count++))
+                haiku_count=$((haiku_count + 1))
             else
                 echo -e "  ${GREEN}installed${NC} ${name}"
             fi
@@ -204,10 +204,10 @@ install_project() {
         local name
         name=$(basename "$agent")
         copy_agent "$agent" "${PROJECT_DIR}/${name}"
-        ((installed++))
+        installed=$((installed + 1))
         if [ "$LITE_MODE" = true ] && is_haiku_safe "$name"; then
             echo -e "  ${GREEN}installed${NC} ${name} ${CYAN}(haiku)${NC}"
-            ((haiku_count++))
+            haiku_count=$((haiku_count + 1))
         else
             echo -e "  ${GREEN}installed${NC} ${name}"
         fi
