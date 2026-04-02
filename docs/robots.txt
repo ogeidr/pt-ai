@@ -1,26 +1,10 @@
-# pentest-ai robots.txt - Optimized for SEO
-# https://pentestai.xyz/robots.txt
-
 User-agent: *
 Allow: /
 Disallow: /assets/
 Disallow: /.git/
-Disallow: /node_modules/
 
-# Sitemap
 Sitemap: https://pentestai.xyz/sitemap.xml
 
-# Crawl-delay for specific bots (optional, helps with server load)
-User-agent: Googlebot
-Crawl-delay: 0
-
-User-agent: Bingbot
-Crawl-delay: 0
-
-User-agent: Slurp
-Crawl-delay: 1
-
-# Block bad bots
 User-agent: AhrefsBot
 Disallow: /
 
@@ -32,16 +16,3 @@ Disallow: /
 
 User-agent: MJ12bot
 Disallow: /
-
-# Allow good SEO bots
-User-agent: Googlebot
-User-agent: Googlebot-Image
-User-agent: Googlebot-Mobile
-User-agent: Bingbot
-User-agent: Slurp
-User-agent: DuckDuckBot
-User-agent: Baiduspider
-User-agent: YandexBot
-User-agent: facebot
-User-agent: ia_archiver
-Allow: /
