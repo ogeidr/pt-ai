@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-
-  <url>
-    <loc>https://pentestai.xyz/</loc>
-    <lastmod>2026-04-02</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://raw.githubusercontent.com/0xSteph/pentest-ai/main/assets/social-post.jpeg</image:loc>
-      <image:title>pentest-ai - AI Pentest Tool</image:title>
-      <image:caption>28 autonomous agents for automated penetration testing</image:caption>
-    </image:image>
-  </url>
-
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<url>
+<loc>https://pentestai.xyz/</loc>
+<lastmod>2026-04-02</lastmod>
+<changefreq>daily</changefreq>
+<priority>1.0</priority>
+<image:image>
+<image:loc>https://raw.githubusercontent.com/0xSteph/pentest-ai/main/assets/social-post.jpeg</image:loc>
+<image:title>pentest-ai - AI Pentest Tool</image:title>
+<image:caption>28 autonomous agents for automated penetration testing</image:caption>
+</image:image>
+</url>
 </urlset>
