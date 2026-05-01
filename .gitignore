@@ -10,4 +10,5 @@ node_modules/
 .vscode/
 *.log
 .claude-flow/
+.claude/
 
