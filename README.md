@@ -14,12 +14,6 @@ A minimalistic, ephemeral, agentic framework for penetration testing.
 - **Authorization-bound.** Every agent operates within explicit scope and authorization boundaries.
 - **Auditable.** Every action is intended to be observable and reproducible.
 
-## Relationship to the Original Project
-
-This repository was originally forked from [`0xSteph/pentest-ai`](https://github.com/0xSteph/pentest-ai), created by [0xSteph](https://github.com/0xSteph). The original project provides a comprehensive suite of 28 Claude Code subagents covering the full penetration testing lifecycle, and full credit for that body of work belongs to the original author.
-
-`pt-ai` diverges in philosophy. Rather than a persistent, pre-defined agent suite, it pursues a minimalistic, per-engagement model in which agents are assembled, connected, and retired according to the shape of each engagement.
-
 ## Status
 
 Early-stage research project. Interfaces, agent definitions, and execution model are subject to change.
@@ -31,3 +25,7 @@ This project is intended exclusively for authorized security testing. Users are 
 ## License
 
 MIT — see `LICENSE`.
+
+## Credits
+
+Forked from [`0xSteph/pentest-ai`](https://github.com/0xSteph/pentest-ai) by [0xSteph](https://github.com/0xSteph); the agents under `agents/` originate from that project. Upstream MIT license preserved in `ORIGINAL.LICENSE`.
