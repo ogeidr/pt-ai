@@ -24,7 +24,7 @@ Each agent's frontmatter includes a `model` field that specifies which Claude mo
 
 ```yaml
 ---
-model: claude-sonnet-4-20250514
+model: sonnet
 ---
 ```
 
@@ -47,10 +47,12 @@ model: claude-sonnet-4-20250514
 Change the model field to match what your subscription supports:
 
 ```yaml
-model: claude-sonnet-4-20250514
+model: sonnet
 # or
-model: claude-opus-4-20250514
+model: opus
 ```
+
+Claude Code resolves these shorthand values to the latest available version of that model tier, so you don't need to update agent files when new model versions are released.
 
 ## Adjusting Tool Permissions
 
@@ -151,7 +153,7 @@ description: >-
   A clear, specific description of what this agent does and when it should be
   invoked. Claude Code uses this field to route tasks, so make it descriptive
   and include key terms users are likely to use in their prompts.
-model: claude-sonnet-4-20250514
+model: sonnet
 tools:
   - Read
   - Write
@@ -196,86 +198,9 @@ Below the frontmatter, write the system prompt that defines the agent's behavior
 5. **Add examples.** Show the agent what good output looks like for common requests.
 6. **Require dual perspective.** For offensive agents, always require defensive recommendations alongside attack methodology.
 
-### Example: Wireless Testing Agent
+The best reference for real agent structure is the existing agents in `agents/`. Browse any file there to see how description, model, tools, and system prompt work together in practice.
 
-```yaml
----
-name: wireless-advisor
-description: >-
-  Provides methodology guidance for authorized wireless security assessments
-  including WiFi, Bluetooth, and RF testing. Analyzes wireless survey data,
-  recommends attack vectors for WPA2/WPA3 networks, and helps document
-  wireless security findings.
-model: claude-sonnet-4-20250514
-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
----
-
-You are a wireless security testing specialist assisting certified penetration
-testers during authorized wireless assessments.
-
-Your expertise covers:
-- WPA2/WPA3 assessment methodology
-- Bluetooth and BLE security testing
-- Rogue access point detection and testing
-- Wireless client isolation testing
-- RF signal analysis and site survey interpretation
-
-For every technique discussed, provide:
-1. The attack methodology with required tools
-2. MITRE ATT&CK mapping (where applicable)
-3. Detection methods for blue teams
-4. Remediation recommendations
-
-Always remind the user to verify their authorization covers wireless testing,
-as it often requires separate scope approval.
-```
-
-### Example: Cloud Security Agent
-
-```yaml
----
-name: cloud-security-advisor
-description: >-
-  Provides methodology guidance for authorized cloud security assessments
-  across AWS, Azure, and GCP. Analyzes cloud configuration data, identifies
-  privilege escalation paths, and helps document cloud-specific security
-  findings with remediation guidance.
-model: claude-sonnet-4-20250514
-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - WebFetch
----
-
-You are a cloud security assessment specialist assisting certified penetration
-testers during authorized cloud engagements.
-
-Your expertise covers:
-- AWS, Azure, and GCP security assessment methodology
-- IAM policy analysis and privilege escalation path identification
-- Cloud storage misconfiguration detection
-- Serverless and container security review
-- Cloud-native detection and logging (CloudTrail, Azure Monitor, GCP Audit Logs)
-
-For every finding, provide:
-1. The misconfiguration or vulnerability details
-2. Exploitation methodology and impact
-3. Cloud-native detection methods
-4. Remediation steps using infrastructure-as-code where possible
-
-Reference the CIS Benchmarks and cloud provider security best practices
-for all recommendations.
-```
+The example below shows a new domain — source code security review — that is not currently in the agent roster.
 
 ### Example: Source Code Review Agent
 
@@ -287,7 +212,7 @@ description: >-
   Identifies vulnerabilities such as injection flaws, authentication bypasses,
   insecure deserialization, and business logic errors. Maps findings to
   CWE identifiers and OWASP Top 10 categories.
-model: claude-sonnet-4-20250514
+model: sonnet
 tools:
   - Read
   - Edit

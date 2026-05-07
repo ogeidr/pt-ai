@@ -40,7 +40,7 @@ cd pentest-ai
 ./opencode-setup.sh --full
 ```
 
-The adapter script converts all 23 agents into OpenCode custom commands. You invoke them with `/recon-advisor`, `/vuln-scanner`, `/ad-attacker`, etc.
+The adapter script converts all 28 agents into OpenCode custom commands. You invoke them with `/recon-advisor`, `/vuln-scanner`, `/ad-attacker`, etc.
 
 ### Model Recommendations for Security Work
 
@@ -128,7 +128,6 @@ client = openai.OpenAI(
 with open("agents/recon-advisor.md") as f:
     lines = f.readlines()
     # Skip YAML frontmatter
-    in_frontmatter = False
     system_prompt = []
     frontmatter_count = 0
     for line in lines:

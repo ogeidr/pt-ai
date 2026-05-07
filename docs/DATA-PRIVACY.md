@@ -70,15 +70,11 @@ The agents work on methodology and patterns. They don't need real IPs to give yo
 For the highest data sensitivity, run a local LLM that never sends data off-machine. Claude Code supports third-party API-compatible providers:
 
 ```bash
-# Example: Use a local model via Ollama with an OpenAI-compatible endpoint
-# (Requires a compatible local model setup. Agent quality will vary with model capability)
-
 # Install Ollama (https://ollama.ai)
-ollama pull llama3
-
-# Point Claude Code at your local endpoint
-# See Claude Code docs for third-party provider configuration
+ollama pull llama3.1:70b
 ```
+
+See [LOCAL-SETUP.md](LOCAL-SETUP.md) for full setup instructions, model recommendations, and hardware requirements.
 
 **Note:** Local models will have significantly reduced capability compared to Claude Sonnet/Opus. Agent output quality depends heavily on model capability. For complex tasks (threat modeling, detection engineering, report generation), cloud models will produce substantially better results.
 

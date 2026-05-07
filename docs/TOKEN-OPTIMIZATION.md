@@ -54,6 +54,8 @@ Keep on Sonnet (Tier 2 execution agents where tool-use accuracy is critical):
 - `exploit-chainer`
 - `poc-validator`
 - `bizlogic-hunter`
+- `cicd-redteam`
+- `social-engineer`
 - `swarm-orchestrator`
 
 ### 3. Be specific in your prompts
@@ -80,6 +82,10 @@ Token cost grows with conversation length because the full history stays in cont
 
 The swarm orchestrator coordinates multiple agents, which multiplies token usage. Use it for full engagements, not single-agent tasks. If you just need recon analysis, talk to `recon-advisor` directly.
 
+### 6. Trim agent system prompts if you need aggressive reduction
+
+The core methodology sections (behavioral rules, output format, scope enforcement) must stay intact. The reference tables — tool command syntax, MITRE ATT&CK mappings, example outputs — can be removed if you already know the tools. See [CUSTOMIZATION.md](CUSTOMIZATION.md) for how to edit agent prompts.
+
 ## Lite Mode vs Standard Mode
 
 | Aspect | Standard | Lite |
@@ -102,8 +108,3 @@ Rough estimates for common workflows:
 | Swarm orchestration (full engagement) | 100,000-300,000 |
 | Report generation from findings | 20,000-40,000 |
 
-## Advanced: Custom Agent Trimming
-
-If you need aggressive token reduction, you can trim the reference tables and examples from agent system prompts. The core methodology sections (behavioral rules, output format, scope enforcement) should stay intact. The reference tables (tool command syntax, MITRE ATT&CK mappings, example outputs) can be removed if you already know the tools.
-
-See [CUSTOMIZATION.md](CUSTOMIZATION.md) for how to modify agent prompts.
