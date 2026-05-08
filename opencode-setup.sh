@@ -39,7 +39,7 @@ convert_agent() {
 
     # Extract everything after the closing --- of YAML frontmatter
     local content
-    content=$(awk 'BEGIN{found=0} /^---$/{found++; next} found>=2{print}' "$agent_file")
+    content=$(awk 'BEGIN{found=0} /^---$/ && found<2 {found++; next} found>=2{print}' "$agent_file")
 
     # Write as OpenCode custom command
     cat > "${dest_dir}/${name}.md" << CMDEOF
