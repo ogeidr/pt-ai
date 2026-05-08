@@ -82,7 +82,7 @@ All offensive actions on target systems remain under your control. In Tier 2, th
 
 ## Data Privacy & LLM Processing
 
-When you use pentest-ai through Claude Code, your prompts and any data you provide are processed by a third-party LLM provider (Anthropic by default). **pentest-ai agents do not add any additional data transmission.** The data flow is identical to using Claude Code without these agents installed.
+When you use pt-ai through Claude Code, your prompts and any data you provide are processed by a third-party LLM provider (Anthropic by default). **pt-ai agents do not add any additional data transmission.** The data flow is identical to using Claude Code without these agents installed.
 
 However, users must be aware:
 

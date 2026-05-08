@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to pentest-ai. This guide explains how to submit improvements and the standards we expect.
+Thank you for your interest in contributing to pt-ai. This guide explains how to submit improvements and the standards we expect.
 
 ## How to Contribute
 

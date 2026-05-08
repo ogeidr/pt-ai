@@ -1,8 +1,8 @@
 # Data Privacy & LLM Processing
 
-## How pentest-ai Handles Data
+## How pt-ai Handles Data
 
-pentest-ai agents are **plain Markdown files**. They contain no code, make no network calls, and collect no telemetry. The agents themselves are fully auditable. Open any `.md` file and read exactly what the agent knows and does.
+pt-ai agents are **plain Markdown files**. They contain no code, make no network calls, and collect no telemetry. The agents themselves are fully auditable. Open any `.md` file and read exactly what the agent knows and does.
 
 However, when you use these agents through Claude Code, your prompts and any data you paste are sent to an LLM provider (Anthropic by default) for processing. This is important to understand for professional engagements.
 
@@ -18,7 +18,7 @@ The provider processes it and returns a response
 Claude Code displays the response locally
 ```
 
-**pentest-ai does not add any additional data transmission.** The data flow is identical to using Claude Code without pentest-ai installed. The agents only change *how* Claude responds, not *where* your data goes.
+**pt-ai does not add any additional data transmission.** The data flow is identical to using Claude Code without pt-ai installed. The agents only change *how* Claude responds, not *where* your data goes.
 
 ## What This Means for Professional Engagements
 
@@ -31,7 +31,7 @@ If you paste scan output, IP addresses, credentials, or client-specific data int
 
 ## Your Responsibilities
 
-Before using pentest-ai on a client engagement:
+Before using pt-ai on a client engagement:
 
 1. **Check your ROE/SOW** for restrictions on third-party data processing or AI tool usage
 2. **Understand your provider's data policy.** Review Anthropic's [data retention policy](https://www.anthropic.com/privacy) or your API provider's terms

@@ -6,7 +6,7 @@ If you haven't used Claude Code before, here's what you need and how to set it u
 
 ### What is Claude Code?
 
-Claude Code is a command-line tool from Anthropic that lets you work with Claude directly in your terminal. You type natural language, and Claude reads files, writes code, runs commands, and answers questions in context. pentest-ai adds 17 security-focused agents on top of this.
+Claude Code is a command-line tool from Anthropic that lets you work with Claude directly in your terminal. You type natural language, and Claude reads files, writes code, runs commands, and answers questions in context. pt-ai adds 28 security-focused agents on top of this.
 
 ### Step 1: Get a Claude Account
 
@@ -44,7 +44,7 @@ claude
 
 Follow the prompts to connect your Claude account. Once authenticated, you'll see the Claude Code prompt in your terminal. Type `exit` to close it for now.
 
-### Step 4: Install pentest-ai
+### Step 4: Install pt-ai
 
 Follow the installation methods below to add the security agents.
 
@@ -58,7 +58,7 @@ claude
 > What agents do you have available?
 ```
 
-Claude should list the pentest-ai agents. Try a real task:
+Claude should list the pt-ai agents. Try a real task:
 
 ```
 > Plan a basic external penetration test for a small web application
@@ -81,7 +81,7 @@ For more details, see the [official Claude Code docs](https://docs.anthropic.com
 
 ## Prerequisites
 
-Before installing pentest-ai, ensure you have the following:
+Before installing pt-ai, ensure you have the following:
 
 - **Claude Code CLI** installed and working (`claude` command available in your terminal)
 - **Active Claude subscription** (Pro or Max tier recommended for best results)
@@ -94,7 +94,7 @@ The install script handles everything, detects existing installations, and shows
 
 ```bash
 # Clone and install in one command
-git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global
+git clone https://github.com/0xSteph/pt-ai.git && cd pt-ai && ./install.sh --global
 
 # Or run the interactive installer (prompts you to choose)
 ./install.sh
@@ -103,7 +103,7 @@ git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./instal
 ./install.sh --global      # Install to ~/.claude/agents/ (all projects)
 ./install.sh --project     # Install to .claude/agents/ (current project only)
 ./install.sh --update      # Update existing global install
-./install.sh --uninstall   # Remove all pentest-ai agents
+./install.sh --uninstall   # Remove all pt-ai agents
 ./install.sh --status      # Show current installation status
 ```
 
@@ -129,7 +129,7 @@ cd /path/to/your/project
 mkdir -p .claude/agents/
 
 # Copy agent files
-cp /path/to/pentest-ai/agents/*.md .claude/agents/
+cp /path/to/pt-ai/agents/*.md .claude/agents/
 ```
 
 ### Method 4: One-Liner from GitHub
@@ -137,7 +137,7 @@ cp /path/to/pentest-ai/agents/*.md .claude/agents/
 Clone the repository and install globally in a single command:
 
 ```bash
-git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global
+git clone https://github.com/0xSteph/pt-ai.git && cd pt-ai && ./install.sh --global
 ```
 
 
@@ -159,7 +159,7 @@ Ask Claude:
 What agents do you have available?
 ```
 
-Claude should list the six pentest-ai agents among any other agents you have installed.
+Claude should list the pt-ai agents among any other agents you have installed.
 
 ### Step 3: Test Each Agent
 
@@ -211,7 +211,7 @@ What sections should a professional penetration test report include?
 
 ### Model Not Available
 
-- **Subscription tier:** Some agents may specify a model (such as `claude-sonnet-4-20250514` or `opus`) in their frontmatter. Ensure your subscription tier supports the specified model.
+- **Subscription tier:** Some agents may specify a model (such as `sonnet` or `opus`) in their frontmatter. Ensure your subscription tier supports the specified model.
 - **Model field:** If a model is not available to you, edit the agent's `.md` file and change the `model` field in the frontmatter to a model your subscription supports.
 
 ### Agent Output Quality

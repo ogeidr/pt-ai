@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Convert pentest-ai agents to OpenCode/Crush custom commands
+# Convert pt-ai agents to OpenCode/Crush custom commands
 # Usage: ./opencode-setup.sh [--global | --project]
 
 set -euo pipefail
@@ -19,7 +19,7 @@ PROJECT_CMD_DIR=".opencode/commands"
 
 banner() {
     echo -e "${CYAN}"
-    echo "  pentest-ai -> OpenCode/Crush adapter"
+    echo "  pt-ai -> OpenCode/Crush adapter"
     echo -e "  ${BOLD}Provider-agnostic mode${NC}"
     echo ""
 }
@@ -86,7 +86,7 @@ install_project() {
 create_context_file() {
     local dest="$1"
     cat > "$dest" << 'CTXEOF'
-# pentest-ai Context
+# pt-ai Context
 
 You are operating as a penetration testing assistant with 23 specialized knowledge areas.
 When the user invokes a command (e.g., /recon-advisor, /vuln-scanner), follow the instructions

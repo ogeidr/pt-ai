@@ -1,8 +1,8 @@
-# Running pentest-ai Without Cloud Providers
+# Running pt-ai Without Cloud Providers
 
-pentest-ai agents are plain markdown files. The security methodology, MITRE ATT&CK mappings, and tool guidance inside them work with any LLM that supports system prompts. If Anthropic, OpenAI, or any cloud provider changes their terms, restricts security content, or shuts down, your agents still work.
+pt-ai agents are plain markdown files. The security methodology, MITRE ATT&CK mappings, and tool guidance inside them work with any LLM that supports system prompts. If Anthropic, OpenAI, or any cloud provider changes their terms, restricts security content, or shuts down, your agents still work.
 
-This guide covers running pentest-ai fully offline with local models.
+This guide covers running pt-ai fully offline with local models.
 
 ## Why Run Locally?
 
@@ -35,8 +35,8 @@ go install github.com/charmbracelet/crush@latest
 # 4. Set the local endpoint
 export LOCAL_ENDPOINT=http://localhost:11434/v1
 
-# 5. Run the pentest-ai adapter
-cd pentest-ai
+# 5. Run the pt-ai adapter
+cd pt-ai
 ./opencode-setup.sh --full
 ```
 
@@ -194,4 +194,4 @@ The agent files are designed to be portable:
 3. **Tool names map directly.** Claude Code's `Bash`, `Read`, `Write`, `Edit`, `Grep`, `Glob` map 1:1 to OpenCode's `bash`, `view`, `write`, `edit`, `grep`, `glob`.
 4. **No proprietary features used.** The agents don't use Claude-specific features like artifacts, projects, or memory. They're pure system prompts.
 
-If you're building on top of pentest-ai and want to stay portable, keep your additions in the same format: methodology in markdown, tool references by generic name, no provider-specific API calls.
+If you're building on top of pt-ai and want to stay portable, keep your additions in the same format: methodology in markdown, tool references by generic name, no provider-specific API calls.

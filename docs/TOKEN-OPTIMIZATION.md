@@ -1,10 +1,10 @@
 # Token Optimization Guide
 
-pentest-ai agents are designed to give deep, methodology-driven responses. That depth costs tokens. This guide covers practical ways to reduce consumption without gutting the quality that makes these agents useful.
+pt-ai agents are designed to give deep, methodology-driven responses. That depth costs tokens. This guide covers practical ways to reduce consumption without gutting the quality that makes these agents useful.
 
 ## How Token Consumption Works
 
-When you invoke a pentest-ai agent, tokens are consumed in three places:
+When you invoke a pt-ai agent, tokens are consumed in three places:
 
 1. **System prompt** (the agent's `.md` file) is loaded once per conversation and stays in context for every message
 2. **Your input** (prompts, pasted scan output, follow-up questions)

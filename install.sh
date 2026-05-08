@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pentest-ai installer
+# pt-ai installer
 # Usage: ./install.sh [--global | --project | --uninstall | --update]
 
 set -euo pipefail
@@ -82,7 +82,7 @@ check_prereqs() {
 
     if [ ! -d "$AGENTS_SRC" ]; then
         echo -e "${RED}Error: agents/ directory not found at ${AGENTS_SRC}${NC}"
-        echo "  Run this script from the pentest-ai repository root."
+        echo "  Run this script from the pt-ai repository root."
         exit 1
     fi
 }
@@ -99,9 +99,9 @@ install_db() {
         return
     fi
 
-    local db_dest="${HOME}/.pentest-ai/bin"
+    local db_dest="${HOME}/.pt-ai/bin"
     mkdir -p "$db_dest"
-    mkdir -p "${HOME}/.pentest-ai/bin/lib"
+    mkdir -p "${HOME}/.pt-ai/bin/lib"
 
     cp "$db_src/findings.sh" "$db_dest/findings.sh"
     cp "$db_src/handoff.sh" "$db_dest/handoff.sh"
@@ -119,17 +119,17 @@ install_db() {
     fi
 
     if [ -n "$shell_rc" ]; then
-        if ! grep -q "pentest-ai/bin" "$shell_rc" 2>/dev/null; then
+        if ! grep -q "pt-ai/bin" "$shell_rc" 2>/dev/null; then
             echo "" >> "$shell_rc"
-            echo "# pentest-ai findings database" >> "$shell_rc"
-            echo "export PATH=\"\$HOME/.pentest-ai/bin:\$PATH\"" >> "$shell_rc"
+            echo "# pt-ai findings database" >> "$shell_rc"
+            echo "export PATH=\"\$HOME/.pt-ai/bin:\$PATH\"" >> "$shell_rc"
             echo -e "  ${GREEN}installed${NC} findings database + PATH added to $(basename "$shell_rc")"
         else
             echo -e "  ${GREEN}installed${NC} findings database (PATH already configured)"
         fi
     else
         echo -e "  ${GREEN}installed${NC} findings database"
-        echo -e "  ${YELLOW}Note:${NC} Add to your PATH: export PATH=\"\$HOME/.pentest-ai/bin:\$PATH\""
+        echo -e "  ${YELLOW}Note:${NC} Add to your PATH: export PATH=\"\$HOME/.pt-ai/bin:\$PATH\""
     fi
 }
 
@@ -222,7 +222,7 @@ install_project() {
 }
 
 uninstall() {
-    echo -e "${BOLD}Uninstalling pentest-ai agents...${NC}"
+    echo -e "${BOLD}Uninstalling pt-ai agents...${NC}"
     echo ""
 
     local removed=0
@@ -254,7 +254,7 @@ uninstall() {
     fi
 
     if [ $removed -eq 0 ]; then
-        echo "  No pentest-ai agents found to remove."
+        echo "  No pt-ai agents found to remove."
     else
         echo ""
         echo -e "${GREEN}Done.${NC} Removed ${removed} agent files."
@@ -293,7 +293,7 @@ usage() {
     echo "Options:"
     echo "  --global      Install agents globally (~/.claude/agents/)"
     echo "  --project     Install agents for current project (.claude/agents/)"
-    echo "  --uninstall   Remove all pentest-ai agents"
+    echo "  --uninstall   Remove all pt-ai agents"
     echo "  --update      Update existing global install (same as --global)"
     echo "  --status      Show installation status"
     echo "  --lite        Use Haiku for advisory agents (lower token cost)"
@@ -305,7 +305,7 @@ usage() {
     echo "  ./install.sh --global --lite       # Lite install (advisory on Haiku)"
     echo ""
     echo "One-liner install from GitHub:"
-    echo "  git clone https://github.com/0xSteph/pentest-ai.git && cd pentest-ai && ./install.sh --global"
+    echo "  git clone https://github.com/0xSteph/pt-ai.git && cd pt-ai && ./install.sh --global"
 }
 
 interactive() {
@@ -313,7 +313,7 @@ interactive() {
     echo ""
     echo "  1) Global     - available in all Claude Code sessions"
     echo "  2) Project    - available only in the current directory"
-    echo "  3) Uninstall  - remove pentest-ai agents"
+    echo "  3) Uninstall  - remove pt-ai agents"
     echo "  4) Status     - show current installation"
     echo ""
 
