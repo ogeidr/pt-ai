@@ -150,7 +150,7 @@ This:
 - Creates `engagements/<engagement-id>/` on the host (the only persistent surface).
 - Bind-mounts the repo's `agents/` read-only into `~/.claude/agents/` so all
   agents in `agents/` are available to Claude Code.
-- Registers the kali MCP in `~/.claude.json` pointing at `$PT_AI_MCP_SERVER`.
+- Registers the MCP bridge in `~/.claude.json` pointing at `$PT_AI_MCP_SERVER`.
 - Probes the remote URL for readiness; warns if unreachable within ~5 s.
 - Tears the container down on exit (`--rm`); only `engagements/<id>/` survives.
 

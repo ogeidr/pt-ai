@@ -20,7 +20,7 @@ ARG MCP_BRIDGE_REPO=https://github.com/Wh0am123/MCP-Kali-Server.git
 ARG MCP_BRIDGE_REF=main
 
 LABEL org.opencontainers.image.title="pt-ai" \
-      org.opencontainers.image.description="Ephemeral Ubuntu container with Claude Code and the kali MCP bridge" \
+      org.opencontainers.image.description="Ephemeral Ubuntu container with Claude Code and the MCP bridge" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${VERSION}"
 
