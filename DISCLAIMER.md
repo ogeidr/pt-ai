@@ -67,7 +67,7 @@ Some agents (marked with `Bash` in their tool list) can compose and execute reco
 
 Tier 2 agents enforce scope boundaries: they require you to declare an authorized scope before executing any commands, and they refuse to target anything outside that scope. This is a prompt-level safety check. Claude Code's per-command permission prompt is the hard safety gate.
 
-### No agent, in any tier, will:
+### Agents are instructed not to:
 
 - Generate functional standalone exploit code or malware
 - Bypass Claude Code's permission system
@@ -75,6 +75,8 @@ Tier 2 agents enforce scope boundaries: they require you to declare an authorize
 - Target systems outside the scope you declared
 - Perform destructive actions (DoS, data deletion) unless explicitly authorized
 - Run commands requiring elevated privileges without flagging it first
+
+These are prompt-level instructions, not hard technical enforcement. Claude Code's per-command permission prompt is the hard safety gate.
 
 All offensive actions on target systems remain under your control. In Tier 2, the agent composes and executes commands, but you approve every one. In Tier 1, you run the tools yourself.
 
