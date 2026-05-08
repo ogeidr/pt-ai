@@ -1,5 +1,5 @@
 #!/bin/sh
-# ptai: host wrapper for the pt-ai ephemeral Kali container.
+# ptai: host wrapper for the pt-ai ephemeral Ubuntu container.
 #
 # Subcommands:
 #   build                          Build the image (always with --pull).
@@ -163,8 +163,8 @@ cmd_run() {
     # Auth: API key wins if both are present.
     # OAuth path mounts the whole ~/.claude-pt-ai dir writable so token
     # refreshes persist; ~/.claude-pt-ai-home.json is bind-mounted at the
-    # container's $HOME/.claude.json (where Claude Code 2.x stores auth +
-    # MCP config). The entrypoint registers the kali MCP in that file at
+    # container's $HOME/.claude.json (where Claude Code stores auth +
+    # MCP config). The entrypoint registers the MCP bridge (pointing at the remote Kali server) in that file at
     # startup, so no separate mcp.json mount is needed.
     auth_args=""
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
