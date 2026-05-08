@@ -1,7 +1,7 @@
 #!/bin/sh
 # pt-ai entrypoint.
 #
-# Runs inside the container. Verifies auth, registers the kali MCP bridge in
+# Runs inside the container. Verifies auth, registers the MCP bridge in
 # Claude Code's config pointing at the remote API URL, probes that URL for
 # readiness, then execs the command (claude by default).
 #
@@ -39,8 +39,8 @@ if [ ! -x "$MCP_PY" ] || [ ! -f "$MCP_CLIENT" ]; then
     exit 1
 fi
 
-# --- register the kali MCP server in ~/.claude.json (idempotent) ----------
-# Claude Code 2.x reads MCP server config from ~/.claude.json under the
+# --- register the MCP server in ~/.claude.json (idempotent) ----------
+# Claude Code reads MCP server config from ~/.claude.json under the
 # "mcpServers" key. We merge our entry in via jq so it persists alongside
 # whatever else Claude Code has written there.
 CLAUDE_JSON="$HOME/.claude.json"
