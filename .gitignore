@@ -1,14 +1,27 @@
+# macOS folder metadata
 .DS_Store
+# Windows folder metadata
 Thumbs.db
+# Vim swap files
 *.swp
 *.swo
 *~
+# API keys and secrets
 .env
 .env.local
+# Node dependencies
 node_modules/
+# JetBrains IDE settings
 .idea/
+# VS Code settings
 .vscode/
+# Runtime logs
 *.log
+# Claude Flow state
 .claude-flow/
+# Local Claude config and agents
 .claude/
+# Engagement evidence (sensitive)
 engagements/
+# Security review outputs (sensitive)
+reviews/
