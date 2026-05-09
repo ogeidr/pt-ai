@@ -30,7 +30,7 @@ MIT — see `LICENSE`.
 
 ## Credits
 
-Forked from [`0xSteph/pt-ai`](https://github.com/0xSteph/pt-ai) by [0xSteph](https://github.com/0xSteph); several folders and files originate from that project. Upstream MIT license preserved in `ORIGINAL.LICENSE`.
+Forked from [`0xSteph/pentest-ai`](https://github.com/0xSteph/pentest-ai) by [0xSteph](https://github.com/0xSteph); several folders and files originate from that project. Upstream MIT license preserved in `ORIGINAL.LICENSE`.
 
 
 
