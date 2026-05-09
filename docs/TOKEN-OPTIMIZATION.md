@@ -14,19 +14,11 @@ The system prompt is the fixed cost. A single agent ranges from ~900 tokens (eng
 
 ## Quick Wins
 
-### 1. Use `--lite` mode during install
+### 1. Switch advisory agents to Haiku
 
-```bash
-./install.sh --global --lite
-```
+Edit the frontmatter of advisory agents (no Bash tool) to use Haiku instead of Sonnet. Haiku is roughly 90% as capable for advisory tasks at a fraction of the cost. Tier 2 execution agents should stay on Sonnet — tool-use accuracy matters when running commands against live targets.
 
-Lite mode installs the same agents with two changes:
-- Advisory-only agents (no Bash tool) use `model: haiku` instead of `model: sonnet`. Haiku is roughly 90% as capable for advisory tasks at a fraction of the cost.
-- Tier 2 execution agents stay on Sonnet because tool-use accuracy matters when running commands against live targets.
-
-### 2. Switch individual agents to Haiku
-
-If you only want to change specific agents, edit the frontmatter:
+Edit the frontmatter of any agent file:
 
 ```yaml
 ---
@@ -34,7 +26,7 @@ model: haiku
 ---
 ```
 
-Good candidates for Haiku (advisory-only, no execution risk):
+Good candidates (advisory-only, no Bash tool):
 - `engagement-planner`
 - `report-generator`
 - `detection-engineer`
@@ -58,7 +50,7 @@ Keep on Sonnet (Tier 2 execution agents where tool-use accuracy is critical):
 - `social-engineer`
 - `swarm-orchestrator`
 
-### 3. Be specific in your prompts
+### 2. Be specific in your prompts
 
 Vague prompts cause longer responses. Compare:
 
@@ -70,7 +62,7 @@ Vague prompts cause longer responses. Compare:
 "Show me the Impacket command for Kerberoasting service accounts in corp.local"
 ```
 
-### 4. Keep conversations short and focused
+### 3. Keep conversations short and focused
 
 Token cost grows with conversation length because the full history stays in context. For multi-phase engagements:
 
@@ -78,23 +70,13 @@ Token cost grows with conversation length because the full history stays in cont
 - Paste only the relevant subset of scan output, not the full dump
 - Use `/clear` between unrelated tasks in the same session
 
-### 5. Avoid the swarm orchestrator for simple tasks
+### 4. Avoid the swarm orchestrator for simple tasks
 
 The swarm orchestrator coordinates multiple agents, which multiplies token usage. Use it for full engagements, not single-agent tasks. If you just need recon analysis, talk to `recon-advisor` directly.
 
-### 6. Trim agent system prompts if you need aggressive reduction
+### 5. Trim agent system prompts if you need aggressive reduction
 
 The core methodology sections (behavioral rules, output format, scope enforcement) must stay intact. The reference tables — tool command syntax, MITRE ATT&CK mappings, example outputs — can be removed if you already know the tools. See [CUSTOMIZATION.md](CUSTOMIZATION.md) for how to edit agent prompts.
-
-## Lite Mode vs Standard Mode
-
-| Aspect | Standard | Lite |
-|--------|----------|------|
-| Advisory agents | Sonnet | Haiku |
-| Execution agents | Sonnet | Sonnet |
-| Response quality | Full depth | Slightly condensed |
-| Token cost | Baseline | ~40-60% reduction for advisory tasks |
-| Best for | Professional engagements, training | Personal use, exploration, learning |
 
 ## Estimating Your Token Budget
 
