@@ -8,7 +8,6 @@ A minimalistic, ephemeral, agentic framework for penetration testing.
 
 ## Design Principles
 
-KIS!S — Keep It Simple, but not Stupid. Trim what adds no value; keep what does.
 
 - **Minimalistic.** Few moving parts. No orchestration layer, no persistent databases, no heavy framework.
 - **Ephemeral.** State is bounded by the engagement. Nothing carries over once the engagement concludes.
