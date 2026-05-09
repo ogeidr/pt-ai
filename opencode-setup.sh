@@ -56,7 +56,7 @@ install_global() {
     local count=0
     for agent in "${AGENTS_SRC}"/*.md; do
         convert_agent "$agent" "$GLOBAL_CMD_DIR"
-        ((count++))
+        count=$((count + 1))
     done
 
     echo ""
@@ -76,7 +76,7 @@ install_project() {
     local count=0
     for agent in "${AGENTS_SRC}"/*.md; do
         convert_agent "$agent" "$PROJECT_CMD_DIR"
-        ((count++))
+        count=$((count + 1))
     done
 
     echo ""
@@ -88,7 +88,7 @@ create_context_file() {
     cat > "$dest" << 'CTXEOF'
 # pt-ai Context
 
-You are operating as a penetration testing assistant with 23 specialized knowledge areas.
+You are operating as a penetration testing assistant with 28 specialized knowledge areas.
 When the user invokes a command (e.g., /recon-advisor, /vuln-scanner), follow the instructions
 in that command file exactly. When no specific command is invoked, use your judgment to apply
 the most relevant security methodology.
@@ -105,9 +105,10 @@ the most relevant security methodology.
 ## Available Commands
 
 Offensive: /recon-advisor, /vuln-scanner, /web-hunter, /ad-attacker, /exploit-guide,
-           /privesc-advisor, /cloud-security, /api-security, /osint-collector,
+           /exploit-chainer, /privesc-advisor, /cloud-security, /api-security, /osint-collector,
            /engagement-planner, /mobile-pentester, /wireless-pentester, /social-engineer,
-           /credential-tester, /attack-planner, /bug-bounty
+           /credential-tester, /attack-planner, /bug-bounty, /bizlogic-hunter,
+           /cicd-redteam, /poc-validator, /swarm-orchestrator
 
 Defense:   /detection-engineer, /threat-modeler, /forensics-analyst, /malware-analyst,
            /stig-analyst
