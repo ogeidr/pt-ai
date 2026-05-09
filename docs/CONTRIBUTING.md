@@ -61,9 +61,8 @@ Before submitting a pull request, verify the following:
 
 ### Agent Loads Correctly
 
-1. Copy the agent file to `~/.claude/agents/` or `.claude/agents/`.
-2. Start Claude Code and confirm the agent appears in the available agents.
-3. Verify the agent's `description` field causes correct routing for relevant prompts.
+1. Run `docker/ptai run <engagement-id>` — agents in `agents/` are mounted automatically.
+2. Confirm the agent appears in Claude Code and its `description` routes correctly.
 
 ### Representative Prompt Testing
 
@@ -77,13 +76,7 @@ Document the prompts used and confirm the output quality meets the standards des
 
 ### Output Quality Verification
 
-For each test prompt, verify that the agent's output:
-
-- Is technically accurate
-- Includes MITRE ATT&CK mappings where applicable
-- Provides both offensive and defensive perspectives
-- Uses clear, professional language without marketing fluff
-- Follows the output structure defined in the agent's system prompt
+Verify output meets the standards in [Agent Quality Standards](#agent-quality-standards).
 
 ## Code of Conduct
 
@@ -101,8 +94,6 @@ Contributors are expected to be security professionals who understand and respec
 
 ### Markdown Formatting
 
-- Use clean, readable Markdown with consistent formatting.
-- Use `#` for top-level headings, `##` for sections, `###` for subsections.
 - Use fenced code blocks with language identifiers for all code examples.
 - Use tables for structured data where appropriate.
 - Keep lines under 100 characters where practical.
