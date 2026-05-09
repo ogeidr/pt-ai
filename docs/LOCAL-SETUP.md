@@ -67,21 +67,33 @@ OLLAMA_NUM_GPU=2 ollama serve
 CUDA_VISIBLE_DEVICES=0,1 ollama serve
 ```
 
-## Option 2: LM Studio + OpenCode
+## Option 2: LM Studio + Docker
 
-[LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local models with an OpenAI-compatible API.
+[LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
+models with an OpenAI-compatible API. This option uses the same Docker architecture
+as the standard pt-ai setup, with a LiteLLM proxy inside the container translating
+Claude Code's Anthropic-format requests to OpenAI format before forwarding to LM Studio.
 
-```bash
-# 1. Download LM Studio from https://lmstudio.ai
-# 2. Download a model through the GUI (search for llama-3.1-70b or qwen2.5-72b)
-# 3. Start the local server in LM Studio (port 1234 by default)
+**Assumptions:** LM Studio is installed on the host, the local server is started,
+and a model is loaded. Note the model identifier shown in LM Studio's server tab.
 
-# 4. Point OpenCode at LM Studio
-export LOCAL_ENDPOINT=http://localhost:1234/v1
+```sh
+# 1. Build the image
+docker/ptai-lmstudio build
 
-# 5. Run the adapter
-./opencode-setup.sh --full
+# 2. Start the SSH tunnel to your Kali host (same as standard setup)
+ssh -L 5000:127.0.0.1:5000 user@<linux-host> -N
+
+# 3. Set required env vars
+export PT_AI_LM_STUDIO_MODEL=<model-identifier-from-lm-studio>
+export PT_AI_MCP_SERVER=http://host.docker.internal:5000
+
+# 4. Run an engagement
+docker/ptai-lmstudio run <engagement-id>
 ```
+
+See [docker/README-lmstudio.md](../docker/README-lmstudio.md) for the full setup,
+architecture diagram, and troubleshooting guide.
 
 ## Option 3: vLLM (Production/Team Use)
 
