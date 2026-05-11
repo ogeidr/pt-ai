@@ -203,6 +203,7 @@ cmd_run() {
         $listen_args \
         -v "$eng_dir:/work" \
         -v "$REPO_DIR/agents:/home/operator/.claude/agents:ro" \
+        -v "$REPO_DIR/skills:/home/operator/.claude/skills:ro" \
         "$IMAGE" \
         sh -c "$cmd_in"
 }
