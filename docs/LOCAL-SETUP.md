@@ -11,48 +11,34 @@ This guide covers running pt-ai fully offline with local models.
 - **No vendor lock-in.** If any provider pulls the plug or changes their acceptable use policy, your tooling keeps working.
 - **No subscription costs.** After the hardware investment, ongoing costs are electricity only.
 
-## Option 1: OpenCode/Crush + Ollama (Recommended)
+## Option 1: Ollama + Docker (Recommended)
 
-[OpenCode](https://github.com/opencode-ai/opencode) (now [Crush](https://github.com/charmbracelet/crush)) is an open-source terminal AI coding tool. It has the same core tools as Claude Code (bash, file read/write/edit, grep, glob, fetch) and supports local models through Ollama.
+Ollama runs locally on your host and exposes an OpenAI-compatible API.
+The pt-ai Docker variant connects opencode directly to it — no translation proxy needed.
 
-### Setup
+**Assumptions:** Ollama is installed on the host and the desired model is pulled.
 
-```bash
-# 1. Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+```sh
+# 1. Install Ollama and pull a model
+brew install ollama          # macOS
+ollama pull gemma4:31b      # or whichever model fits your VRAM
 
-# 2. Pull a model (pick based on your VRAM)
-ollama pull llama3.1:70b       # Best quality, needs 40GB+ VRAM
-ollama pull qwen2.5:72b        # Strong alternative, 40GB+ VRAM
-ollama pull deepseek-r1:32b    # Good reasoning, 20GB+ VRAM
-ollama pull llama3.1:8b         # Lighter, runs on 8GB VRAM
+# 2. Build the image
+docker/ptai-ollama build
 
-# 3. Install OpenCode
-go install github.com/opencode-ai/opencode@latest
-# Or Crush (the renamed version)
-go install github.com/charmbracelet/crush@latest
+# 3. Start the SSH tunnel to your Kali host (same as standard setup)
+ssh -L 5000:127.0.0.1:5000 user@<linux-host> -N
 
-# 4. Set the local endpoint
-export LOCAL_ENDPOINT=http://localhost:11434/v1
+# 4. Set required env vars
+export PT_AI_OLLAMA_MODEL=gemma4:31b
+export PT_AI_MCP_SERVER=http://host.docker.internal:5000
 
-# 5. Run the pt-ai adapter
-cd pt-ai
-./opencode-setup.sh --full
+# 5. Run an engagement
+docker/ptai-ollama run <engagement-id>
 ```
 
-The adapter script converts all 28 agents into OpenCode custom commands. You invoke them with `/recon-advisor`, `/vuln-scanner`, `/ad-attacker`, etc.
-
-### Model Recommendations for Security Work
-
-| Model | VRAM | Quality | Speed | Best For |
-|-------|------|---------|-------|----------|
-| Llama 3.1 70B | 40GB+ | High | Moderate | Full methodology, complex analysis |
-| Qwen 2.5 72B | 40GB+ | High | Moderate | Strong reasoning, good at code |
-| DeepSeek R1 32B | 20GB+ | Good | Fast | Reasoning tasks, attack chain planning |
-| Llama 3.1 8B | 8GB | Moderate | Fast | Quick lookups, basic methodology |
-| Mistral Large | 24GB+ | Good | Moderate | General purpose, solid all-around |
-
-For professional pentest work, use 70B+ parameter models. Smaller models miss nuance in complex attack chains and produce less reliable command syntax.
+See [docker/README-ollama.md](../docker/README-ollama.md) for the full setup,
+architecture diagram, model recommendations, and troubleshooting guide.
 
 ### Multi-GPU Setup
 

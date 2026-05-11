@@ -4,3 +4,5 @@
 !entrypoint.sh
 !Dockerfile.lmstudio
 !entrypoint-lmstudio.sh
+!Dockerfile.ollama
+!entrypoint-ollama.sh

@@ -26,7 +26,8 @@ LABEL org.opencontainers.image.title="pt-ai" \
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/operator \
-    PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+    PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin \
+    CLAUDE_CODE_DISABLE_AUTO_UPDATE=1
 
 # Base utilities + Node 20 (NodeSource — Ubuntu 24.04's apt nodejs is 18) +
 # Python with venv support (Ubuntu 24.04 enforces PEP 668 system-Python pip).
@@ -39,8 +40,8 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Claude Code CLI.
-RUN npm install -g @anthropic-ai/claude-code
+# Claude Code CLI — pinned to stable tag; resolves to the current stable release at build time.
+RUN npm install -g @anthropic-ai/claude-code@stable
 
 # Vendor the MCP stdio bridge from upstream Wh0am123/MCP-Kali-Server. The bug
 # we hit in the apt-packaged kali-server-mcp lives in the API server (which we
