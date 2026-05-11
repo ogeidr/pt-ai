@@ -158,6 +158,7 @@ cmd_run() {
         $listen_args \
         -v "$eng_dir:/work" \
         -v "$REPO_DIR/agents:/opt/pt-ai/agents:ro" \
+        -v "$REPO_DIR/commands:/opt/pt-ai/commands:ro" \
         "$IMAGE" \
         sh -c "$cmd_in"
 }

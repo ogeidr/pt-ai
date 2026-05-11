@@ -60,6 +60,16 @@ if [ -d "$AGENTS_DIR" ]; then
     done
 fi
 
+# --- copy opencode commands ----------------------------------------------
+# Commands are plain markdown with no frontmatter — copied directly.
+COMMANDS_DIR=/opt/pt-ai/commands
+if [ -d "$COMMANDS_DIR" ]; then
+    for cmd in "$COMMANDS_DIR"/*.md; do
+        [ -f "$cmd" ] || continue
+        cp "$cmd" "$CMD_DIR/$(basename "$cmd")"
+    done
+fi
+
 # --- generate opencode.json ----------------------------------------------
 # Points opencode at LM Studio via the OpenAI-compatible provider.
 # MCP bridge is registered as a local stdio server.
