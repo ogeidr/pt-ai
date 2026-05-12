@@ -1,0 +1,74 @@
+KALI_BOX        = ENV.fetch("KALI_BOX",        "kalilinux/rolling")
+VAGRANT_PROVIDER = ENV.fetch("VAGRANT_PROVIDER", "virtualbox")
+VM_MEMORY       = ENV.fetch("VAGRANT_MEMORY",   "4096").to_i
+VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
+
+Vagrant.configure("2") do |config|
+  config.vm.box      = KALI_BOX
+  # hostname is set by the inline provisioner below; not set here because
+  # Vagrant's built-in hostname setter fails when / is still mounted read-only
+  # on first boot after box cloning.
+
+  # --- Providers -----------------------------------------------------------
+  # Select with: VAGRANT_PROVIDER=vmware_desktop ./kali up
+  config.vm.provider "virtualbox" do |v|
+    v.name   = "kali-ptai"
+    v.memory = VM_MEMORY
+    v.cpus   = VM_CPUS
+    v.gui    = false
+    v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+  end
+
+  config.vm.provider "vmware_desktop" do |v|
+    v.vmx["memsize"]   = VM_MEMORY.to_s
+    v.vmx["numvcpus"]  = VM_CPUS.to_s
+    v.gui              = false
+    v.allowlist_verified = true
+  end
+
+  config.vm.provider "parallels" do |v|
+    v.name   = "kali-ptai"
+    v.memory = VM_MEMORY
+    v.cpus   = VM_CPUS
+  end
+
+  # --- Synced folders -------------------------------------------------------
+  # engagements/ is the shared workspace; agents/skills/commands are read-only
+  # references synced from the repo into the VM.
+  config.vm.synced_folder "../engagements", "/engagements", create: true
+  config.vm.synced_folder "../agents",      "/opt/pt-ai/agents"
+  config.vm.synced_folder "../skills",      "/opt/pt-ai/skills"
+  config.vm.synced_folder "../commands",    "/opt/pt-ai/commands"
+
+  # Private network for host <-> VM access without NAT overhead
+  config.vm.network "private_network", type: "dhcp"
+
+  # --- Provisioners (run once on first `vagrant up`) -----------------------
+  # Ensure root is mounted read-write before any other provisioner runs.
+  # On first boot after box cloning the filesystem may be remounted ro by fsck.
+  config.vm.provision "shell", inline: <<~SHELL
+    mount -o remount,rw / 2>/dev/null || true
+    echo "kali-ptai" > /etc/hostname
+    hostname kali-ptai
+    grep -q "kali-ptai" /etc/hosts || echo "127.0.1.1 kali-ptai" >> /etc/hosts
+    # Override broken VMware NAT DNS before any provisioner touches the network.
+    # Write directly to resolv.conf (immediate) and resolv.conf.head (persists
+    # across DHCP renewals).
+    printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf
+    printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf.head
+  SHELL
+
+  config.vm.provision "shell", path: "provision/00-update.sh"
+
+  config.vm.provision "shell",
+    path: "provision/01-tools.sh",
+    args: ["/vagrant/config/tools.txt"]
+
+  config.vm.provision "shell", path: "provision/02-claude.sh"
+
+  config.vm.provision "shell", path: "provision/03-network.sh"
+
+  # Heavy build — installs Ghidra + ghidrasql for binary analysis via SQL.
+  # Runs once on first `vagrant up`; skips already-built steps on re-provision.
+  config.vm.provision "shell", path: "provision/04-ghidrasql.sh"
+end

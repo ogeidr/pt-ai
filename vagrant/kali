@@ -1,0 +1,160 @@
+#!/bin/sh
+# kali: host wrapper for the pt-ai Vagrant Kali VM.
+#
+# Mirrors the docker/ptai pattern: one command for the full VM lifecycle.
+#
+# Subcommands:
+#   up                  Boot VM (provision on first run)
+#   ssh                 Interactive shell inside the VM
+#   claude [-- <args>]  Start Claude Code inside the VM
+#   snapshot <name>     Save a VM snapshot
+#   restore  <name>     Restore a VM snapshot
+#   halt                Shut down the VM
+#   destroy             Destroy the VM (irreversible)
+#   provision           Re-run all provisioners
+#   status              Show VM status
+#
+# Auth:
+#   Claude Code inside the VM authenticates via OAuth by default (claude.ai/pro).
+#   On first `./kali claude`, run `claude` inside the VM — it will print a URL
+#   to open in your host browser to complete the OAuth flow.
+#
+#   API key auth is also supported: if ANTHROPIC_API_KEY is set in the host env
+#   it is forwarded into the VM via SSH SendEnv automatically.
+#
+# Environment overrides:
+#   ANTHROPIC_API_KEY   Optional — forwarded if set (API key auth)
+#   KALI_BOX            Vagrant box name (default: kalilinux/rolling)
+#   VAGRANT_PROVIDER    virtualbox | vmware_desktop | parallels (default: virtualbox)
+#   VAGRANT_MEMORY      VM memory MB (default: 4096)
+#   VAGRANT_CPUS        vCPU count (default: 4)
+#
+# ARM64 (Apple Silicon):
+#   Build the box first: ./box/build.sh
+#   Then: KALI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+#
+set -eu
+
+SCRIPT="$0"
+case "$SCRIPT" in
+    /*) ;;
+    *)  SCRIPT="$PWD/$SCRIPT" ;;
+esac
+VAGRANT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
+
+KALI_BOX="${KALI_BOX:-kalilinux/rolling}"
+VAGRANT_PROVIDER="${VAGRANT_PROVIDER:-virtualbox}"
+VAGRANT_MEMORY="${VAGRANT_MEMORY:-4096}"
+VAGRANT_CPUS="${VAGRANT_CPUS:-4}"
+
+# Run vagrant with the correct env from the vagrant/ dir
+_vagrant() {
+    ( cd "$VAGRANT_DIR" && \
+      env \
+        KALI_BOX="$KALI_BOX" \
+        VAGRANT_PROVIDER="$VAGRANT_PROVIDER" \
+        VAGRANT_MEMORY="$VAGRANT_MEMORY" \
+        VAGRANT_CPUS="$VAGRANT_CPUS" \
+      vagrant "$@" )
+}
+
+usage() {
+    cat <<EOF
+Usage: kali <command> [options]
+
+Commands:
+  up                     Boot VM (provision on first run)
+  ssh                    Interactive shell inside VM
+  claude [-- <args>]     Start Claude Code inside VM
+  snapshot <name>        Save a VM snapshot
+  restore  <name>        Restore a VM snapshot
+  halt                   Shut down the VM
+  destroy                Destroy the VM and all its state
+  provision              Re-run all provisioners
+  status                 Show VM status
+
+Environment:
+  ANTHROPIC_API_KEY    Optional — forwarded if set (API key auth); OAuth used otherwise
+  KALI_BOX             Box name (default: kalilinux/rolling)
+  VAGRANT_PROVIDER     virtualbox | vmware_desktop | parallels (default: virtualbox)
+  VAGRANT_MEMORY       VM RAM in MB (default: 4096)
+  VAGRANT_CPUS         vCPU count (default: 4)
+
+ARM64 hosts:
+  Build the box first: ./box/build.sh
+  Then: KALI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+EOF
+}
+
+cmd_up() {
+    _vagrant up --provider "$VAGRANT_PROVIDER" "$@"
+}
+
+cmd_ssh() {
+    ssh_opt=""
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        ssh_opt="-o SendEnv=ANTHROPIC_API_KEY"
+    fi
+    # shellcheck disable=SC2086
+    _vagrant ssh -- $ssh_opt "$@"
+}
+
+cmd_claude() {
+    extra_args=""
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then
+        shift
+        extra_args="$*"
+    fi
+
+    claude_cmd="claude${extra_args:+ $extra_args}"
+
+    send_env=""
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        send_env="-o SendEnv=ANTHROPIC_API_KEY"
+    fi
+
+    # Login shell (-l) so /etc/profile.d/pt-ai.sh is sourced (PATH, PS1, etc).
+    # shellcheck disable=SC2086
+    _vagrant ssh -- $send_env -t "bash -l -c 'cd /engagements && $claude_cmd'"
+}
+
+cmd_snapshot() {
+    if [ "$#" -lt 1 ]; then
+        echo "kali snapshot: missing <name>" >&2; exit 1
+    fi
+    _vagrant snapshot save "$1"
+}
+
+cmd_restore() {
+    if [ "$#" -lt 1 ]; then
+        echo "kali restore: missing <name>" >&2; exit 1
+    fi
+    _vagrant snapshot restore "$1"
+}
+
+cmd_halt()      { _vagrant halt; }
+cmd_destroy()   { _vagrant destroy -f; }
+cmd_provision() { _vagrant provision; }
+cmd_status()    { _vagrant status; }
+
+if [ "$#" -lt 1 ]; then
+    usage; exit 1
+fi
+
+sub="$1"; shift
+case "$sub" in
+    up)             cmd_up "$@" ;;
+    ssh)            cmd_ssh "$@" ;;
+    claude)         cmd_claude "$@" ;;
+    snapshot)       cmd_snapshot "$@" ;;
+    restore)        cmd_restore "$@" ;;
+    halt)           cmd_halt ;;
+    destroy)        cmd_destroy ;;
+    provision)      cmd_provision ;;
+    status)         cmd_status ;;
+    -h|--help|help) usage ;;
+    *)
+        echo "kali: unknown command: $sub" >&2
+        usage; exit 1
+        ;;
+esac

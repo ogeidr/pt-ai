@@ -1,0 +1,14 @@
+# Vagrant runtime state
+.vagrant/
+
+# Box build artifacts
+box/.build/
+box/*.box
+box/*.ova
+box/*.7z
+box/*.zip
+box/*.vmdk
+box/*.vmx
+
+# Local env overrides
+config/.env

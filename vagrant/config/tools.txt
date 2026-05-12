@@ -1,0 +1,15 @@
+# Additional tools installed on top of kali-linux-default.
+# One apt package name per line. Blank lines and comments are ignored.
+# Edit freely — re-run with: ./kali provision
+
+burpsuite
+crackmapexec
+evil-winrm
+ffuf
+gobuster
+impacket-scripts
+ligolo-ng
+netexec
+responder
+seclists
+sqlmap
