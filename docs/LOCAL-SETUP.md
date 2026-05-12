@@ -56,9 +56,8 @@ CUDA_VISIBLE_DEVICES=0,1 ollama serve
 ## Option 2: LM Studio + Docker
 
 [LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
-models with an OpenAI-compatible API. This option uses the same Docker architecture
-as the standard pt-ai setup, with a LiteLLM proxy inside the container translating
-Claude Code's Anthropic-format requests to OpenAI format before forwarding to LM Studio.
+models with an OpenAI-compatible API. The pt-ai LM Studio variant runs opencode
+inside the container, which speaks OpenAI natively — no translation proxy needed.
 
 **Assumptions:** LM Studio is installed on the host, the local server is started,
 and a model is loaded. Note the model identifier shown in LM Studio's server tab.

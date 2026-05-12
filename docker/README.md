@@ -32,12 +32,20 @@ at `/opt/mcp-bridge/.commit` inside the image.
 
 ```
 docker/
-├── Dockerfile            # ubuntu:24.04 + node 20 + claude code + vendored bridge
-├── entrypoint.sh         # auth check, register MCP, probe remote, exec claude
-├── ptai                  # POSIX-sh host wrapper (build / auth / run)
+├── Dockerfile               # ubuntu:24.04 + node 20 + claude code + vendored bridge
+├── entrypoint.sh            # auth check, register MCP, probe remote, exec claude
+├── ptai                     # POSIX-sh host wrapper (build / auth / run)
+├── Dockerfile.lmstudio      # opencode + mcp bridge, reaches LM Studio on host
+├── entrypoint-lmstudio.sh   # convert agents, generate opencode.json, probe, exec opencode
+├── ptai-lmstudio            # POSIX-sh wrapper for the lmstudio variant
+├── Dockerfile.ollama        # opencode + mcp bridge, reaches Ollama on host
+├── entrypoint-ollama.sh     # convert agents, generate opencode.json, probe, exec opencode
+├── ptai-ollama              # POSIX-sh wrapper for the ollama variant
 ├── .dockerignore
 └── README.md
 ```
+
+For the LM Studio and Ollama variants see [README-lmstudio.md](README-lmstudio.md) and [README-ollama.md](README-ollama.md).
 
 ## Prerequisites
 
