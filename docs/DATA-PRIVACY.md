@@ -67,11 +67,21 @@ The agents work on methodology and patterns. They don't need real IPs to give yo
 
 ### Option 3: Local Models (Maximum Privacy)
 
-For the highest data sensitivity, run a local LLM that never sends data off-machine. Claude Code supports third-party API-compatible providers:
+For the highest data sensitivity, run a local LLM that never sends data off-machine.
+pt-ai has dedicated Docker variants for this using opencode (which speaks OpenAI-compatible
+APIs natively) connected to Ollama or LM Studio running on your host:
 
 ```bash
-# Install Ollama (https://ollama.ai)
-ollama pull llama3.1:70b
+# Ollama
+ollama pull qwen2.5-coder:32b
+export PT_AI_OLLAMA_MODEL=qwen2.5-coder:32b
+export PT_AI_MCP_SERVER=http://host.docker.internal:5000
+docker/ptai-ollama run <engagement-id>
+
+# LM Studio — start the local server in LM Studio, then:
+export PT_AI_LM_STUDIO_MODEL=<model-id-from-lmstudio>
+export PT_AI_MCP_SERVER=http://host.docker.internal:5000
+docker/ptai-lmstudio run <engagement-id>
 ```
 
 See [LOCAL-SETUP.md](LOCAL-SETUP.md) for full setup instructions, model recommendations, and hardware requirements.
