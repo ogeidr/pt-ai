@@ -2,6 +2,18 @@
 
 This guide explains how to modify existing agents, adjust their configuration, and create new agents tailored to your specific needs.
 
+## Using Agents Without a Deployment
+
+If you want agents available in a local Claude Code session without Docker or Vagrant:
+
+```bash
+# Global — available in all Claude Code sessions
+cp agents/*.md ~/.claude/agents/
+
+# Project-level — available only in the current directory
+mkdir -p .claude/agents && cp agents/*.md .claude/agents/
+```
+
 ## Modifying Agent System Prompts
 
 Each agent is defined by a single Markdown file with two sections: the YAML frontmatter (metadata) and the system prompt (instructions). To modify an agent's behavior, edit the content below the closing `---` of the frontmatter.
