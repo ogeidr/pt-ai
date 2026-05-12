@@ -34,5 +34,7 @@ chown -R vagrant:vagrant "$CLAUDE_DIR"
 cat > /etc/profile.d/pt-ai.sh <<'EOF'
 export PATH="$HOME/.npm-global/bin:$PATH"
 export PS1='\[\033[01;31m\][kali-ptai]\[\033[00m\] \[\033[01;34m\]\w\[\033[00m\]\$ '
+# Persistent API key — written by './kali key store' on the host.
+[ -f "$HOME/.anthropic_key" ] && . "$HOME/.anthropic_key"
 EOF
 chmod 644 /etc/profile.d/pt-ai.sh

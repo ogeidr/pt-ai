@@ -41,12 +41,6 @@ if ! node --version 2>/dev/null | grep -qE "^v2[0-9]"; then
     apt-get install -y nodejs
 fi
 
-# Allow ANTHROPIC_API_KEY to pass through SSH when using API key auth.
-# OAuth users (Claude Pro) don't need this — it's a no-op if the key isn't sent.
-if ! grep -q "AcceptEnv ANTHROPIC_API_KEY" /etc/ssh/sshd_config 2>/dev/null; then
-    echo "AcceptEnv ANTHROPIC_API_KEY" >> /etc/ssh/sshd_config
-    systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true
-fi
 
 apt-get clean
 rm -rf /var/lib/apt/lists/*

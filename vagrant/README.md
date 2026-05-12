@@ -8,7 +8,7 @@ One command to boot; `vagrant snapshot` for clean-state management between engag
 ```
 Host (macOS)
 └── Kali VM (VMware Fusion / VirtualBox / Parallels)
-    ├── Claude Code          — authenticated via OAuth (claude.ai/pro)
+    ├── Claude Code          — API key or OAuth (claude.ai/pro)
     ├── ghidrasql            — binary analysis via SQL for AI agents
     ├── kali-linux-default   — core Kali toolset + extras (see config/tools.txt)
     └── /engagements/        — synced from host engagements/
@@ -99,11 +99,35 @@ Subsequent `./kali up` calls boot in seconds — provisioning is skipped.
 
 ### Step 4 — Authenticate Claude Code
 
+Two options. Pick one per VM.
+
+#### Option A — API key (Anthropic API)
+
+Bills against your Anthropic API key, not a Pro/Max subscription.
+
+```sh
+# Session-only (key forwarded for this run, never stored in VM):
+export ANTHROPIC_API_KEY=sk-ant-...
+./kali claude
+
+# Persistent (stored in VM, picked up by all future sessions):
+export ANTHROPIC_API_KEY=sk-ant-...
+./kali key store
+./kali claude
+
+# Remove a stored key:
+./kali key clear
+```
+
+#### Option B — OAuth (Claude Pro / Max)
+
 ```sh
 ./kali claude
 ```
 
-On first run, Claude Code prints a URL — open it in your host browser to complete the OAuth login. **You only need to do this once per VM.**
+On first run, Claude Code prints a URL — open it in your host browser to complete the OAuth login. **You only need to do this once per VM.** Credentials are stored in `~/.claude/` inside the VM and persist across `halt`/`up` cycles and snapshots.
+
+**Precedence:** if both a stored API key and OAuth credentials exist, the API key wins.
 
 After authenticating, exit Claude Code (`/exit`) and take your baseline snapshot:
 
@@ -166,7 +190,7 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 | `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
 | `VAGRANT_CPUS` | `4` | vCPU count |
-| `ANTHROPIC_API_KEY` | — | Optional — forwarded via SSH if set; OAuth used otherwise |
+| `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./kali key` for persistent storage |
 
 ---
 
@@ -176,6 +200,9 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 ./kali up                  Boot VM (provision on first run)
 ./kali claude [-- <args>]  Start Claude Code session inside VM
 ./kali ssh                 Interactive shell inside VM
+./kali key store           Store ANTHROPIC_API_KEY from host env into VM
+./kali key clear           Remove stored API key from VM
+./kali key status          Show whether an API key is stored in VM
 ./kali snapshot <name>     Save a VM snapshot
 ./kali restore  <name>     Restore a VM snapshot
 ./kali halt                Shut down the VM
