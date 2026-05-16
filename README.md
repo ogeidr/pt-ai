@@ -27,7 +27,7 @@ All three Docker options share the same architecture: an ephemeral container han
 
 ### Vagrant Kali VM
 
-A fully-provisioned Kali Linux VM (`vagrant/kali`) where Claude Code runs directly inside the VM alongside all the tools — no MCP bridge or remote host required. Includes ghidrasql for binary analysis. Snapshot/restore provides clean state between engagements.
+A fully-provisioned Kali Linux VM (`vagrant/kali`) where Claude Code runs directly inside the VM alongside all the tools — no MCP bridge or remote host required. Snapshot/restore provides clean state between engagements.
 
 ## Status
 
