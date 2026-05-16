@@ -9,7 +9,6 @@ One command to boot; `vagrant snapshot` for clean-state management between engag
 Host (macOS)
 └── Kali VM (VMware Fusion / VirtualBox / Parallels)
     ├── Claude Code          — API key or OAuth (claude.ai/pro)
-    ├── ghidrasql            — binary analysis via SQL for AI agents
     ├── kali-linux-default   — core Kali toolset + extras (see config/tools.txt)
     └── /engagements/        — synced from host engagements/
 ```
@@ -30,6 +29,8 @@ Install the provider for your platform:
 | Intel Mac / Linux | VirtualBox | Default, no extra config |
 | macOS (either) | Parallels Desktop | Requires plugin |
 
+The `Vagrantfile`, the `kali` wrapper, and the provisioners are OS-agnostic — they work wherever Vagrant and a supported provider run. On Windows, run the `kali` wrapper from WSL. The only platform-specific piece is `box/build.sh` (Step 1), which is macOS-only and only needed on Apple Silicon.
+
 ```sh
 # All platforms
 brew install vagrant
@@ -46,7 +47,7 @@ vagrant plugin install vagrant-parallels
 
 ### Step 1 — Build the Kali ARM64 box (Apple Silicon only)
 
-Skip this step on Intel/Linux — VirtualBox uses the official `kalilinux/rolling` box automatically.
+**macOS-only step.** Skip it entirely on Intel Mac or Linux — VirtualBox uses the official `kalilinux/rolling` box automatically, no build needed. `box/build.sh` exists only because there is no official Kali ARM64 VMware box.
 
 ```sh
 ./box/build.sh
@@ -91,7 +92,6 @@ First run provisions the VM automatically (~30–60 min depending on network):
 - Kali toolset (`kali-linux-default` + extras from `config/tools.txt`)
 - Claude Code CLI (installed as the vagrant user so self-updates work)
 - Network config: IP forwarding, iptables open policy, openvpn/proxychains
-- Ghidra + ghidrasql for binary analysis via SQL
 
 Subsequent `./kali up` calls boot in seconds — provisioning is skipped.
 

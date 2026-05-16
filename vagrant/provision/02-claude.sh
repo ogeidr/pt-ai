@@ -29,6 +29,16 @@ ln -sfn /opt/pt-ai/agents "$CLAUDE_DIR/agents"
 ln -sfn /opt/pt-ai/skills "$CLAUDE_DIR/skills"
 chown -R vagrant:vagrant "$CLAUDE_DIR"
 
+# --- CLAUDE.md — VM environment context ----------------------------------
+# Loaded automatically by Claude Code for every session.  Tells Claude what
+# is installed and how to use it so the user never has to explain it.
+cat > "$CLAUDE_DIR/CLAUDE.md" <<'EOF'
+# pt-ai Kali VM
+
+Engagement workspace: `/engagements/`
+EOF
+chown vagrant:vagrant "$CLAUDE_DIR/CLAUDE.md"
+
 # --- Shell environment ----------------------------------------------------
 # profile.d for interactive-shell extras (PS1).
 cat > /etc/profile.d/pt-ai.sh <<'EOF'

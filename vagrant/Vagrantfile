@@ -67,8 +67,4 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", path: "provision/02-claude.sh"
 
   config.vm.provision "shell", path: "provision/03-network.sh"
-
-  # Heavy build — installs Ghidra + ghidrasql for binary analysis via SQL.
-  # Runs once on first `vagrant up`; skips already-built steps on re-provision.
-  config.vm.provision "shell", path: "provision/04-ghidrasql.sh"
 end

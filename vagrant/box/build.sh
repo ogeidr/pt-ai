@@ -10,8 +10,19 @@
 #
 # Prerequisites: curl, vagrant, VMware Fusion 13+, vagrant-vmware-desktop plugin
 #
+# Platform: macOS only. This builds an ARM64 box for Apple Silicon, which is
+# the one case with no official Kali VMware box. Intel Mac and Linux users do
+# not need this script — the default VirtualBox setup uses the official
+# kalilinux/rolling box and is fully cross-platform.
+#
 # Usage: ./box/build.sh
 set -euo pipefail
+
+err() { echo "Error: $*" >&2; exit 1; }
+
+[ "$(uname -s)" = "Darwin" ] || err "box/build.sh runs only on macOS with VMware Fusion.
+On Intel Mac or Linux you don't need it — use the default VirtualBox setup with
+KALI_BOX=kalilinux/rolling. See README.md."
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 WORK_DIR="$SCRIPT_DIR/.build"
@@ -26,7 +37,6 @@ ISO_BASE_URL="https://kali.download/base-images/current"
 VMRUN="$( find '/Applications/VMware Fusion.app' -name vmrun -type f 2>/dev/null | head -1 )"
 VDISKMANAGER="$( find '/Applications/VMware Fusion.app' -name vmware-vdiskmanager -type f 2>/dev/null | head -1 )"
 
-err()  { echo "Error: $*" >&2; exit 1; }
 info() { echo "==> $*" >&2; }
 
 check_deps() {
@@ -238,7 +248,9 @@ EOF
 {"provider":"vmware_desktop"}
 EOF
 
-    # Normalise paths in VMX to relative so the box is portable
+    # Normalise paths in VMX to relative so the box is portable.
+    # BSD sed (macOS) — the '' is the mandatory in-place backup-suffix arg.
+    # Correct as-is: this script is macOS-only (guarded at the top).
     sed -i '' \
         -e "s|$VM_DIR/||g" \
         -e 's|sata0:1\.fileName = ".*"|sata0:1.fileName = ""|' \
