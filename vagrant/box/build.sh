@@ -204,19 +204,38 @@ configure_for_vagrant() {
     ssh -fNM "${ssh_ctl[@]}" -o ControlPersist=300s vagrant@"$ip"
 
     # Remaining config with passwordless sudo — no TTY needed
-    info "Running post-install configuration..."
+    info "Running post-install configuration (hardening + cleanup)..."
     ssh "${ssh_ctl[@]}" vagrant@"$ip" "sudo bash -s" <<'ENDSSH'
 set -e
 
-# allow password auth — Vagrant uses vagrant/vagrant on first vagrant up
-# and replaces it with a generated key automatically
-sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# --- SSH hardening --------------------------------------------------------
+# Install Vagrant's well-known insecure public key so Vagrant can key-auth
+# on first `vagrant up`. Vagrant detects this key and automatically swaps it
+# for a freshly-generated unique key, then removes the insecure one.
+install -d -m 700 -o vagrant -g vagrant /home/vagrant/.ssh
+cat > /home/vagrant/.ssh/authorized_keys <<'KEY'
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
+KEY
+chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+chmod 600 /home/vagrant/.ssh/authorized_keys
+
+# Lock the vagrant password — key auth + NOPASSWD sudo cover all needs.
+# This blocks both SSH password login and VMware console login for vagrant.
+passwd -l vagrant
+
+# Disable password / keyboard-interactive SSH. Only key auth from here on.
+sed -i \
+    -e 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' \
+    -e 's/^#*KbdInteractiveAuthentication.*/KbdInteractiveAuthentication no/' \
+    -e 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' \
+    -e 's/^#*PermitRootLogin.*/PermitRootLogin no/' \
+    /etc/ssh/sshd_config
 systemctl restart ssh
 
-# open-vm-tools (idempotent)
+# --- Base packages --------------------------------------------------------
 apt-get install -y --no-install-recommends open-vm-tools
 
-# clean up
+# --- Cleanup --------------------------------------------------------------
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 rm -f /etc/udev/rules.d/70-persistent-net.rules
@@ -237,10 +256,12 @@ package_box() {
     local pkg_dir="$WORK_DIR/box-pkg"
     mkdir -p "$pkg_dir"
 
+    # No ssh.password — the box ships with Vagrant's insecure public key
+    # in authorized_keys; Vagrant key-auths on first up and swaps it for a
+    # generated unique key. Password auth is disabled in sshd_config.
     cat > "$pkg_dir/Vagrantfile" <<'EOF'
 Vagrant.configure("2") do |config|
   config.ssh.username = "vagrant"
-  config.ssh.password = "vagrant"
 end
 EOF
 
