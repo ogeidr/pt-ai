@@ -36,13 +36,22 @@ cat > "$CLAUDE_DIR/CLAUDE.md" <<'EOF'
 # pt-ai Kali VM
 
 Engagement workspace: `/engagements/`
+
+Cloud-audit toolset (pre-installed, on PATH):
+- `aws`         — AWS CLI v2
+- `prowler`     — multi-cloud security posture scanner (AWS/Azure/GCP/K8s)
+- `scout`       — Scout Suite multi-cloud auditor (entry point: `scout`)
+- `trufflehog`  — secrets scanner (git/filesystem/S3/GCS/etc.)
+- `pacu`        — AWS exploitation framework
+- `kube-hunter` — Kubernetes attack-surface scanner (pipx; `kube-hunter --active` for active scan)
 EOF
 chown vagrant:vagrant "$CLAUDE_DIR/CLAUDE.md"
 
 # --- Shell environment ----------------------------------------------------
 # profile.d for interactive-shell extras (PS1).
 cat > /etc/profile.d/pt-ai.sh <<'EOF'
-export PATH="$HOME/.npm-global/bin:$PATH"
+# ~/.local/bin holds pipx-installed CLIs (prowler, scoutsuite — see 06-cloud.sh).
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
 export PS1='\[\033[01;31m\][kali-ptai]\[\033[00m\] \[\033[01;34m\]\w\[\033[00m\]\$ '
 # Persistent API key — written by './kali key store' on the host.
 [ -f "$HOME/.anthropic_key" ] && . "$HOME/.anthropic_key"

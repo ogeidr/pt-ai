@@ -9,11 +9,12 @@ One command to boot; `vagrant snapshot` for clean-state management between engag
 Host (macOS)
 └── Kali VM (VMware Fusion / VirtualBox / Parallels)
     ├── Claude Code          — API key or OAuth (claude.ai/pro)
+    ├── opencode             — API key only (Anthropic provider default)
     ├── kali-linux-default   — core Kali toolset + extras (see config/tools.txt)
     └── /engagements/        — synced from host engagements/
 ```
 
-Claude Code runs directly inside the VM and invokes Kali tools via its built-in shell — no MCP bridge needed.
+Both Claude Code and opencode run directly inside the VM and invoke Kali tools via their built-in shells — no MCP bridge needed.
 
 ---
 
@@ -92,6 +93,8 @@ First run provisions the VM automatically (~30–60 min depending on network):
 - Kali toolset (`kali-linux-default` + extras from `config/tools.txt`)
 - Claude Code CLI (installed as the vagrant user so self-updates work)
 - Network config: IP forwarding, iptables open policy, openvpn/proxychains
+- opencode CLI + pt-ai agents converted to opencode slash commands
+- Cloud-audit toolset: AWS CLI v2, prowler, scoutsuite, trufflehog (plus apt pacu, kube-hunter)
 
 Subsequent `./kali up` calls boot in seconds — provisioning is skipped.
 
@@ -139,6 +142,35 @@ This captures the fully-provisioned, authenticated state. Restore to it between 
 
 ---
 
+### Step 5 — (Optional) opencode
+
+opencode is installed alongside Claude Code. Use it when you want a provider-agnostic CLI or want to invoke pt-ai agents as slash commands (e.g. `/recon-advisor`, `/vuln-scanner`).
+
+```sh
+./kali opencode
+```
+
+**Auth — read this before first use.** opencode does **not** consume Claude Code's `~/.claude/` OAuth tokens. It requires an Anthropic API key, supplied in one of three ways:
+
+| Method | How |
+|---|---|
+| Session-only | `export ANTHROPIC_API_KEY=sk-ant-... && ./kali opencode` |
+| Persistent (shared with Claude Code) | `./kali key store` |
+| opencode's own OAuth | Inside the VM: `opencode auth login anthropic` |
+
+**Billing:** opencode bills against your API key. A Pro/Max subscription covers Claude Code only — opencode usage is pay-as-you-go.
+
+**Model:** defaults to `anthropic/claude-sonnet-4-6`. Override per session:
+
+```sh
+export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
+./kali opencode
+```
+
+Agents are converted to opencode commands at provision time. To pick up agent edits made on the host, re-run `./kali provision`.
+
+---
+
 ## Daily workflow
 
 ```sh
@@ -148,6 +180,9 @@ source config/.env
 
 # Start a Claude Code session (opens in /engagements)
 ./kali claude
+
+# Or start an opencode session (opens in /engagements)
+./kali opencode
 
 # Drop to a shell if needed
 ./kali ssh
@@ -190,16 +225,18 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 | `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
 | `VAGRANT_CPUS` | `4` | vCPU count |
-| `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./kali key` for persistent storage |
+| `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./kali key` for persistent storage. Used by both Claude Code and opencode |
+| `PT_AI_OPENCODE_MODEL` | `anthropic/claude-sonnet-4-6` | Optional — overrides opencode's default model per session |
 
 ---
 
 ## Subcommands
 
 ```
-./kali up                  Boot VM (provision on first run)
-./kali claude [-- <args>]  Start Claude Code session inside VM
-./kali ssh                 Interactive shell inside VM
+./kali up                    Boot VM (provision on first run)
+./kali claude [-- <args>]    Start Claude Code session inside VM
+./kali opencode [-- <args>]  Start opencode session inside VM
+./kali ssh                   Interactive shell inside VM
 ./kali key store           Store ANTHROPIC_API_KEY from host env into VM
 ./kali key clear           Remove stored API key from VM
 ./kali key status          Show whether an API key is stored in VM

@@ -13,3 +13,6 @@ netexec
 responder
 seclists
 sqlmap
+
+# Cloud / Kubernetes recon companion (cloud-audit toolset proper lives in provision/06-cloud.sh)
+pacu

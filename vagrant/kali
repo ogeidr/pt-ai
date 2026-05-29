@@ -7,6 +7,7 @@
 #   up                  Boot VM (provision on first run)
 #   ssh                 Interactive shell inside the VM
 #   claude [-- <args>]  Start Claude Code inside the VM
+#   opencode [-- <args>] Start opencode inside the VM (Anthropic provider)
 #   key <store|clear|status>  Manage a persistent API key inside the VM
 #   snapshot <name>     Save a VM snapshot
 #   restore  <name>     Restore a VM snapshot
@@ -36,12 +37,21 @@
 #
 #   Precedence (handled by Claude Code): API key > stored OAuth credentials.
 #
+#   opencode auth note:
+#     opencode does NOT consume Claude Code's ~/.claude/ OAuth tokens.  It needs
+#     ANTHROPIC_API_KEY (either session-forwarded, './kali key store'd, or set
+#     via 'opencode auth login anthropic' inside the VM).  Pro/Max subscription
+#     usage runs through Claude Code only — opencode bills against the API key.
+#
 # Environment overrides:
-#   ANTHROPIC_API_KEY   Optional — forwarded if set (Options A/B)
-#   KALI_BOX            Vagrant box name (default: kalilinux/rolling)
-#   VAGRANT_PROVIDER    virtualbox | vmware_desktop | parallels (default: virtualbox)
-#   VAGRANT_MEMORY      VM memory MB (default: 4096)
-#   VAGRANT_CPUS        vCPU count (default: 4)
+#   ANTHROPIC_API_KEY     Optional — forwarded if set (Options A/B); used by
+#                         both Claude Code and opencode
+#   PT_AI_OPENCODE_MODEL  Optional — overrides opencode's default model
+#                         (default in opencode.json: anthropic/claude-sonnet-4-6)
+#   KALI_BOX              Vagrant box name (default: kalilinux/rolling)
+#   VAGRANT_PROVIDER      virtualbox | vmware_desktop | parallels (default: virtualbox)
+#   VAGRANT_MEMORY        VM memory MB (default: 4096)
+#   VAGRANT_CPUS          vCPU count (default: 4)
 #
 # ARM64 (Apple Silicon):
 #   Build the box first: ./box/build.sh
@@ -80,6 +90,7 @@ Commands:
   up                     Boot VM (provision on first run)
   ssh                    Interactive shell inside VM
   claude [-- <args>]     Start Claude Code inside VM
+  opencode [-- <args>]   Start opencode inside VM (Anthropic provider)
   key store              Store ANTHROPIC_API_KEY from host env into VM
   key clear              Remove stored API key from VM
   key status             Show whether an API key is stored in VM
@@ -97,6 +108,8 @@ Auth:
 
 Environment:
   ANTHROPIC_API_KEY    Optional — forwarded per-session if set
+                       (shared between claude and opencode)
+  PT_AI_OPENCODE_MODEL Optional — overrides opencode's default model
   KALI_BOX             Box name (default: kalilinux/rolling)
   VAGRANT_PROVIDER     virtualbox | vmware_desktop | parallels (default: virtualbox)
   VAGRANT_MEMORY       VM RAM in MB (default: 4096)
@@ -138,6 +151,33 @@ cmd_claude() {
     # Login shell (-l) so /etc/profile.d/pt-ai.sh is sourced (PATH, PS1, stored key).
     # shellcheck disable=SC2086
     _vagrant ssh -- -t "bash -l -c 'cd /engagements && $claude_cmd'"
+}
+
+cmd_opencode() {
+    extra_args=""
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then
+        shift
+        extra_args="$*"
+    fi
+
+    base_cmd="opencode${extra_args:+ $extra_args}"
+
+    # Model override is read at opencode startup; export inline.
+    model_prefix=""
+    if [ -n "${PT_AI_OPENCODE_MODEL:-}" ]; then
+        model_prefix="OPENCODE_MODEL='${PT_AI_OPENCODE_MODEL}' "
+    fi
+
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+        # Same short-lived temp-file trick as cmd_claude.
+        _vagrant ssh -- "bash -c 'printf \"%s\" \"${ANTHROPIC_API_KEY}\" > /tmp/.ptai-key && chmod 600 /tmp/.ptai-key'"
+        opencode_cmd="export ANTHROPIC_API_KEY=\$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && ${model_prefix}$base_cmd"
+    else
+        opencode_cmd="${model_prefix}$base_cmd"
+    fi
+
+    # shellcheck disable=SC2086
+    _vagrant ssh -- -t "bash -l -c 'cd /engagements && $opencode_cmd'"
 }
 
 cmd_key() {
@@ -199,6 +239,7 @@ case "$sub" in
     up)             cmd_up "$@" ;;
     ssh)            cmd_ssh "$@" ;;
     claude)         cmd_claude "$@" ;;
+    opencode)       cmd_opencode "$@" ;;
     key)            cmd_key "$@" ;;
     snapshot)       cmd_snapshot "$@" ;;
     restore)        cmd_restore "$@" ;;

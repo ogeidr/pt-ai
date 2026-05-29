@@ -67,4 +67,10 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", path: "provision/02-claude.sh"
 
   config.vm.provision "shell", path: "provision/03-network.sh"
+
+  config.vm.provision "shell", path: "provision/04-harden.sh"
+
+  config.vm.provision "shell", path: "provision/05-opencode.sh"
+
+  config.vm.provision "shell", path: "provision/06-cloud.sh"
 end
