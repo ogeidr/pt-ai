@@ -1,8 +1,0 @@
-# Keep the build context minimal — only what each Dockerfile actually COPYs.
-*
-!Dockerfile
-!entrypoint.sh
-!Dockerfile.lmstudio
-!entrypoint-lmstudio.sh
-!Dockerfile.ollama
-!entrypoint-ollama.sh

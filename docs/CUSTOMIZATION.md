@@ -4,7 +4,7 @@ This guide explains how to modify existing agents, adjust their configuration, a
 
 ## Using Agents Without a Deployment
 
-If you want agents available in a local Claude Code session without Docker or Vagrant:
+If you want agents available in a local Claude Code session without Vagrant:
 
 ```bash
 # Global — available in all Claude Code sessions

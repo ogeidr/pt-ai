@@ -61,7 +61,7 @@ Before submitting a pull request, verify the following:
 
 ### Agent Loads Correctly
 
-1. Run `docker/ptai run <engagement-id>` — agents in `agents/` are mounted automatically.
+1. Run `cd vagrant && ./kali claude` — agents in `agents/` are synced into the VM automatically.
 2. Confirm the agent appears in Claude Code and its `description` routes correctly.
 
 ### Representative Prompt Testing

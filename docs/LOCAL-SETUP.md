@@ -11,34 +11,45 @@ This guide covers running pt-ai fully offline with local models.
 - **No vendor lock-in.** If any provider pulls the plug or changes their acceptable use policy, your tooling keeps working.
 - **No subscription costs.** After the hardware investment, ongoing costs are electricity only.
 
-## Option 1: Ollama + Docker (Recommended)
+## Option 1: Ollama (Recommended)
 
-Ollama runs locally on your host and exposes an OpenAI-compatible API.
-The pt-ai Docker variant connects opencode directly to it — no translation proxy needed.
+Ollama runs on your host and exposes an OpenAI-compatible API. opencode inside the
+Kali VM connects directly to it — no translation proxy needed.
 
 **Assumptions:** Ollama is installed on the host and the desired model is pulled.
 
 ```sh
-# 1. Install Ollama and pull a model
-brew install ollama          # macOS
-ollama pull gemma4:31b      # or whichever model fits your VRAM
+# 1. Install Ollama and pull a model (on the host)
+brew install ollama             # macOS
+ollama pull qwen2.5-coder:32b   # or whichever model fits your VRAM
 
-# 2. Build the image
-docker/ptai-ollama build
-
-# 3. Start the SSH tunnel to your Kali host (same as standard setup)
-ssh -L 5000:127.0.0.1:5000 user@<linux-host> -N
-
-# 4. Set required env vars
-export PT_AI_OLLAMA_MODEL=gemma4:31b
-export PT_AI_MCP_SERVER=http://host.docker.internal:5000
-
-# 5. Run an engagement
-docker/ptai-ollama run <engagement-id>
+# 2. Expose Ollama to the VM (bind to all interfaces, not just localhost)
+OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
-See [docker/README-ollama.md](../docker/README-ollama.md) for the full setup,
-architecture diagram, model recommendations, and troubleshooting guide.
+Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
+(`./kali ssh`) to add the local provider:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://10.0.2.2:11434/v1" },
+      "models": { "qwen2.5-coder:32b": { "name": "qwen2.5-coder:32b" } }
+    }
+  },
+  "model": "ollama/qwen2.5-coder:32b"
+}
+```
+
+`10.0.2.2` is the host as seen from a VirtualBox NAT guest; on VMware/Parallels use
+the host's address reachable from the VM. Then start a session:
+
+```sh
+./kali opencode
+```
 
 ### Multi-GPU Setup
 
@@ -53,32 +64,34 @@ OLLAMA_NUM_GPU=2 ollama serve
 CUDA_VISIBLE_DEVICES=0,1 ollama serve
 ```
 
-## Option 2: LM Studio + Docker
+## Option 2: LM Studio
 
 [LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
-models with an OpenAI-compatible API. The pt-ai LM Studio variant runs opencode
-inside the container, which speaks OpenAI natively — no translation proxy needed.
+models with an OpenAI-compatible API. opencode inside the Kali VM speaks OpenAI
+natively — no translation proxy needed.
 
-**Assumptions:** LM Studio is installed on the host, the local server is started,
-and a model is loaded. Note the model identifier shown in LM Studio's server tab.
+**Assumptions:** LM Studio is installed on the host, the local server is started
+(bound to the network, not just localhost), and a model is loaded. Note the model
+identifier shown in LM Studio's server tab.
 
-```sh
-# 1. Build the image
-docker/ptai-lmstudio build
+Edit `~/.config/opencode/opencode.json` inside the VM (`./kali ssh`):
 
-# 2. Start the SSH tunnel to your Kali host (same as standard setup)
-ssh -L 5000:127.0.0.1:5000 user@<linux-host> -N
-
-# 3. Set required env vars
-export PT_AI_LM_STUDIO_MODEL=<model-identifier-from-lm-studio>
-export PT_AI_MCP_SERVER=http://host.docker.internal:5000
-
-# 4. Run an engagement
-docker/ptai-lmstudio run <engagement-id>
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://10.0.2.2:1234/v1" },
+      "models": { "<model-id-from-lm-studio>": { "name": "<model-id-from-lm-studio>" } }
+    }
+  },
+  "model": "lmstudio/<model-id-from-lm-studio>"
+}
 ```
 
-See [docker/README-lmstudio.md](../docker/README-lmstudio.md) for the full setup,
-architecture diagram, and troubleshooting guide.
+Then run `./kali opencode`. As with Ollama, replace `10.0.2.2` with the host
+address reachable from your VM.
 
 ## Option 3: vLLM (Production/Team Use)
 

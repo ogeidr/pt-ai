@@ -68,23 +68,19 @@ The agents work on methodology and patterns. They don't need real IPs to give yo
 ### Option 3: Local Models (Maximum Privacy)
 
 For the highest data sensitivity, run a local LLM that never sends data off-machine.
-pt-ai has dedicated Docker variants for this using opencode (which speaks OpenAI-compatible
-APIs natively) connected to Ollama or LM Studio running on your host:
+Run Ollama or LM Studio on your host and point opencode (inside the Kali VM) at it —
+opencode speaks OpenAI-compatible APIs natively, so no translation proxy is needed:
 
 ```bash
-# Ollama
+# Ollama, on the host — bind to all interfaces so the VM can reach it
 ollama pull qwen2.5-coder:32b
-export PT_AI_OLLAMA_MODEL=qwen2.5-coder:32b
-export PT_AI_MCP_SERVER=http://host.docker.internal:5000
-docker/ptai-ollama run <engagement-id>
-
-# LM Studio — start the local server in LM Studio, then:
-export PT_AI_LM_STUDIO_MODEL=<model-id-from-lmstudio>
-export PT_AI_MCP_SERVER=http://host.docker.internal:5000
-docker/ptai-lmstudio run <engagement-id>
+OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
-See [LOCAL-SETUP.md](LOCAL-SETUP.md) for full setup instructions, model recommendations, and hardware requirements.
+Add the local provider to `~/.config/opencode/opencode.json` inside the VM
+(`./kali ssh`), then start a session with `./kali opencode`.
+
+See [LOCAL-SETUP.md](LOCAL-SETUP.md) for the full provider config, model recommendations, and hardware requirements.
 
 **Note:** Local models will have significantly reduced capability compared to Claude Sonnet/Opus. Agent output quality depends heavily on model capability. For complex tasks (threat modeling, detection engineering, report generation), cloud models will produce substantially better results.
 

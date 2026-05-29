@@ -77,8 +77,8 @@ The safety model is identical to a human operator running tools: someone compose
 | Agent | Why |
 |-------|-----|
 | **Exploit Guide** | Exploitation tools are high-risk. Methodology guidance is the right level of assistance. |
-| **Wireless Pentester** | Wireless tools require hardware interaction (WiFi adapters in monitor mode). Not reproducible in the container environment. |
-| **Mobile Pentester** | Mobile tools require device connections and complex environment setup. Not reproducible in the container environment. |
+| **Wireless Pentester** | Wireless tools require hardware interaction (WiFi adapters in monitor mode). Not reproducible in the VM environment. |
+| **Mobile Pentester** | Mobile tools require device connections and complex environment setup. Not reproducible in the VM environment. |
 | **Credential Tester** | Password attacks carry high lockout risk. Methodology agent; execution covered by AD Attacker for spraying. |
 | **Attack Planner** | Produces strategy documents, not commands. Coordinates findings from other agents. |
 | **Bug Bounty Hunter** | Methodology and reporting agent. Recon tools covered by other Tier 2 agents. |

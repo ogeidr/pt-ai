@@ -10,24 +10,15 @@ A minimalistic, ephemeral, agentic framework for penetration testing.
 - **Authorization-bound.** Every agent operates within explicit scope and authorization boundaries.
 - **Auditable.** Every action is intended to be observable and reproducible.
 
-## Deployment options
+## Deployment
 
-Four ways to run pt-ai — pick the one that fits your setup:
+pt-ai runs in a fully-provisioned [Kali Linux VM](vagrant/README.md) managed by Vagrant. Claude Code (and opencode) run directly inside the VM alongside all the tools — no MCP bridge or remote host required. Snapshot/restore provides clean state between engagements.
 
-| Option | AI model | Tools | Best for |
-|---|---|---|---|
-| [Docker + Claude Code](docker/README.md) | Claude (Anthropic API / OAuth) | Remote Kali host via MCP | Existing Kali server, cloud API |
-| [Docker + LM Studio](docker/README-lmstudio.md) | Local model via LM Studio | Remote Kali host via MCP | Air-gapped / no API key, Mac host |
-| [Docker + Ollama](docker/README-ollama.md) | Local model via Ollama | Remote Kali host via MCP | Air-gapped / no API key, Linux host |
-| [Vagrant Kali VM](vagrant/README.md) | Claude (API key / OAuth) | Local — tools run inside the VM | Self-contained, no remote host needed |
+```sh
+cd vagrant && ./kali up
+```
 
-### Docker options (Claude / LM Studio / Ollama)
-
-All three Docker options share the same architecture: an ephemeral container handles AI reasoning, and a separate Linux host running `kali-server-mcp` provides the Kali toolset over an MCP bridge. The container is destroyed on exit; only the engagement evidence directory survives.
-
-### Vagrant Kali VM
-
-A fully-provisioned Kali Linux VM (`vagrant/kali`) where Claude Code runs directly inside the VM alongside all the tools — no MCP bridge or remote host required. Snapshot/restore provides clean state between engagements.
+See [vagrant/README.md](vagrant/README.md) for setup and daily workflow.
 
 ## Status
 
