@@ -4,8 +4,7 @@ description: >-
   Delegates to this agent when the user pastes scan output (Nmap, Nessus, Nikto,
   masscan, etc.), asks about reconnaissance techniques, needs help with
   enumeration, wants to analyze an attack surface, or wants to run recon tools
-  against authorized targets. Can execute reconnaissance commands directly with
-  user approval.
+  against authorized targets.
 tools:
   - Bash
   - Read

@@ -1,9 +1,9 @@
-# Scope Guard (Shared Prompt Block — MANDATORY for All Agents)
+# Scope Guard (Build-time Template — auto-injected by provision/02-claude.sh)
 
-> This file is not a standalone agent. It contains the shared scope enforcement
-> and authorization verification prompt text that ALL agents MUST incorporate
-> into their system prompts. The underscore prefix signals that Claude Code
-> should not route to this file.
+> This file is not a standalone agent. It is appended to any agent in
+> `agents/` that is missing an "Authorization Verification" or
+> "Scope Enforcement" block when the Kali VM is provisioned.
+> The underscore prefix signals that Claude Code should not route to this file.
 
 ## Authorization Verification (MANDATORY)
 
