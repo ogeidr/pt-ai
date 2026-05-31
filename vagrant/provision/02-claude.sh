@@ -23,9 +23,27 @@ fi
 
 # --- pt-ai agents/skills --------------------------------------------------
 mkdir -p "$CLAUDE_DIR"
-# Synced folders are already mounted at /opt/pt-ai/; link into .claude so
-# Claude Code discovers them without duplication.
-ln -sfn /opt/pt-ai/agents "$CLAUDE_DIR/agents"
+
+# Agents: copy source files into ~/.claude/agents/ and append _scope-guard.md
+# to any agent that is missing both scope sentinels.  This guarantees every
+# agent enforces scope even if the manual copy step was forgotten when the
+# agent was authored.  Re-provisioning regenerates the directory from source.
+SCOPE_GUARD="/opt/pt-ai/agents/_scope-guard.md"
+AGENTS_DST="$CLAUDE_DIR/agents"
+rm -rf "$AGENTS_DST"
+mkdir -p "$AGENTS_DST"
+for src in /opt/pt-ai/agents/*.md; do
+    fname=$(basename "$src")
+    [[ "$fname" == _* ]] && continue   # exclude _scope-guard.md and any future _*.md helpers
+    dst="$AGENTS_DST/$fname"
+    cp "$src" "$dst"
+    if ! grep -qE "Authorization Verification|Scope Enforcement" "$dst"; then
+        printf '\n' >> "$dst"
+        cat "$SCOPE_GUARD" >> "$dst"
+    fi
+done
+
+# Skills: symlink as before (scope enforcement handled via bang preambles).
 ln -sfn /opt/pt-ai/skills "$CLAUDE_DIR/skills"
 chown -R vagrant:vagrant "$CLAUDE_DIR"
 

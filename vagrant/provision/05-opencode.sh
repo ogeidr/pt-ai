@@ -14,7 +14,7 @@ NPM_GLOBAL="$VAGRANT_HOME/.npm-global"
 OPENCODE_DIR="$VAGRANT_HOME/.config/opencode"
 CMD_DIR="$OPENCODE_DIR/commands"
 AGENTS_SRC="/opt/pt-ai/agents"
-COMMANDS_SRC="/opt/pt-ai/commands"
+SKILLS_SRC="/opt/pt-ai/skills"
 
 # --- opencode CLI ---------------------------------------------------------
 # Installed as the vagrant user under the same npm-global prefix as Claude Code
@@ -26,15 +26,25 @@ sudo -u vagrant bash -c "
     fi
 "
 
-# --- agent → command conversion -------------------------------------------
-# opencode commands are plain markdown without YAML frontmatter.  Strip the
-# frontmatter from each agent file and write it into ~/.config/opencode/commands/.
+# --- agent / skill → opencode command conversion -------------------------
+# opencode commands accept YAML frontmatter (description / agent / model)
+# plus a markdown body.  Two sources feed into ~/.config/opencode/commands/:
+#
+#   agents/<name>.md         → strip frontmatter, emit body only
+#                              (agents become commands so users can type
+#                               /recon-advisor etc.)
+#   skills/<name>/SKILL.md   → rewrite frontmatter to keep only `description:`,
+#                              emit body (bang-prefix preambles transplant
+#                              verbatim — opencode honours them too)
+#
+# Precedence: skills override agents on filename collision.
 # _* files are shared prompt blocks, not standalone commands — skip them.
 # Re-runs cleanly: previously-generated files in CMD_DIR are removed first so
 # deletions on the host propagate.
 sudo -u vagrant mkdir -p "$CMD_DIR"
 sudo -u vagrant find "$CMD_DIR" -maxdepth 1 -type f -name '*.md' -delete
 
+# Pass 1 — agents (strip frontmatter, body only)
 if [ -d "$AGENTS_SRC" ]; then
     for agent in "$AGENTS_SRC"/*.md; do
         [ -f "$agent" ] || continue
@@ -45,11 +55,31 @@ if [ -d "$AGENTS_SRC" ]; then
     done
 fi
 
-# pt-ai commands/ are already plain markdown — copy verbatim.
-if [ -d "$COMMANDS_SRC" ]; then
-    for cmd in "$COMMANDS_SRC"/*.md; do
-        [ -f "$cmd" ] || continue
-        cp "$cmd" "$CMD_DIR/$(basename "$cmd")"
+# Pass 2 — skills (derived; overrides agents — skill is the source of truth)
+# The awk keeps the opening `---`, retains only `description:` (plus its YAML
+# folded-scalar continuation lines) from the skill frontmatter, emits the
+# closing `---`, and passes the body through unchanged.  The body's
+# `!`cmd`` bang preambles work in opencode without any rewrite.
+if [ -d "$SKILLS_SRC" ]; then
+    for skill in "$SKILLS_SRC"/*/SKILL.md; do
+        [ -f "$skill" ] || continue
+        name=$(basename "$(dirname "$skill")")
+        case "$name" in _*) continue ;; esac
+        awk '
+            BEGIN { state = 0; keep = 0 }
+            /^---$/ {
+                state++
+                if (state <= 2) { print; next }
+            }
+            state == 1 {
+                if (/^[A-Za-z][A-Za-z0-9_-]*:/) {
+                    keep = /^description:/
+                }
+                if (keep) print
+                next
+            }
+            state >= 2 { print }
+        ' "$skill" > "$CMD_DIR/${name}.md"
     done
 fi
 
