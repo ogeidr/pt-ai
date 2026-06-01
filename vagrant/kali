@@ -139,10 +139,12 @@ cmd_claude() {
     base_cmd="claude${extra_args:+ $extra_args}"
 
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-        # Write key to a short-lived temp file in the VM (chmod 600), read it
-        # at session start, then delete it.  Avoids SSH SendEnv fragility and
-        # keeps the key out of the remote process listing.
-        _vagrant ssh -- "bash -c 'printf \"%s\" \"${ANTHROPIC_API_KEY}\" > /tmp/.ptai-key && chmod 600 /tmp/.ptai-key'"
+        # Write key to a short-lived temp file in the VM, read it at session
+        # start, then delete it.  The key is streamed over SSH stdin (never
+        # placed in argv), so it stays out of both the host and guest process
+        # listings; `umask 077` makes the temp file 0600.
+        printf '%s' "$ANTHROPIC_API_KEY" | \
+            _vagrant ssh -- -T "umask 077; cat > /tmp/.ptai-key"
         claude_cmd="export ANTHROPIC_API_KEY=\$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && $base_cmd"
     else
         claude_cmd="$base_cmd"
@@ -169,8 +171,9 @@ cmd_opencode() {
     fi
 
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-        # Same short-lived temp-file trick as cmd_claude.
-        _vagrant ssh -- "bash -c 'printf \"%s\" \"${ANTHROPIC_API_KEY}\" > /tmp/.ptai-key && chmod 600 /tmp/.ptai-key'"
+        # Same short-lived temp-file trick as cmd_claude — key via SSH stdin.
+        printf '%s' "$ANTHROPIC_API_KEY" | \
+            _vagrant ssh -- -T "umask 077; cat > /tmp/.ptai-key"
         opencode_cmd="export ANTHROPIC_API_KEY=\$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && ${model_prefix}$base_cmd"
     else
         opencode_cmd="${model_prefix}$base_cmd"
@@ -188,7 +191,10 @@ cmd_key() {
                 echo "kali key store: ANTHROPIC_API_KEY is not set in the host environment" >&2
                 exit 1
             fi
-            _vagrant ssh -- "bash -c 'printf \"export ANTHROPIC_API_KEY=%s\n\" \"${ANTHROPIC_API_KEY}\" > ~/.anthropic_key && chmod 600 ~/.anthropic_key'"
+            # Stream the key over SSH stdin (never in argv); the guest wraps it
+            # as a sourceable `export` line and umask 077 makes it 0600.
+            printf '%s' "$ANTHROPIC_API_KEY" | _vagrant ssh -- -T \
+                'umask 077; { printf "export ANTHROPIC_API_KEY="; cat; printf "\n"; } > ~/.anthropic_key'
             echo "API key stored in VM (~/.anthropic_key)."
             echo "All subsequent './kali claude' sessions will use it."
             echo "Run './kali key clear' to remove it."
