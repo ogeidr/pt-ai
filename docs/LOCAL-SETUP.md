@@ -109,7 +109,7 @@ python -m vllm.entrypoints.openai.api_server \
 
 # Point OpenCode at vLLM
 export LOCAL_ENDPOINT=http://localhost:8000/v1
-./opencode-setup.sh --full
+./vagrant/opencode-setup.sh --full
 ```
 
 ## Option 4: Raw System Prompts (Any LLM)
