@@ -221,18 +221,18 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 ## ghidrasql
 
 [`ghidrasql`](https://github.com/0xeb/ghidrasql) exposes a SQL interface over a
-binary's Ghidra analysis database — query functions, symbols, decompiled
+binary's Ghidra analysis database — query functions, symbols, strings, decompiled
 pseudocode, and more with SQL, one-shot or over HTTP. It drives Ghidra headless
 via the `libghidra` extension; the toolchain (Ghidra 12.0.4, JDK 21, the libghidra
 extension, and the ghidrasql binary) is provisioned by `provision/07-ghidrasql.sh`.
-(Pinned to 12.0.4 — libghidra's supported version; on 12.1 the host fails to bind
-the program's metadata, so `funcs`/`db_info` come back empty.)
+Ghidra is pinned to 12.0.4 (the version libghidra documents); override with the
+env vars below.
 
 **aarch64 note.** The official Ghidra release ships no `linux_arm_64` native
-decompiler, so on Apple Silicon the provisioner builds it from the decompiler
-source bundled in the release. This is the slow, failure-prone part of the
-install; if it cannot produce the native, ghidrasql still runs but
-decompiler-backed tables (`pseudocode`, `decomp_*`) will error.
+decompiler, so on Apple Silicon `provision/07-ghidrasql.sh` builds it from the
+decompiler source bundled in the release (`ghidra_opt` with `ARCH_TYPE=`). This is
+the slowest step of the first provision. If it cannot produce the native binary,
+ghidrasql still runs but decompiler-backed tables (`pseudocode`, `decomp_*`) error.
 
 The command runs in `/engagements`, so `--binary` relative paths resolve there.
 The **`--project` path must be absolute** — Ghidra rejects any path element
