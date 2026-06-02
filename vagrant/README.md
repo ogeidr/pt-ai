@@ -22,15 +22,11 @@ Both Claude Code and opencode run directly inside the VM and invoke Kali tools v
 
 ### Prerequisites
 
-Install the provider for your platform:
-
 | Platform | Provider | Notes |
 |---|---|---|
 | Apple Silicon Mac | VMware Fusion 13+ Pro (free) | Recommended — tested |
 | Intel Mac / Linux | VirtualBox | Default, no extra config |
 | macOS (either) | Parallels Desktop | Requires plugin |
-
-The `Vagrantfile`, the `kali` wrapper, and the provisioners are OS-agnostic — they work wherever Vagrant and a supported provider run. On Windows, run the `kali` wrapper from WSL. The only platform-specific piece is `box/build.sh` (Step 1), which is macOS-only and only needed on Apple Silicon.
 
 ```sh
 # All platforms
@@ -44,19 +40,19 @@ vagrant plugin install vagrant-vmware-desktop
 vagrant plugin install vagrant-parallels
 ```
 
+On Windows, run the `kali` wrapper from WSL. The only macOS-only piece is `box/build.sh` (Step 1).
+
 ---
 
 ### Step 1 — Build the Kali ARM64 box (Apple Silicon only)
 
-**macOS-only step.** Skip it entirely on Intel Mac or Linux — VirtualBox uses the official `kalilinux/rolling` box automatically, no build needed. `box/build.sh` exists only because there is no official Kali ARM64 VMware box.
+**Skip on Intel Mac / Linux** — VirtualBox uses the official `kalilinux/rolling` box automatically. `box/build.sh` exists only because there is no official Kali ARM64 VMware box.
 
 ```sh
 ./box/build.sh
 ```
 
-This downloads the Kali ARM64 installer ISO (~4 GB), runs an automated install inside VMware Fusion, and packages the result as a local Vagrant box. **One-time operation — takes 30–60 min.**
-
-When prompted, type `vagrant` as the SSH password.
+Downloads the Kali ARM64 installer ISO (~4 GB), installs it inside VMware Fusion, and packages a local Vagrant box. **One-time — takes 30–60 min.** When prompted, type `vagrant` as the SSH password.
 
 ---
 
@@ -195,11 +191,7 @@ source config/.env
 ./kali halt
 ```
 
----
-
-## Engagement directories
-
-The host `engagements/` directory is synced to `/engagements/` inside the VM. Create one directory per engagement on the host — it appears immediately inside the VM.
+The host `engagements/` directory is synced to `/engagements/` inside the VM. Create one directory per engagement:
 
 ```sh
 mkdir ../engagements/client-abc
@@ -221,18 +213,15 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 ## ghidrasql
 
 [`ghidrasql`](https://github.com/0xeb/ghidrasql) exposes a SQL interface over a
-binary's Ghidra analysis database — query functions, symbols, strings, decompiled
-pseudocode, and more with SQL, one-shot or over HTTP. It drives Ghidra headless
-via the `libghidra` extension; the toolchain (Ghidra 12.0.4, JDK 21, the libghidra
+binary's Ghidra analysis database — query functions, strings, decompiled pseudocode,
+and more, one-shot or over HTTP. The toolchain (Ghidra 12.0.4, JDK 21, the libghidra
 extension, and the ghidrasql binary) is provisioned by `provision/07-ghidrasql.sh`.
-Ghidra is pinned to 12.0.4 (the version libghidra documents); override with the
-env vars below.
 
 **aarch64 note.** The official Ghidra release ships no `linux_arm_64` native
 decompiler, so on Apple Silicon `provision/07-ghidrasql.sh` builds it from the
-decompiler source bundled in the release (`ghidra_opt` with `ARCH_TYPE=`). This is
-the slowest step of the first provision. If it cannot produce the native binary,
-ghidrasql still runs but decompiler-backed tables (`pseudocode`, `decomp_*`) error.
+decompiler source bundled in the release. This is the slowest step of the first
+provision. If the build fails, ghidrasql still runs but decompiler-backed tables
+(`pseudocode`, `decomp_*`) will error.
 
 The command runs in `/engagements`, so `--binary` relative paths resolve there.
 The **`--project` path must be absolute** — Ghidra rejects any path element
@@ -249,9 +238,14 @@ starting with `.` (so `./proj` fails; use `/tmp/…` or `/engagements/…`).
 # (from ./kali ssh) curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
 ```
 
-`GHIDRA_INSTALL_DIR` is exported VM-wide, so `--ghidra` is auto-filled. Because
-that env var conflicts with `--url` attach mode, prefix attach calls with
-`env -u GHIDRA_INSTALL_DIR` (e.g. `ghidrasql --url http://127.0.0.1:18080`).
+`GHIDRA_INSTALL_DIR` is exported VM-wide, so `--ghidra` is auto-filled. For
+`--url` attach mode (which conflicts with that var), prefix the call with
+`env -u GHIDRA_INSTALL_DIR`.
+
+`provision/07-ghidrasql.sh` carries local patches for two upstream bugs
+([#1](https://github.com/0xeb/ghidrasql/issues/1),
+[#2](https://github.com/0xeb/ghidrasql/issues/2)) and for GCC 15 / libxsql
+build compatibility. Drop the relevant patch once a fix lands upstream.
 
 Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
 `GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`).
@@ -279,13 +273,13 @@ Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
 ./kali opencode [-- <args>]  Start opencode session inside VM
 ./kali ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
 ./kali ssh                   Interactive shell inside VM
-./kali key store           Store ANTHROPIC_API_KEY from host env into VM
-./kali key clear           Remove stored API key from VM
-./kali key status          Show whether an API key is stored in VM
-./kali snapshot <name>     Save a VM snapshot
-./kali restore  <name>     Restore a VM snapshot
-./kali halt                Shut down the VM
-./kali destroy             Destroy the VM and all state
-./kali provision           Re-run all provisioners
-./kali status              Show VM status
+./kali key store             Store ANTHROPIC_API_KEY from host env into VM
+./kali key clear             Remove stored API key from VM
+./kali key status            Show whether an API key is stored in VM
+./kali snapshot <name>       Save a VM snapshot
+./kali restore  <name>       Restore a VM snapshot
+./kali halt                  Shut down the VM
+./kali destroy               Destroy the VM and all state
+./kali provision             Re-run all provisioners
+./kali status                Show VM status
 ```
