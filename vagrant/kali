@@ -82,6 +82,24 @@ _vagrant() {
       vagrant "$@" )
 }
 
+# POSIX-safe shell quoting: wrap each argument in single quotes (escaping any
+# embedded single quote as '\'') so spaces, quotes, parens, '*', and SQL bodies
+# survive being re-parsed by the remote shell. Pure parameter expansion — no
+# bashisms, no sed. Output has a leading space (harmless).
+_shquote() {
+    _sq_out=
+    for _sq_arg in "$@"; do
+        _sq_q="'"
+        _sq_rest=$_sq_arg
+        while case $_sq_rest in *\'*) true ;; *) false ;; esac; do
+            _sq_q="$_sq_q${_sq_rest%%\'*}'\\''"
+            _sq_rest=${_sq_rest#*\'}
+        done
+        _sq_out="$_sq_out $_sq_q$_sq_rest'"
+    done
+    printf '%s' "$_sq_out"
+}
+
 usage() {
     cat <<EOF
 Usage: kali <command> [options]
@@ -91,6 +109,7 @@ Commands:
   ssh                    Interactive shell inside VM
   claude [-- <args>]     Start Claude Code inside VM
   opencode [-- <args>]   Start opencode inside VM (Anthropic provider)
+  ghidrasql [args...]    Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
   key store              Store ANTHROPIC_API_KEY from host env into VM
   key clear              Remove stored API key from VM
   key status             Show whether an API key is stored in VM
@@ -183,6 +202,28 @@ cmd_opencode() {
     _vagrant ssh -- -t "bash -l -c 'cd /engagements && $opencode_cmd'"
 }
 
+cmd_ghidrasql() {
+    # Accept an optional leading `--` separator (like claude/opencode).
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; fi
+    [ "$#" -eq 0 ] && set -- --help
+
+    # Quote every argument so SQL/paths with spaces, quotes, parens, or '*'
+    # survive the single remote-shell parse (no command injection, no mangling).
+    qargs=$(_shquote "$@")
+
+    # Source ghidrasql's env (GHIDRA_INSTALL_DIR, JAVA_HOME). `--url` attach mode
+    # conflicts with GHIDRA_INSTALL_DIR (it auto-fills --ghidra), so drop it then.
+    env_setup=". /etc/profile.d/pt-ai-ghidrasql.sh"
+    for a in "$@"; do
+        [ "$a" = "--url" ] && env_setup="$env_setup; unset GHIDRA_INSTALL_DIR"
+    done
+
+    # One remote parsing layer; call by absolute path so PATH need not be loaded.
+    # Runs in /engagements so --binary/--project relative paths resolve there.
+    # shellcheck disable=SC2029
+    _vagrant ssh -- -t "$env_setup; cd /engagements && /usr/local/bin/ghidrasql$qargs"
+}
+
 cmd_key() {
     action="${1:-}"
     case "$action" in
@@ -246,6 +287,7 @@ case "$sub" in
     ssh)            cmd_ssh "$@" ;;
     claude)         cmd_claude "$@" ;;
     opencode)       cmd_opencode "$@" ;;
+    ghidrasql)      cmd_ghidrasql "$@" ;;
     key)            cmd_key "$@" ;;
     snapshot)       cmd_snapshot "$@" ;;
     restore)        cmd_restore "$@" ;;

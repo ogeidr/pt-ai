@@ -95,6 +95,7 @@ First run provisions the VM automatically (~30–60 min depending on network):
 - Network config: IP forwarding, iptables open policy, openvpn/proxychains
 - opencode CLI + pt-ai agents converted to opencode slash commands
 - Cloud-audit toolset: AWS CLI v2, prowler, scoutsuite, trufflehog (plus apt pacu, kube-hunter)
+- ghidrasql: Ghidra 12.0.4 + libghidra + ghidrasql (on aarch64, the native decompiler is built from source — adds time to the first provision)
 
 Subsequent `./kali up` calls boot in seconds — provisioning is skipped.
 
@@ -217,6 +218,46 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 
 ---
 
+## ghidrasql
+
+[`ghidrasql`](https://github.com/0xeb/ghidrasql) exposes a SQL interface over a
+binary's Ghidra analysis database — query functions, symbols, decompiled
+pseudocode, and more with SQL, one-shot or over HTTP. It drives Ghidra headless
+via the `libghidra` extension; the toolchain (Ghidra 12.0.4, JDK 21, the libghidra
+extension, and the ghidrasql binary) is provisioned by `provision/07-ghidrasql.sh`.
+(Pinned to 12.0.4 — libghidra's supported version; on 12.1 the host fails to bind
+the program's metadata, so `funcs`/`db_info` come back empty.)
+
+**aarch64 note.** The official Ghidra release ships no `linux_arm_64` native
+decompiler, so on Apple Silicon the provisioner builds it from the decompiler
+source bundled in the release. This is the slow, failure-prone part of the
+install; if it cannot produce the native, ghidrasql still runs but
+decompiler-backed tables (`pseudocode`, `decomp_*`) will error.
+
+The command runs in `/engagements`, so `--binary` relative paths resolve there.
+The **`--project` path must be absolute** — Ghidra rejects any path element
+starting with `.` (so `./proj` fails; use `/tmp/…` or `/engagements/…`).
+
+```sh
+# One-shot query against a binary
+./kali ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+  --analyze -q "SELECT name, printf('0x%X', address) AS addr FROM funcs ORDER BY size DESC LIMIT 5"
+
+# Background HTTP mode, then query over curl from inside the VM
+./kali ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+  --analyze --http --port 8081 --max-runtime 0
+# (from ./kali ssh) curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
+```
+
+`GHIDRA_INSTALL_DIR` is exported VM-wide, so `--ghidra` is auto-filled. Because
+that env var conflicts with `--url` attach mode, prefix attach calls with
+`env -u GHIDRA_INSTALL_DIR` (e.g. `ghidrasql --url http://127.0.0.1:18080`).
+
+Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
+`GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`).
+
+---
+
 ## Environment variables
 
 | Variable | Default | Description |
@@ -236,6 +277,7 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 ./kali up                    Boot VM (provision on first run)
 ./kali claude [-- <args>]    Start Claude Code session inside VM
 ./kali opencode [-- <args>]  Start opencode session inside VM
+./kali ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
 ./kali ssh                   Interactive shell inside VM
 ./kali key store           Store ANTHROPIC_API_KEY from host env into VM
 ./kali key clear           Remove stored API key from VM
