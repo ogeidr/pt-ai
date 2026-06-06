@@ -10,6 +10,14 @@ All platforms use the `vmware_desktop` Vagrant provider.
 
 Work through phases in order. Stop and fix before continuing if anything fails.
 
+> **Scope of this plan:** full manual acceptance test of the **Kali** deployment
+> (auth, key store, snapshot/restore, cold boot, opencode, cloud tools). For the
+> automated **multi-box** provisioning + assertion test (Kali *and* Debian, verifying
+> the Kali-only steps gate correctly), use `./test/provision-test.sh` — see
+> [test/README.md](test/README.md). The box is selected with `PTAI_BOX` (`KALI_BOX`
+> is still honored as a fallback); skip the heavy ghidrasql build with
+> `PTAI_SKIP_GHIDRASQL=1`.
+
 ---
 
 ## Phase 0 — Prerequisites
@@ -70,7 +78,7 @@ Checkpoints during the run:
 5. Return to terminal, press Enter when prompted.
 6. Script auto-detects IP (or you paste it) — type `vagrant` password once.
 7. `==> Guest configuration done` prints, box is packaged.
-8. `==> Done. Use with: KALI_BOX=kali-arm64 ...` prints.
+8. `==> Done. Use with: PTAI_BOX=kali-arm64 ...` prints.
 
 Verify:
 ```sh
@@ -92,20 +100,20 @@ Edit `config/.env` for your platform:
 
 **Apple Silicon:**
 ```sh
-export KALI_BOX=kali-arm64
+export PTAI_BOX=kali-arm64
 export VAGRANT_PROVIDER=vmware_desktop
 ```
 
 **Intel Mac / Linux:**
 ```sh
-export KALI_BOX=kalilinux/rolling
+export PTAI_BOX=kalilinux/rolling
 export VAGRANT_PROVIDER=vmware_desktop
 ```
 
 Source it:
 ```sh
 source config/.env
-echo $KALI_BOX $VAGRANT_PROVIDER   # verify both set
+echo $PTAI_BOX $VAGRANT_PROVIDER   # verify both set
 ```
 
 **Pass:** Variables exported correctly.
@@ -129,7 +137,8 @@ Expected duration: 30–60 min. Milestones in order:
 | `03-network.sh` | iptables policy set, openvpn/proxychains configured |
 | `04-harden.sh` | SSH key-only, vagrant password locked, unattended-upgrades enabled |
 | `05-opencode.sh` | opencode installed, agents converted, opencode.json written |
-| `06-cloud.sh` | pipx/unzip installed, AWS CLI v2 unpacked, trufflehog binary fetched, prowler + scoutsuite pipx venvs created |
+| `06-cloud.sh` | pipx/unzip + build deps installed, AWS CLI v2 unpacked, trufflehog binary fetched, prowler + scoutsuite pipx venvs created |
+| `07-ghidrasql.sh` | Ghidra + ghidrasql built (skipped if `PTAI_SKIP_GHIDRASQL=1`; on aarch64 the native decompiler is built from source — slow) |
 
 Completes with no `ERROR` lines and the shell prompt returns.
 

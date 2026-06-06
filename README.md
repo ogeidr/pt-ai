@@ -12,7 +12,7 @@ A minimalistic, ephemeral, agentic framework for penetration testing.
 
 ## Deployment
 
-pt-ai runs in a fully-provisioned [Kali Linux VM](vagrant/README.md) managed by Vagrant. Claude Code (and opencode) run directly inside the VM alongside all the tools — no MCP bridge or remote host required. Snapshot/restore provides clean state between engagements.
+pt-ai runs in a fully-provisioned [VM](vagrant/README.md) managed by Vagrant — Kali by default, with any apt-family box (Ubuntu, Debian, Parrot, …) supported via `PTAI_BOX`. Claude Code (and opencode) run directly inside the VM alongside all the tools — no MCP bridge or remote host required. Snapshot/restore provides clean state between engagements.
 
 ```sh
 cd vagrant && ./kali up

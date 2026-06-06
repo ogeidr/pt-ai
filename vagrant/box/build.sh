@@ -21,8 +21,8 @@ set -euo pipefail
 err() { echo "Error: $*" >&2; exit 1; }
 
 [ "$(uname -s)" = "Darwin" ] || err "box/build.sh runs only on macOS with VMware Fusion.
-On Intel Mac or Linux you don't need it — use the default VirtualBox setup with
-KALI_BOX=kalilinux/rolling. See README.md."
+On Intel Mac or Linux you don't need it — use the default VirtualBox setup
+(box defaults to kalilinux/rolling; override with PTAI_BOX). See README.md."
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 WORK_DIR="$SCRIPT_DIR/.build"
@@ -307,6 +307,6 @@ vagrant box add --name "$BOX_NAME" "$BOX_FILE"
 
 info ""
 info "Done. Use with:"
-info "  KALI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up"
+info "  PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up"
 
 rm -rf "$WORK_DIR"
