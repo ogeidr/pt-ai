@@ -93,26 +93,7 @@ Edit `~/.config/opencode/opencode.json` inside the VM (`./kali ssh`):
 Then run `./kali opencode`. As with Ollama, replace `10.0.2.2` with the host
 address reachable from your VM.
 
-## Option 3: vLLM (Production/Team Use)
-
-For teams or high-throughput setups, [vLLM](https://github.com/vllm-project/vllm) provides an optimized inference server.
-
-```bash
-# Install vLLM
-pip install vllm
-
-# Start the server
-python -m vllm.entrypoints.openai.api_server \
-  --model meta-llama/Meta-Llama-3.1-70B-Instruct \
-  --tensor-parallel-size 2 \
-  --port 8000
-
-# Point OpenCode at vLLM
-export LOCAL_ENDPOINT=http://localhost:8000/v1
-./vagrant/opencode-setup.sh --full
-```
-
-## Option 4: Raw System Prompts (Any LLM)
+## Option 3: Raw System Prompts (Any LLM)
 
 If you don't use OpenCode or Claude Code at all, you can still use the agent methodology directly. Each agent file contains a complete system prompt after the YAML frontmatter.
 
