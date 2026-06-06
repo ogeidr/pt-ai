@@ -123,7 +123,7 @@ echo $PTAI_BOX $VAGRANT_PROVIDER   # verify both set
 ## Phase 3 — First boot and provision
 
 ```sh
-./kali up
+./pt-ai up
 ```
 
 Expected duration: 30–60 min. Milestones in order:
@@ -142,14 +142,14 @@ Expected duration: 30–60 min. Milestones in order:
 
 Completes with no `ERROR` lines and the shell prompt returns.
 
-**Pass:** `./kali status` shows `running`.
+**Pass:** `./pt-ai status` shows `running`.
 
 ---
 
 ## Phase 4 — Smoke tests inside VM
 
 ```sh
-./kali ssh
+./pt-ai ssh
 ```
 
 ```sh
@@ -223,7 +223,7 @@ exit
 ## Phase 5 — Claude OAuth auth
 
 ```sh
-./kali claude
+./pt-ai claude
 ```
 
 1. Claude Code starts in `/engagements/`.
@@ -231,7 +231,7 @@ exit
 3. Claude Code prints "Login successful" and shows the prompt.
 4. Test prompt: `say hello` — Claude responds.
 5. Exit: `/exit`
-6. Run `./kali claude` again — no login prompt this time.
+6. Run `./pt-ai claude` again — no login prompt this time.
 
 **Pass:** Second invocation starts without re-authentication.
 
@@ -242,7 +242,7 @@ exit
 **Session-only (key forwarded, never stored in VM):**
 ```sh
 export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
-./kali claude
+./pt-ai claude
 # Claude starts; exit with /exit
 ```
 
@@ -250,16 +250,16 @@ export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
 ```sh
 # Store
 export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
-./kali key store
-./kali key status       # API key stored in VM
+./pt-ai key store
+./pt-ai key status       # API key stored in VM
 
 # Verify key is used without env var
 unset ANTHROPIC_API_KEY
-./kali claude           # starts without login prompt; exit with /exit
+./pt-ai claude           # starts without login prompt; exit with /exit
 
 # Clear
-./kali key clear
-./kali key status       # No API key stored in VM
+./pt-ai key clear
+./pt-ai key status       # No API key stored in VM
 ```
 
 **Pass:** All three subcommands work; key persists when stored, absent after clear.
@@ -272,20 +272,20 @@ Verifies that VM-local files are wiped by restore while `/engagements/` (host-sy
 survives:
 
 ```sh
-./kali snapshot pre-engagement
+./pt-ai snapshot pre-engagement
 
-./kali ssh
+./pt-ai ssh
 touch /tmp/vm-local-artifact.txt
 touch /engagements/synced-artifact.txt
 exit
 
-./kali ssh -- "ls /tmp/vm-local-artifact.txt"       # exists
-./kali ssh -- "ls /engagements/synced-artifact.txt" # exists
+./pt-ai ssh -- "ls /tmp/vm-local-artifact.txt"       # exists
+./pt-ai ssh -- "ls /engagements/synced-artifact.txt" # exists
 
-./kali restore pre-engagement
+./pt-ai restore pre-engagement
 
-./kali ssh -- "ls /tmp/vm-local-artifact.txt 2>&1"       # No such file — wiped by restore
-./kali ssh -- "ls /engagements/synced-artifact.txt 2>&1" # still exists — host-synced
+./pt-ai ssh -- "ls /tmp/vm-local-artifact.txt 2>&1"       # No such file — wiped by restore
+./pt-ai ssh -- "ls /engagements/synced-artifact.txt 2>&1" # still exists — host-synced
 ```
 
 Clean up:
@@ -302,11 +302,11 @@ on restore).
 ## Phase 8 — Halt and cold-boot verification
 
 ```sh
-./kali halt
-./kali status      # poweroff
+./pt-ai halt
+./pt-ai status      # poweroff
 
-./kali up          # fast boot, no provisioning output
-./kali status      # running
+./pt-ai up          # fast boot, no provisioning output
+./pt-ai status      # running
 ```
 
 **Pass:** Boot completes in under 2 minutes without re-provisioning.
@@ -318,14 +318,14 @@ on restore).
 Verifies full reprovisioning from the registered box:
 
 ```sh
-./kali destroy
-./kali up          # full provision (~30–60 min)
+./pt-ai destroy
+./pt-ai up          # full provision (~30–60 min)
 ```
 
 Repeat Phase 4 smoke tests, then verify the evidence path design end-to-end:
 
 ```sh
-./kali ssh
+./pt-ai ssh
 ```
 
 ```sh
@@ -347,7 +347,7 @@ grep -c '/work/'                ~/.claude/agents/recon-advisor.md   # 0
 exit
 ```
 
-Then confirm scope-declare creates the correct directory structure. Run `./kali claude`, then inside the session:
+Then confirm scope-declare creates the correct directory structure. Run `./pt-ai claude`, then inside the session:
 
 ```
 /scope-declare
@@ -376,7 +376,7 @@ Requires an Anthropic API key (Pro/Max OAuth does not work for opencode).
 
 ```sh
 export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
-./kali opencode
+./pt-ai opencode
 ```
 
 1. opencode starts in `/engagements/` with no prompt about missing auth.
@@ -388,25 +388,25 @@ export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
 **Model override:**
 ```sh
 export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
-./kali opencode    # prompt header should show the opus model
+./pt-ai opencode    # prompt header should show the opus model
 ```
 
 **Persistent key path:**
 ```sh
 export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
-./kali key store
+./pt-ai key store
 unset ANTHROPIC_API_KEY
-./kali opencode    # starts without prompting; uses stored key
+./pt-ai opencode    # starts without prompting; uses stored key
 ```
 
 **Agent edit re-sync:**
 ```sh
 # On host: edit agents/recon-advisor.md (add a marker line)
-./kali provision   # re-runs 05-opencode.sh
-./kali ssh -- "grep -c MARKER ~/.config/opencode/commands/recon-advisor.md"
+./pt-ai provision   # re-runs 05-opencode.sh
+./pt-ai ssh -- "grep -c MARKER ~/.config/opencode/commands/recon-advisor.md"
 ```
 
-**Pass:** opencode starts, slash commands listed, model responds, model override visible in UI, stored key honored after unset, agent edits propagate after `./kali provision`.
+**Pass:** opencode starts, slash commands listed, model responds, model override visible in UI, stored key honored after unset, agent edits propagate after `./pt-ai provision`.
 
 ---
 
@@ -417,7 +417,7 @@ No AWS credentials are needed for these checks — every command is read-only an
 local (no API calls to AWS/Azure/GCP).
 
 ```sh
-./kali ssh
+./pt-ai ssh
 ```
 
 ```sh

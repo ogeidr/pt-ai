@@ -28,7 +28,7 @@ OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
 Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
-(`./kali ssh`) to add the local provider:
+(`./pt-ai ssh`) to add the local provider:
 
 ```json
 {
@@ -48,7 +48,7 @@ Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
 the host's address reachable from the VM. Then start a session:
 
 ```sh
-./kali opencode
+./pt-ai opencode
 ```
 
 ### Multi-GPU Setup
@@ -74,7 +74,7 @@ natively — no translation proxy needed.
 (bound to the network, not just localhost), and a model is loaded. Note the model
 identifier shown in LM Studio's server tab.
 
-Edit `~/.config/opencode/opencode.json` inside the VM (`./kali ssh`):
+Edit `~/.config/opencode/opencode.json` inside the VM (`./pt-ai ssh`):
 
 ```json
 {
@@ -90,7 +90,7 @@ Edit `~/.config/opencode/opencode.json` inside the VM (`./kali ssh`):
 }
 ```
 
-Then run `./kali opencode`. As with Ollama, replace `10.0.2.2` with the host
+Then run `./pt-ai opencode`. As with Ollama, replace `10.0.2.2` with the host
 address reachable from your VM.
 
 ## Option 3: Raw System Prompts (Any LLM)

@@ -78,7 +78,7 @@ OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
 Add the local provider to `~/.config/opencode/opencode.json` inside the VM
-(`./kali ssh`), then start a session with `./kali opencode`.
+(`./pt-ai ssh`), then start a session with `./pt-ai opencode`.
 
 See [LOCAL-SETUP.md](LOCAL-SETUP.md) for the full provider config, model recommendations, and hardware requirements.
 

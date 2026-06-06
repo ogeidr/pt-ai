@@ -1,5 +1,5 @@
 #!/bin/sh
-# kali: host wrapper for the pt-ai Vagrant Kali VM.
+# pt-ai: host wrapper for the pt-ai Vagrant Kali VM.
 #
 # Mirrors the docker/ptai pattern: one command for the full VM lifecycle.
 #
@@ -21,25 +21,25 @@
 #
 #   Option A — API key (session forwarding):
 #     export ANTHROPIC_API_KEY=sk-ant-...
-#     ./kali claude
+#     ./pt-ai claude
 #     The key is written to a short-lived temp file in the VM for the session
 #     duration and deleted when Claude exits.  Never stored at rest.
 #
 #   Option B — API key (persistent, stored in VM):
 #     export ANTHROPIC_API_KEY=sk-ant-...
-#     ./kali key store      # writes key to ~/.anthropic_key inside the VM
-#     ./kali claude         # all subsequent sessions pick it up automatically
-#     ./kali key clear      # remove when no longer needed
+#     ./pt-ai key store      # writes key to ~/.anthropic_key inside the VM
+#     ./pt-ai claude         # all subsequent sessions pick it up automatically
+#     ./pt-ai key clear      # remove when no longer needed
 #
 #   Option C — OAuth (Claude Pro/Max, no API key):
-#     ./kali claude         # first run prints a URL; open in host browser
+#     ./pt-ai claude         # first run prints a URL; open in host browser
 #                           # credentials persist in ~/.claude/ across sessions
 #
 #   Precedence (handled by Claude Code): API key > stored OAuth credentials.
 #
 #   opencode auth note:
 #     opencode does NOT consume Claude Code's ~/.claude/ OAuth tokens.  It needs
-#     ANTHROPIC_API_KEY (either session-forwarded, './kali key store'd, or set
+#     ANTHROPIC_API_KEY (either session-forwarded, './pt-ai key store'd, or set
 #     via 'opencode auth login anthropic' inside the VM).  Pro/Max subscription
 #     usage runs through Claude Code only — opencode bills against the API key.
 #
@@ -58,7 +58,7 @@
 #
 # ARM64 (Apple Silicon):
 #   Build the box first: ./box/build.sh
-#   Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+#   Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./pt-ai up
 #
 set -eu
 
@@ -108,7 +108,7 @@ _shquote() {
 
 usage() {
     cat <<EOF
-Usage: kali <command> [options]
+Usage: pt-ai <command> [options]
 
 Commands:
   up                     Boot VM (provision on first run)
@@ -127,9 +127,9 @@ Commands:
   status                 Show VM status
 
 Auth:
-  API key (session):     export ANTHROPIC_API_KEY=sk-ant-... && ./kali claude
-  API key (persistent):  export ANTHROPIC_API_KEY=sk-ant-... && ./kali key store
-  OAuth (Pro/Max):       ./kali claude  (URL printed on first run)
+  API key (session):     export ANTHROPIC_API_KEY=sk-ant-... && ./pt-ai claude
+  API key (persistent):  export ANTHROPIC_API_KEY=sk-ant-... && ./pt-ai key store
+  OAuth (Pro/Max):       ./pt-ai claude  (URL printed on first run)
 
 Environment:
   ANTHROPIC_API_KEY    Optional — forwarded per-session if set
@@ -145,7 +145,7 @@ Environment:
 
 ARM64 hosts:
   Build the box first: ./box/build.sh
-  Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+  Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./pt-ai up
 EOF
 }
 
@@ -238,7 +238,7 @@ cmd_key() {
     case "$action" in
         store)
             if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-                echo "kali key store: ANTHROPIC_API_KEY is not set in the host environment" >&2
+                echo "pt-ai key store: ANTHROPIC_API_KEY is not set in the host environment" >&2
                 exit 1
             fi
             # Stream the key over SSH stdin (never in argv); the guest wraps it
@@ -246,8 +246,8 @@ cmd_key() {
             printf '%s' "$ANTHROPIC_API_KEY" | _vagrant ssh -- -T \
                 'umask 077; { printf "export ANTHROPIC_API_KEY="; cat; printf "\n"; } > ~/.anthropic_key'
             echo "API key stored in VM (~/.anthropic_key)."
-            echo "All subsequent './kali claude' sessions will use it."
-            echo "Run './kali key clear' to remove it."
+            echo "All subsequent './pt-ai claude' sessions will use it."
+            echo "Run './pt-ai key clear' to remove it."
             ;;
         clear)
             _vagrant ssh -- "rm -f ~/.anthropic_key"
@@ -255,13 +255,13 @@ cmd_key() {
             ;;
         status)
             if _vagrant ssh -- "test -f ~/.anthropic_key" 2>/dev/null; then
-                echo "API key: stored in VM (./kali key clear to remove)"
+                echo "API key: stored in VM (./pt-ai key clear to remove)"
             else
                 echo "API key: not stored — using OAuth or per-session forwarding"
             fi
             ;;
         *)
-            echo "Usage: kali key <store|clear|status>" >&2
+            echo "Usage: pt-ai key <store|clear|status>" >&2
             exit 1
             ;;
     esac
@@ -269,14 +269,14 @@ cmd_key() {
 
 cmd_snapshot() {
     if [ "$#" -lt 1 ]; then
-        echo "kali snapshot: missing <name>" >&2; exit 1
+        echo "pt-ai snapshot: missing <name>" >&2; exit 1
     fi
     _vagrant snapshot save "$1"
 }
 
 cmd_restore() {
     if [ "$#" -lt 1 ]; then
-        echo "kali restore: missing <name>" >&2; exit 1
+        echo "pt-ai restore: missing <name>" >&2; exit 1
     fi
     _vagrant snapshot restore "$1"
 }
@@ -306,7 +306,7 @@ case "$sub" in
     status)         cmd_status ;;
     -h|--help|help) usage ;;
     *)
-        echo "kali: unknown command: $sub" >&2
+        echo "pt-ai: unknown command: $sub" >&2
         usage; exit 1
         ;;
 esac

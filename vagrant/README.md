@@ -87,7 +87,7 @@ source config/.env
 ### Step 3 — Boot and provision
 
 ```sh
-./kali up
+./pt-ai up
 ```
 
 First run provisions the VM automatically (~30–60 min depending on network):
@@ -99,7 +99,7 @@ First run provisions the VM automatically (~30–60 min depending on network):
 - Cloud-audit toolset: AWS CLI v2, prowler, scoutsuite, trufflehog (plus apt pacu, kube-hunter)
 - ghidrasql: Ghidra 12.0.4 + libghidra + ghidrasql (on aarch64, the native decompiler is built from source — adds time to the first provision)
 
-Subsequent `./kali up` calls boot in seconds — provisioning is skipped.
+Subsequent `./pt-ai up` calls boot in seconds — provisioning is skipped.
 
 ---
 
@@ -114,21 +114,21 @@ Bills against your Anthropic API key, not a Pro/Max subscription.
 ```sh
 # Session-only (key forwarded for this run, never stored in VM):
 export ANTHROPIC_API_KEY=sk-ant-...
-./kali claude
+./pt-ai claude
 
 # Persistent (stored in VM, picked up by all future sessions):
 export ANTHROPIC_API_KEY=sk-ant-...
-./kali key store
-./kali claude
+./pt-ai key store
+./pt-ai claude
 
 # Remove a stored key:
-./kali key clear
+./pt-ai key clear
 ```
 
 #### Option B — OAuth (Claude Pro / Max)
 
 ```sh
-./kali claude
+./pt-ai claude
 ```
 
 On first run, Claude Code prints a URL — open it in your host browser to complete the OAuth login. **You only need to do this once per VM.** Credentials are stored in `~/.claude/` inside the VM and persist across `halt`/`up` cycles and snapshots.
@@ -138,7 +138,7 @@ On first run, Claude Code prints a URL — open it in your host browser to compl
 After authenticating, exit Claude Code (`/exit`) and take your baseline snapshot:
 
 ```sh
-./kali snapshot pre-engagement
+./pt-ai snapshot pre-engagement
 ```
 
 This captures the fully-provisioned, authenticated state. Restore to it between engagements.
@@ -150,15 +150,15 @@ This captures the fully-provisioned, authenticated state. Restore to it between 
 opencode is installed alongside Claude Code. Use it when you want a provider-agnostic CLI or want to invoke pt-ai agents as slash commands (e.g. `/recon-advisor`, `/vuln-scanner`).
 
 ```sh
-./kali opencode
+./pt-ai opencode
 ```
 
 **Auth — read this before first use.** opencode does **not** consume Claude Code's `~/.claude/` OAuth tokens. It requires an Anthropic API key, supplied in one of three ways:
 
 | Method | How |
 |---|---|
-| Session-only | `export ANTHROPIC_API_KEY=sk-ant-... && ./kali opencode` |
-| Persistent (shared with Claude Code) | `./kali key store` |
+| Session-only | `export ANTHROPIC_API_KEY=sk-ant-... && ./pt-ai opencode` |
+| Persistent (shared with Claude Code) | `./pt-ai key store` |
 | opencode's own OAuth | Inside the VM: `opencode auth login anthropic` |
 
 **Billing:** opencode bills against your API key. A Pro/Max subscription covers Claude Code only — opencode usage is pay-as-you-go.
@@ -167,10 +167,10 @@ opencode is installed alongside Claude Code. Use it when you want a provider-agn
 
 ```sh
 export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
-./kali opencode
+./pt-ai opencode
 ```
 
-Agents are converted to opencode commands at provision time. To pick up agent edits made on the host, re-run `./kali provision`.
+Agents are converted to opencode commands at provision time. To pick up agent edits made on the host, re-run `./pt-ai provision`.
 
 ---
 
@@ -179,22 +179,22 @@ Agents are converted to opencode commands at provision time. To pick up agent ed
 ```sh
 # Boot
 source config/.env
-./kali up
+./pt-ai up
 
 # Start a Claude Code session (opens in /engagements)
-./kali claude
+./pt-ai claude
 
 # Or start an opencode session (opens in /engagements)
-./kali opencode
+./pt-ai opencode
 
 # Drop to a shell if needed
-./kali ssh
+./pt-ai ssh
 
 # Restore clean state after an engagement
-./kali restore pre-engagement
+./pt-ai restore pre-engagement
 
 # Shut down when done
-./kali halt
+./pt-ai halt
 ```
 
 The host `engagements/` directory is synced to `/engagements/` inside the VM. Run
@@ -204,7 +204,7 @@ directory using absolute paths, so files appear on the host in real time and sur
 snapshot restores.
 
 ```sh
-./kali claude
+./pt-ai claude
 # Inside Claude Code, run:
 /scope-declare      # sets engagement ID, creates /engagements/{id}/, writes scope.md
 ```
@@ -216,7 +216,7 @@ snapshot restores.
 Edit `config/tools.txt` (one apt package per line) then re-provision:
 
 ```sh
-./kali provision
+./pt-ai provision
 ```
 
 ---
@@ -240,13 +240,13 @@ starting with `.` (so `./proj` fails; use `/tmp/…` or `/engagements/…`).
 
 ```sh
 # One-shot query against a binary
-./kali ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+./pt-ai ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
   --analyze -q "SELECT name, printf('0x%X', address) AS addr FROM funcs ORDER BY size DESC LIMIT 5"
 
 # Background HTTP mode, then query over curl from inside the VM
-./kali ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+./pt-ai ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
   --analyze --http --port 8081 --max-runtime 0
-# (from ./kali ssh) curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
+# (from ./pt-ai ssh) curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
 ```
 
 `GHIDRA_INSTALL_DIR` is exported VM-wide, so `--ghidra` is auto-filled. For
@@ -270,7 +270,7 @@ Parrot, Linux Mint, …). Set `PTAI_BOX` to the box you want:
 
 ```sh
 export PTAI_BOX=ubuntu/jammy
-./kali up
+./pt-ai up
 ```
 
 A capability probe (`provision/_lib.sh`) detects the guest from `/etc/os-release`
@@ -299,7 +299,7 @@ To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
 | `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
 | `VAGRANT_CPUS` | `4` | vCPU count |
-| `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./kali key` for persistent storage. Used by both Claude Code and opencode |
+| `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./pt-ai key` for persistent storage. Used by both Claude Code and opencode |
 | `PT_AI_OPENCODE_MODEL` | `anthropic/claude-sonnet-4-6` | Optional — overrides opencode's default model per session |
 
 ---
@@ -307,18 +307,18 @@ To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
 ## Subcommands
 
 ```
-./kali up                    Boot VM (provision on first run)
-./kali claude [-- <args>]    Start Claude Code session inside VM
-./kali opencode [-- <args>]  Start opencode session inside VM
-./kali ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
-./kali ssh                   Interactive shell inside VM
-./kali key store             Store ANTHROPIC_API_KEY from host env into VM
-./kali key clear             Remove stored API key from VM
-./kali key status            Show whether an API key is stored in VM
-./kali snapshot <name>       Save a VM snapshot
-./kali restore  <name>       Restore a VM snapshot
-./kali halt                  Shut down the VM
-./kali destroy               Destroy the VM and all state
-./kali provision             Re-run all provisioners
-./kali status                Show VM status
+./pt-ai up                    Boot VM (provision on first run)
+./pt-ai claude [-- <args>]    Start Claude Code session inside VM
+./pt-ai opencode [-- <args>]  Start opencode session inside VM
+./pt-ai ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
+./pt-ai ssh                   Interactive shell inside VM
+./pt-ai key store             Store ANTHROPIC_API_KEY from host env into VM
+./pt-ai key clear             Remove stored API key from VM
+./pt-ai key status            Show whether an API key is stored in VM
+./pt-ai snapshot <name>       Save a VM snapshot
+./pt-ai restore  <name>       Restore a VM snapshot
+./pt-ai halt                  Shut down the VM
+./pt-ai destroy               Destroy the VM and all state
+./pt-ai provision             Re-run all provisioners
+./pt-ai status                Show VM status
 ```

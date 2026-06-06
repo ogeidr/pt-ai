@@ -51,7 +51,7 @@ SSH key setup command shown in the terminal — then press Enter in the script.
 ```sh
 export PTAI_BOX=kali-arm64
 export VAGRANT_PROVIDER=vmware_desktop
-./kali up
+./pt-ai up
 ```
 
 Or add both to `config/.env` (copy from `config/engagement.env.example`).
