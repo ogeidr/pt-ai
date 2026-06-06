@@ -1,16 +1,17 @@
-# Vagrant Kali VM
+# Vagrant Pentest VM
 
-Reproducible, fully-provisioned Kali Linux VM for pt-ai engagements.
+Reproducible, fully-provisioned pentest VM for pt-ai engagements — Kali by
+default, any apt-family box supported (Ubuntu, Debian, Parrot, Mint, …).
 One command to boot; `vagrant snapshot` for clean-state management between engagements.
 
 ## Architecture
 
 ```
 Host (macOS)
-└── Kali VM (VMware Fusion / VirtualBox / Parallels)
+└── Pentest VM (Kali by default · VMware Fusion / VirtualBox / Parallels)
     ├── Claude Code          — API key or OAuth (claude.ai/pro)
     ├── opencode             — API key only (Anthropic provider default)
-    ├── kali-linux-default   — core Kali toolset + extras (see config/tools.txt)
+    ├── kali-linux-default   — core Kali toolset + extras (Kali boxes; see config/tools.txt)
     └── /engagements/        — synced from host engagements/
 ```
 
@@ -66,9 +67,14 @@ For Apple Silicon, set the provider and box:
 
 ```sh
 # config/.env
-export KALI_BOX=kali-arm64
+export PTAI_BOX=kali-arm64
 export VAGRANT_PROVIDER=vmware_desktop
 ```
+
+To build on a non-Kali, apt-family box instead, set `PTAI_BOX` to any such box
+(e.g. `ubuntu/jammy`); Kali-specific provisioning auto-skips. See
+[Using a different box](#using-a-different-box) below. `KALI_BOX` is still
+honored for back-compat.
 
 Source it before using the VM:
 
@@ -86,7 +92,7 @@ source config/.env
 
 First run provisions the VM automatically (~30–60 min depending on network):
 - System update + base dependencies
-- Kali toolset (`kali-linux-default` + extras from `config/tools.txt`)
+- Kali toolset (`kali-linux-default`, Kali boxes only) + extras from `config/tools.txt`
 - Claude Code CLI (installed as the vagrant user so self-updates work)
 - Network config: IP forwarding, iptables open policy, openvpn/proxychains
 - opencode CLI + pt-ai agents converted to opencode slash commands
@@ -257,11 +263,39 @@ Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
 
 ---
 
+## Using a different box
+
+The VM is Kali by default but works on any **apt-family** box (Ubuntu, Debian,
+Parrot, Linux Mint, …). Set `PTAI_BOX` to the box you want:
+
+```sh
+export PTAI_BOX=ubuntu/jammy
+./kali up
+```
+
+A capability probe (`provision/_lib.sh`) detects the guest from `/etc/os-release`
+and runs the Kali-only steps — the `kali-rolling` repo, `kali-linux-default`, and
+the Kali-pinned `unattended-upgrades` origin — **only on a Kali guest**. The
+pt-ai framework layer (Claude Code, opencode, agents, network config, SSH
+hardening, cloud tooling) provisions identically on every apt-family box.
+Kali-only package names in `config/tools.txt` simply warn-and-skip elsewhere;
+add box-appropriate tools there.
+
+Non-apt boxes (Fedora, Arch, …) are out of scope: provisioning warns and skips
+its package steps rather than failing. `KALI_BOX` is still honored as a fallback
+for `PTAI_BOX`.
+
+To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
+
+---
+
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `KALI_BOX` | `kalilinux/rolling` | Vagrant box (use `kali-arm64` on Apple Silicon) |
+| `PTAI_BOX` | `kalilinux/rolling` | Vagrant box. Any apt-family box; Kali-only steps auto-skip (use `kali-arm64` on Apple Silicon) |
+| `PTAI_SKIP_GHIDRASQL` | — | Set to any value to skip the heavy ghidrasql provisioner |
+| `KALI_BOX` | — | Legacy alias for `PTAI_BOX` (still honored as a fallback) |
 | `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
 | `VAGRANT_CPUS` | `4` | vCPU count |

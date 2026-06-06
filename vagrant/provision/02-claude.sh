@@ -51,7 +51,7 @@ chown -R vagrant:vagrant "$CLAUDE_DIR"
 # Loaded automatically by Claude Code for every session.  Tells Claude what
 # is installed and how to use it so the user never has to explain it.
 cat > "$CLAUDE_DIR/CLAUDE.md" <<'EOF'
-# pt-ai Kali VM
+# pt-ai pentest VM
 
 Engagement workspace: `/engagements/` (host-synced — always use absolute paths here)
 

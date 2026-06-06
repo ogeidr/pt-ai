@@ -2,9 +2,13 @@
 # 00-update.sh: Bootstrap apt, upgrade, install base dependencies.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
+# shellcheck source=/dev/null
+. /vagrant/provision/_lib.sh
 
-# --- Kali rolling sources (idempotent) ------------------------------------
-if ! grep -rq "kali-rolling" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+# --- Kali rolling sources (Kali guests only; idempotent) ------------------
+# Force-adding kali-rolling to a non-Kali apt box injects the wrong archive,
+# so this is gated on IS_KALI.
+if $IS_KALI && ! grep -rq "kali-rolling" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
     echo "deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware" \
         > /etc/apt/sources.list.d/kali-rolling.list
 fi
@@ -15,10 +19,16 @@ fi
 printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf
 printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf.head
 
+if ! $IS_APT; then
+    echo "[00-update] non-apt distro — skipping package bootstrap (out of scope)" >&2
+    exit 0
+fi
+
 apt-get update -y
 
-# kali-archive-keyring is required before a full update on non-Kali base boxes
-if ! dpkg -l kali-archive-keyring >/dev/null 2>&1; then
+# kali-archive-keyring authenticates the kali-rolling source added above —
+# only relevant on Kali (where it is normally already installed anyway).
+if $IS_KALI && ! dpkg -l kali-archive-keyring >/dev/null 2>&1; then
     apt-get install -y --no-install-recommends kali-archive-keyring || true
     apt-get update -y
 fi
@@ -35,7 +45,7 @@ apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv
 
-# Node 20 via NodeSource — Kali's packaged node may be older
+# Node 20 via NodeSource (supports Kali/Debian/Ubuntu) — packaged node may be older
 if ! node --version 2>/dev/null | grep -qE "^v2[0-9]"; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs

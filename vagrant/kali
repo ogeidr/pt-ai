@@ -48,14 +48,17 @@
 #                         both Claude Code and opencode
 #   PT_AI_OPENCODE_MODEL  Optional — overrides opencode's default model
 #                         (default in opencode.json: anthropic/claude-sonnet-4-6)
-#   KALI_BOX              Vagrant box name (default: kalilinux/rolling)
+#   PTAI_BOX              Vagrant box name (default: kalilinux/rolling). Any
+#                         apt-family box works; Kali-only steps auto-skip.
+#                         KALI_BOX is still honored as a fallback.
+#   PTAI_SKIP_GHIDRASQL   Set to skip the heavy ghidrasql provisioner.
 #   VAGRANT_PROVIDER      virtualbox | vmware_desktop | parallels (default: virtualbox)
 #   VAGRANT_MEMORY        VM memory MB (default: 4096)
 #   VAGRANT_CPUS          vCPU count (default: 4)
 #
 # ARM64 (Apple Silicon):
 #   Build the box first: ./box/build.sh
-#   Then: KALI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+#   Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
 #
 set -eu
 
@@ -66,7 +69,9 @@ case "$SCRIPT" in
 esac
 VAGRANT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
 
-KALI_BOX="${KALI_BOX:-kalilinux/rolling}"
+# PTAI_BOX is primary; KALI_BOX kept as a back-compat fallback.
+PTAI_BOX="${PTAI_BOX:-${KALI_BOX:-kalilinux/rolling}}"
+PTAI_SKIP_GHIDRASQL="${PTAI_SKIP_GHIDRASQL:-}"
 VAGRANT_PROVIDER="${VAGRANT_PROVIDER:-virtualbox}"
 VAGRANT_MEMORY="${VAGRANT_MEMORY:-4096}"
 VAGRANT_CPUS="${VAGRANT_CPUS:-4}"
@@ -75,7 +80,8 @@ VAGRANT_CPUS="${VAGRANT_CPUS:-4}"
 _vagrant() {
     ( cd "$VAGRANT_DIR" && \
       env \
-        KALI_BOX="$KALI_BOX" \
+        PTAI_BOX="$PTAI_BOX" \
+        PTAI_SKIP_GHIDRASQL="$PTAI_SKIP_GHIDRASQL" \
         VAGRANT_PROVIDER="$VAGRANT_PROVIDER" \
         VAGRANT_MEMORY="$VAGRANT_MEMORY" \
         VAGRANT_CPUS="$VAGRANT_CPUS" \
@@ -129,14 +135,17 @@ Environment:
   ANTHROPIC_API_KEY    Optional — forwarded per-session if set
                        (shared between claude and opencode)
   PT_AI_OPENCODE_MODEL Optional — overrides opencode's default model
-  KALI_BOX             Box name (default: kalilinux/rolling)
+  PTAI_BOX             Box name (default: kalilinux/rolling). Any apt-family
+                       box works; Kali-only steps auto-skip. KALI_BOX honored
+                       as a fallback.
+  PTAI_SKIP_GHIDRASQL  Set to skip the heavy ghidrasql provisioner
   VAGRANT_PROVIDER     virtualbox | vmware_desktop | parallels (default: virtualbox)
   VAGRANT_MEMORY       VM RAM in MB (default: 4096)
   VAGRANT_CPUS         vCPU count (default: 4)
 
 ARM64 hosts:
   Build the box first: ./box/build.sh
-  Then: KALI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
+  Then: PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up
 EOF
 }
 

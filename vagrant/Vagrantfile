@@ -1,10 +1,17 @@
-KALI_BOX        = ENV.fetch("KALI_BOX",        "kalilinux/rolling")
+# Box selection: PTAI_BOX is the primary var; KALI_BOX is still honored for
+# back-compat. Any apt-family box works — Kali-specific provisioning auto-skips
+# on non-Kali guests (see provision/_lib.sh).
+BOX             = ENV.fetch("PTAI_BOX") { ENV.fetch("KALI_BOX", "kalilinux/rolling") }
 VAGRANT_PROVIDER = ENV.fetch("VAGRANT_PROVIDER", "virtualbox")
 VM_MEMORY       = ENV.fetch("VAGRANT_MEMORY",   "4096").to_i
 VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
 
+# The ghidrasql build is heavy and the most distro-fragile step — make it
+# opt-out via PTAI_SKIP_GHIDRASQL (set to any non-empty value to skip).
+GHIDRASQL_ENABLED = ENV.fetch("PTAI_SKIP_GHIDRASQL", "").strip.empty?
+
 Vagrant.configure("2") do |config|
-  config.vm.box      = KALI_BOX
+  config.vm.box      = BOX
   # hostname is set by the inline provisioner below; not set here because
   # Vagrant's built-in hostname setter fails when / is still mounted read-only
   # on first boot after box cloning.
@@ -78,5 +85,8 @@ Vagrant.configure("2") do |config|
 
   # ghidrasql — SQL/HTTP interface over Ghidra program DBs. Heavy: downloads
   # Ghidra and, on aarch64, builds the native decompiler from source.
-  config.vm.provision "shell", path: "provision/07-ghidrasql.sh"
+  # Opt out with PTAI_SKIP_GHIDRASQL=1.
+  if GHIDRASQL_ENABLED
+    config.vm.provision "shell", path: "provision/07-ghidrasql.sh"
+  end
 end

@@ -15,6 +15,20 @@
 # provision` re-runs are cheap.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
+# shellcheck source=/dev/null
+. /vagrant/provision/_lib.sh
+
+# Opt-out for the heaviest, most distro-fragile provisioner. The Vagrantfile
+# already drops this step when PTAI_SKIP_GHIDRASQL is set; this guard also
+# covers a direct `./kali provision` re-run with the flag exported.
+if [ -n "${PTAI_SKIP_GHIDRASQL:-}" ]; then
+    echo "[07-ghidrasql] PTAI_SKIP_GHIDRASQL set — skipping" >&2
+    exit 0
+fi
+if ! $IS_APT; then
+    echo "[07-ghidrasql] non-apt distro — skipping (needs apt build deps)" >&2
+    exit 0
+fi
 
 # --- Pinned, overridable versions ----------------------------------------
 # Pinned to 12.0.4 — the version libghidra documents as supported. On Ghidra 12.1
@@ -45,6 +59,24 @@ ARCH="$(uname -m)"
 
 log() { printf '\n[07-ghidrasql] %s\n' "$*"; }
 
+# Retry a flaky, network-bound command a few times before giving up. Gradle and
+# CMake keep their caches between attempts, so a re-run resumes where the network
+# dropped (transient connection-refused/timeouts to gradle/maven/github).
+#   retry <attempts> <delay_seconds> [--] cmd...
+retry() {
+    local attempts="$1" delay="$2"; shift 2
+    [ "${1:-}" = "--" ] && shift
+    local n=1
+    until "$@"; do
+        if [ "$n" -ge "$attempts" ]; then
+            echo "[07-ghidrasql] failed after $attempts attempts: $*" >&2
+            return 1
+        fi
+        echo "[07-ghidrasql] attempt $n/$attempts failed; retrying in ${delay}s…" >&2
+        sleep "$delay"; n=$((n + 1))
+    done
+}
+
 # --- 1. Build/runtime dependencies ---------------------------------------
 log "Installing build dependencies"
 apt-get update -y
@@ -63,7 +95,7 @@ log "JAVA_HOME=$JAVA_HOME ($(java -version 2>&1 | head -1))"
 if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
     log "Installing Gradle ${GRADLE_VERSION}"
     tmp="$(mktemp -d)"
-    curl -fsSL "$GRADLE_URL" -o "$tmp/gradle.zip"
+    curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused "$GRADLE_URL" -o "$tmp/gradle.zip"
     unzip -q "$tmp/gradle.zip" -d /opt
     rm -rf "$tmp"
 fi
@@ -74,7 +106,7 @@ log "gradle: $(/usr/local/bin/gradle --version | awk '/^Gradle/{print $2}')"
 if [ ! -x "$GHIDRA_INSTALL_DIR/support/analyzeHeadless" ]; then
     log "Downloading Ghidra ${GHIDRA_VERSION}"
     tmp="$(mktemp -d)"
-    curl -fL "$GHIDRA_URL" -o "$tmp/ghidra.zip"
+    curl -fL --retry 3 --retry-delay 5 --retry-connrefused "$GHIDRA_URL" -o "$tmp/ghidra.zip"
     log "Ghidra SHA-256: $(sha256sum "$tmp/ghidra.zip" | awk '{print $1}') (cross-check against the release page)"
     unzip -q "$tmp/ghidra.zip" -d /opt
     # The zip extracts to /opt/ghidra_<ver>_PUBLIC; normalize if the inner dir
@@ -137,7 +169,7 @@ clone_or_pull() {  # $1 repo url, $2 dest dir
     if [ -d "$2/.git" ]; then
         sudo -u "$VAGRANT_USER" git -C "$2" pull --ff-only || true
     else
-        sudo -u "$VAGRANT_USER" git clone --depth 1 -- "$1" "$2"
+        retry 3 10 -- sudo -u "$VAGRANT_USER" git clone --depth 1 -- "$1" "$2"
     fi
 }
 clone_or_pull "$LIBGHIDRA_REPO" "$SRC_DIR/libghidra"
@@ -155,9 +187,9 @@ LIBXSQL_COMMIT="$(awk '/FetchContent_Declare\(libxsql/{f=1} f&&/GIT_TAG/{print $
 [ -n "$LIBXSQL_COMMIT" ] || LIBXSQL_COMMIT="ea11622"
 log "Pre-fetching libxsql @ $LIBXSQL_COMMIT (full clone — shallow can't pin a bare commit)"
 if [ ! -d "$LIBXSQL_DIR/.git" ]; then
-    sudo -u "$VAGRANT_USER" bash -c "git clone https://github.com/0xeb/libxsql.git '$LIBXSQL_DIR'"
+    retry 3 10 -- sudo -u "$VAGRANT_USER" bash -c "git clone https://github.com/0xeb/libxsql.git '$LIBXSQL_DIR'"
 fi
-sudo -u "$VAGRANT_USER" bash -c "cd '$LIBXSQL_DIR' && git fetch -q --all && git checkout -q '$LIBXSQL_COMMIT'"
+retry 3 10 -- sudo -u "$VAGRANT_USER" bash -c "cd '$LIBXSQL_DIR' && git fetch -q --all && git checkout -q '$LIBXSQL_COMMIT'"
 
 # --- 5b. Patch ghidrasql for GCC 15 --------------------------------------
 # Kali's GCC 15 / libstdc++ 15 no longer transitively pulls in <algorithm>, so
@@ -231,7 +263,9 @@ sed -i \
 # Note: PATH is set unquoted so the inner shell expands its own $PATH (a quoted
 # '...:$PATH' would become a literal and strip /usr/bin -> uname/xargs not found).
 log "Building libghidra Ghidra extension"
-sudo -u "$VAGRANT_USER" bash -c "
+# Retried: dependency resolution against maven central is the step most prone to
+# transient connection-refused; gradle's cache persists so re-runs resume.
+retry 3 30 -- sudo -u "$VAGRANT_USER" bash -c "
     set -e
     export JAVA_HOME='$JAVA_HOME'
     export PATH=$GRADLE_HOME/bin:\$PATH
@@ -249,7 +283,9 @@ test -d "$GHIDRA_INSTALL_DIR/Ghidra/Extensions/LibGhidraHost" || {
 # and is near-instant when nothing changed. This guarantees source patches apply.
 BUILT_BIN="$SRC_DIR/ghidrasql/build/bin/ghidrasql"
 log "Building ghidrasql"
-sudo -u "$VAGRANT_USER" bash -c "
+# Retried: CMake FetchContent pulls protobuf/abseil from the network; build is
+# incremental so retries are cheap and only re-fetch what failed.
+retry 3 20 -- sudo -u "$VAGRANT_USER" bash -c "
     set -e
     export JAVA_HOME='$JAVA_HOME'
     cd '$SRC_DIR/ghidrasql'

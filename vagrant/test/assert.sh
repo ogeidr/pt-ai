@@ -17,7 +17,7 @@ set -uo pipefail   # deliberately NOT -e: every check must run
 # env are on PATH even under a non-login `ssh -c` shell.
 [ -r /etc/profile.d/pt-ai.sh ]           && . /etc/profile.d/pt-ai.sh
 [ -r /etc/profile.d/pt-ai-ghidrasql.sh ] && . /etc/profile.d/pt-ai-ghidrasql.sh
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/sbin:/sbin:$PATH"
 
 EXPECT_GHIDRASQL="${EXPECT_GHIDRASQL:-1}"
 
@@ -54,7 +54,7 @@ check  "recon-advisor references /engagements"  grep -q "/engagements" "$HOME/.c
 checkn "recon-advisor has no legacy /work/ path" grep -q "/work/" "$HOME/.claude/agents/recon-advisor.md"
 check  "opencode commands derived"              bash -c 'ls "$HOME"/.config/opencode/commands/*.md >/dev/null 2>&1'
 check  "/engagements exists and is writable"    bash -c 't=/engagements/.ptai-write-test.$$; test -d /engagements && touch "$t" && rm -f "$t"'
-check  "ip_forward enabled"                     bash -c '[ "$(sysctl -n net.ipv4.ip_forward 2>/dev/null)" = 1 ]'
+check  "ip_forward enabled"                     bash -c '[ "$(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null)" = 1 ]'
 check  "SSH password auth disabled"             grep -qE '^PasswordAuthentication no' /etc/ssh/sshd_config
 check  "SSH root login disabled"                grep -qE '^PermitRootLogin no' /etc/ssh/sshd_config
 check  "unattended-upgrades installed"          pkg_installed unattended-upgrades

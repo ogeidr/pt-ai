@@ -6,9 +6,19 @@
 # pacu and kube-hunter (apt) live in config/tools.txt alongside the rest.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
+# shellcheck source=/dev/null
+. /vagrant/provision/_lib.sh
+
+if ! $IS_APT; then
+    echo "[06-cloud] non-apt distro — skipping cloud tooling (needs apt pipx/unzip)" >&2
+    exit 0
+fi
 
 apt-get update -y
-apt-get install -y --no-install-recommends pipx unzip
+# python3-dev + build-essential let pipx build C-extension deps (e.g. kube-hunter
+# -> netifaces needs Python.h + a compiler). Kali ships these implicitly; a clean
+# Debian/Ubuntu base does not, so install them here for portability across boxes.
+apt-get install -y --no-install-recommends pipx unzip python3-dev build-essential
 
 # --- AWS CLI v2 -----------------------------------------------------------
 # Arch-aware; official bundle to /usr/local/aws-cli with `aws` symlinked into
@@ -45,7 +55,10 @@ sudo -u vagrant bash -c '
     pipx ensurepath >/dev/null
     [ -d "$HOME/.local/share/pipx/venvs/prowler" ]      || pipx install prowler
     [ -d "$HOME/.local/share/pipx/venvs/scoutsuite" ]   || pipx install scoutsuite
-    [ -d "$HOME/.local/share/pipx/venvs/kube-hunter" ]  || pipx install kube-hunter
+    # kube-hunter is archived upstream (2021) and its netifaces dep is the most
+    # fragile to build — keep it best-effort so it can never block provisioning.
+    [ -d "$HOME/.local/share/pipx/venvs/kube-hunter" ]  || pipx install kube-hunter \
+        || echo "Warning: kube-hunter install failed — skipping" >&2
 '
 
 apt-get clean
