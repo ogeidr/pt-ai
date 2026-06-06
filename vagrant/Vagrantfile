@@ -17,7 +17,7 @@ Vagrant.configure("2") do |config|
   # on first boot after box cloning.
 
   # --- Providers -----------------------------------------------------------
-  # Select with: VAGRANT_PROVIDER=vmware_desktop ./kali up
+  # Select with: VAGRANT_PROVIDER=vmware_desktop ./pt-ai up
   config.vm.provider "virtualbox" do |v|
     v.name   = "kali-ptai"
     v.memory = VM_MEMORY
