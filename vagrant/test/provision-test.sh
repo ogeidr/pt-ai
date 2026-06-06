@@ -3,7 +3,7 @@
 # and/or Debian, then asserts the result and writes logs.
 #
 # It runs in two modes from ONE file:
-#   * HOST mode  (default): drives `vagrant` via the ./kali wrapper, then
+#   * HOST mode  (default): drives `vagrant` via the ./pt-ai wrapper, then
 #     re-invokes itself INSIDE the guest over ssh to verify the deployment.
 #   * GUEST mode (--assert): runs the in-guest assertions. The host calls this
 #     as `/vagrant/test/provision-test.sh --assert` (vagrant syncs vagrant/ to
@@ -16,9 +16,9 @@
 #
 # SAFETY / ISOLATION
 #   All Vagrant state lives under test/.vagrant-test/ (VAGRANT_DOTFILE_PATH), so
-#   your normal `./kali` VM, its OAuth credentials, and snapshots are NOT touched
+#   your normal `./pt-ai` VM, its OAuth credentials, and snapshots are NOT touched
 #   and NOT destroyed. Cases run sequentially against this isolated machine
-#   (destroyed between cases unless KEEP=1). Tip: `./kali halt` first.
+#   (destroyed between cases unless KEEP=1). Tip: `./pt-ai halt` first.
 #
 # USAGE
 #   ./test/provision-test.sh [kali|debian|both]      (default: both)
@@ -33,7 +33,7 @@
 #   EXPECT_GHIDRASQL    1|0  whether ghidrasql should be installed (default: 1)
 #
 # OUTPUT
-#   test/results/<case>-provision.log   full `./kali up` output
+#   test/results/<case>-provision.log   full `./pt-ai up` output
 #   test/results/<case>-assert.log      in-guest assertion output
 #   test/results/summary.txt            one PASS/FAIL line per case
 set -uo pipefail
@@ -154,21 +154,21 @@ run_case(){ # name box skip_ghidra expect_ghidra
   say "CASE $name — box=$box provider=$PROVIDER skip_ghidrasql='${skip:-0}'"
 
   # Clean slate for the ISOLATED test machine only (never the user's VM).
-  PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./kali destroy >/dev/null 2>&1 || true
+  PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./pt-ai destroy >/dev/null 2>&1 || true
 
   say "$name: provisioning (this takes a while) → ${name}-provision.log"
   PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" PTAI_SKIP_GHIDRASQL="$skip" \
-      ./kali up 2>&1 | tee "$plog"
+      ./pt-ai up 2>&1 | tee "$plog"
   local up_rc=${PIPESTATUS[0]}
   if [ "$up_rc" -ne 0 ]; then
     record "FAIL  $name  provisioning failed (rc=$up_rc) — see ${name}-provision.log"
-    [ "$KEEP" = 1 ] || PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./kali destroy >/dev/null 2>&1 || true
+    [ "$KEEP" = 1 ] || PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./pt-ai destroy >/dev/null 2>&1 || true
     return 1
   fi
 
   say "$name: running in-guest assertions → ${name}-assert.log"
   PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" \
-      ./kali ssh -c "EXPECT_GHIDRASQL=$expect bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
+      ./pt-ai ssh -c "EXPECT_GHIDRASQL=$expect bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
   local as_rc=${PIPESTATUS[0]}
 
   if [ "$as_rc" -eq 0 ]; then
@@ -179,7 +179,7 @@ run_case(){ # name box skip_ghidra expect_ghidra
 
   [ "$KEEP" = 1 ] || {
     say "$name: destroying isolated test VM"
-    PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./kali destroy >/dev/null 2>&1 || true
+    PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./pt-ai destroy >/dev/null 2>&1 || true
   }
   return "$as_rc"
 }
@@ -192,11 +192,11 @@ command -v vagrant >/dev/null 2>&1 || { echo "ERROR: vagrant not installed" >&2;
 # both up front so "start over" is automatic.
 #   * `global-status --prune` only drops index entries whose machine state is
 #     already gone — it never destroys a valid, running machine, so your normal
-#     ./kali VM is untouched.
+#     ./pt-ai VM is untouched.
 #   * the best-effort destroy clears any leftover *isolated* test machine.
 say "preflight: pruning stale Vagrant state"
 vagrant global-status --prune >/dev/null 2>&1 || true
-VAGRANT_PROVIDER="$PROVIDER" ./kali destroy >/dev/null 2>&1 || true
+VAGRANT_PROVIDER="$PROVIDER" ./pt-ai destroy >/dev/null 2>&1 || true
 
 do_kali=0; do_debian=0
 case "$WHICH" in
