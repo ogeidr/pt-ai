@@ -57,24 +57,34 @@ only removes index entries whose machine state is already gone, so your normal
 
 ## Run it
 
-After approval:
+The harness is a single script with two modes: on the host it drives `vagrant`;
+inside the guest (`--assert`) it runs the checks. You only ever call the host form:
 
 ```sh
 cd vagrant
-./test/run-tests.sh both       # or: kali | debian
+./test/provision-test.sh both       # or: kali | debian
 ```
 
 Useful overrides:
 
 ```sh
-KEEP=1            ./test/run-tests.sh both     # leave the test VM up to inspect
-TEST_DEBIAN_GHIDRA=0 ./test/run-tests.sh debian  # skip ghidrasql on Debian (faster)
-TEST_DEBIAN_BOX=foo/bar ./test/run-tests.sh debian
+KEEP=1            ./test/provision-test.sh both       # leave the test VM up to inspect
+TEST_DEBIAN_GHIDRA=0 ./test/provision-test.sh debian  # skip ghidrasql on Debian (faster)
+TEST_DEBIAN_BOX=foo/bar ./test/provision-test.sh debian
+```
+
+With `KEEP=1` the VM stays up, so you can re-run just the assertions (no
+re-provision) against it:
+
+```sh
+VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
+  VAGRANT_PROVIDER=vmware_desktop \
+  ./kali ssh -c "EXPECT_GHIDRASQL=1 bash /vagrant/test/provision-test.sh --assert"
 ```
 
 ---
 
-## What gets asserted (`assert.sh`, run inside each VM)
+## What gets asserted (`provision-test.sh --assert`, run inside each VM)
 
 **Framework layer — must pass on BOTH boxes**
 
@@ -122,7 +132,7 @@ every assertion passed). The runner's exit code is non-zero if any case failed.
 
 ## Fix loop
 
-1. You run `./test/run-tests.sh both`.
+1. You run `./test/provision-test.sh both`.
 2. The logs above are written to `test/results/` (host-side, gitignored).
 3. I read them, fix any provisioning/assertion failure, and you re-run — until
    `summary.txt` is all-PASS.
