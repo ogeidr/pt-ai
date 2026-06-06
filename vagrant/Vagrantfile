@@ -56,6 +56,8 @@ Vagrant.configure("2") do |config|
     # across DHCP renewals).
     printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf
     printf 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf.head
+    # Remove legacy /work/ directory (replaced by /engagements/{id}/ in scope-declare).
+    rm -rf /work
   SHELL
 
   config.vm.provision "shell", path: "provision/00-update.sh"

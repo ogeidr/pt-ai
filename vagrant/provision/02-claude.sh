@@ -11,8 +11,8 @@ NPM_GLOBAL="$VAGRANT_HOME/.npm-global"
 # can update itself without needing root (global npm is root-owned).
 sudo -u vagrant bash -c "
     npm config set prefix '$NPM_GLOBAL'
-    if ! '$NPM_GLOBAL/bin/claude' --version >/dev/null 2>&1; then
-        npm install -g @anthropic-ai/claude-code@stable
+    if [ ! -d '$NPM_GLOBAL/lib/node_modules/@anthropic-ai/claude-code' ]; then
+        npm install -g @anthropic-ai/claude-code@latest
     fi
 "
 

@@ -313,9 +313,51 @@ Verifies full reprovisioning from the registered box:
 ./kali up          # full provision (~30–60 min)
 ```
 
-Repeat Phase 4 smoke tests.
+Repeat Phase 4 smoke tests, then verify the evidence path design end-to-end:
 
-**Pass:** Clean provision produces a fully working VM.
+```sh
+./kali ssh
+```
+
+```sh
+# /work/ must not exist
+test ! -d /work && echo "/work absent: OK" || echo "ERROR: /work still exists"
+
+# /engagements/ is writable
+test -d /engagements && test -w /engagements && echo "/engagements writable: OK"
+
+# CLAUDE.md carries the evidence path rules
+grep -c 'Evidence path rules' ~/.claude/CLAUDE.md      # 1
+
+# Agents reference /engagements/scope.md, not /work/
+grep -c '/engagements/scope.md' ~/.claude/agents/recon-advisor.md   # ≥1
+grep -c '/work/'                ~/.claude/agents/recon-advisor.md   # 0
+```
+
+```sh
+exit
+```
+
+Then confirm scope-declare creates the correct directory structure. Run `./kali claude`, then inside the session:
+
+```
+/scope-declare
+```
+
+Complete all four prompts (engagement ID, scope, type, authorization yes). Then from the host:
+
+```sh
+ls ../engagements/                         # scope.md + {safe_id}/ subdirectory present
+cat ../engagements/scope.md | grep 'Evidence directory'   # /engagements/{safe_id}
+ls "../engagements/$(ls ../engagements/ | grep -v scope.md)/"   # scope.md inside subdir
+```
+
+Clean up:
+```sh
+rm -rf ../engagements/scope.md ../engagements/<safe_id>/
+```
+
+**Pass:** Clean provision produces a fully working VM; `/work/` absent; scope-declare creates the engagement subdirectory and writes `scope.md` with an `Evidence directory:` line.
 
 ---
 
