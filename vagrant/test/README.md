@@ -17,19 +17,19 @@ Target environment (per decision): **Apple Silicon + VMware Fusion**
 ## Safety — this will NOT touch your working VM
 
 The runner isolates all of its Vagrant state under `test/.vagrant-test/` using
-`VAGRANT_DOTFILE_PATH`. Your normal `./kali` VM, its OAuth credentials, and its
+`VAGRANT_DOTFILE_PATH`. Your normal `./pt-ai` VM, its OAuth credentials, and its
 snapshots live under the default `.vagrant/` and are **never read, modified, or
 destroyed** by this test. The two cases run sequentially against the isolated
 machine and it is destroyed between cases (unless `KEEP=1`).
 
-> Recommended: `./kali halt` your working VM before running, to avoid two
+> Recommended: `./pt-ai halt` your working VM before running, to avoid two
 > VMware VMs competing for CPU/RAM.
 
 On startup the runner does a **preflight**: `vagrant global-status --prune`
 plus a best-effort destroy of any leftover isolated test machine. This makes a
 "start over" automatic after an interrupted run (e.g. a network drop). Prune
 only removes index entries whose machine state is already gone, so your normal
-`./kali` VM is never affected.
+`./pt-ai` VM is never affected.
 
 ---
 
@@ -79,7 +79,7 @@ re-provision) against it:
 ```sh
 VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
   VAGRANT_PROVIDER=vmware_desktop \
-  ./kali ssh -c "EXPECT_GHIDRASQL=1 bash /vagrant/test/provision-test.sh --assert"
+  ./pt-ai ssh -c "EXPECT_GHIDRASQL=1 bash /vagrant/test/provision-test.sh --assert"
 ```
 
 ---
@@ -118,7 +118,7 @@ VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
 
 ```
 test/results/
-├── kali-provision.log     # full ./kali up output
+├── kali-provision.log     # full ./pt-ai up output
 ├── kali-assert.log        # assertion results
 ├── debian-provision.log
 ├── debian-assert.log
