@@ -137,15 +137,29 @@ If you are a contributor looking to add execution capability to an agent, the fu
 
 ## Evidence Management
 
-Tier 2 agents save all command output to timestamped files:
+Run `/scope-declare` at the start of every session. It creates a per-engagement
+subdirectory under `/engagements/` and writes the path into `scope.md`:
 
 ```
-nmap_10.10.1.0_20260330_140000.txt
-dig_corp.local_20260330_140215.txt
-whois_example.com_20260330_140330.txt
+/engagements/acme-corp-external-2026/
+  scope.md
+  nmap_10.10.1.0_20260330_140000.txt
+  dig_corp.local_20260330_140215.txt
+  whois_example.com_20260330_140330.txt
 ```
 
-These files are saved in the current working directory. At session end, secure or transfer them according to your engagement's evidence handling procedures.
+All Tier 2 agents read the `Evidence directory:` line from `/engagements/scope.md`
+and write every output file there using an absolute path. The `/engagements/`
+folder is synced to the host — files appear on your host machine in real time and
+survive snapshot restores.
+
+**Why absolute paths matter.** Claude Code's Bash tool maintains CWD across tool
+calls within a session. If any command changes directory (e.g., `cd /tmp`), a
+relative filename silently saves evidence to the wrong location. Absolute paths
+under `/engagements/{id}/` are CWD-immune.
+
+At session end, evidence is already on the host at `engagements/{id}/` — no
+manual transfer needed.
 
 ## Scope Guard Reference
 

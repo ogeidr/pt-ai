@@ -11,7 +11,11 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`cat /work/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before auditing any cloud account."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before auditing any cloud account."`
+
+## Evidence directory for this engagement
+
+!`grep -m1 'Evidence directory:' /engagements/scope.md 2>/dev/null | sed 's/.*Evidence directory: //' || echo "/engagements (no scope declared — run /scope-declare first)"`
 
 ## Caller identity (which AWS account these credentials belong to)
 
@@ -27,9 +31,12 @@ You are running a **read-only cloud posture audit**. prowler and ScoutSuite make
 large numbers of `describe/list/get` API calls across every service — they never
 create, modify, or delete resources. Never add write/exploit flags from this skill.
 
+The **Evidence directory** shown above is `ENGAGEMENT_DIR`. Use it as an absolute
+path prefix for every output directory and file in this skill. Never use relative paths.
+
 ### Step 1 — Confirm scope and authorization (MANDATORY)
 
-1. Read `/work/scope.md`. If missing, STOP and tell the user to run `/scope-declare`.
+1. Read `/engagements/scope.md`. If missing, STOP and tell the user to run `/scope-declare`.
 2. Confirm the authenticated account/subscription/project (from caller identity
    above) is named in the declared scope. If not, REFUSE and explain.
 3. If scope or identity is ambiguous, ask the user to confirm before proceeding.
@@ -44,6 +51,15 @@ down (Step 3) if stealth matters.
 
 ### Step 3 — Choose provider and depth
 
+First, verify the evidence directory and set `ENGAGEMENT_DIR`:
+
+```sh
+test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
+ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+[ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+mkdir -p "$ENGAGEMENT_DIR"
+```
+
 Ask: which provider (`aws` / `azure` / `gcp` / `kubernetes`) and full sweep vs.
 targeted? Both tools default to AWS.
 
@@ -53,7 +69,7 @@ targeted? Both tools default to AWS.
 # Full AWS audit, JSON + HTML evidence into a timestamped dir
 prowler aws \
   --output-formats csv json-ocsf html \
-  --output-directory ./prowler_{accountid}_{YYYYMMDD_HHMMSS}
+  --output-directory "$ENGAGEMENT_DIR/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 ```
@@ -61,7 +77,7 @@ prowler aws \
 prowler aws --severity critical high \
   --service iam s3 ec2 \
   --output-formats json-ocsf \
-  --output-directory ./prowler_{accountid}_{YYYYMMDD_HHMMSS}
+  --output-directory "$ENGAGEMENT_DIR/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 ```
@@ -74,7 +90,7 @@ prowler aws --list-services
 
 ```
 scout aws --no-browser \
-  --report-dir ./scoutsuite_{accountid}_{YYYYMMDD_HHMMSS}
+  --report-dir "$ENGAGEMENT_DIR/scoutsuite_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 For other providers: `scout azure`, `scout gcp --project-id <id>`, `scout kubernetes`.
@@ -83,12 +99,12 @@ For other providers: `scout azure`, `scout gcp --project-id <id>`, `scout kubern
 
 Both tools already write to the `--output-directory` / `--report-dir` you pass —
 keep those timestamped dirs as the raw evidence (don't overwrite them). Then write
-a markdown summary with the Write tool:
+a markdown summary with the Write tool using an absolute path:
 
-- `cloudaudit_{accountid}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/cloudaudit_{accountid}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: provider, account/subscription/project ID, engagement ID from
-`/work/scope.md`, tools + versions run, and the collection timestamp.
+`/engagements/scope.md`, tools + versions run, and the collection timestamp.
 
 ### Step 5 — Present prioritized findings
 
@@ -112,4 +128,4 @@ Lead with the exploitable, attacker-relevant issues, not compliance noise:
 - Note that confirmed exploitation (e.g., abusing an IAM privesc path) belongs in a
   separate, explicitly authorized active-testing phase — `cloud-audit` stays read-only.
 
-Remind the user to secure or transfer the evidence directories at session end.
+Remind the user that evidence is in `$ENGAGEMENT_DIR/` and synced to the host.

@@ -191,11 +191,16 @@ source config/.env
 ./kali halt
 ```
 
-The host `engagements/` directory is synced to `/engagements/` inside the VM. Create one directory per engagement:
+The host `engagements/` directory is synced to `/engagements/` inside the VM. Run
+`/scope-declare` at the start of every Claude Code session — it creates the per-engagement
+subdirectory and writes `scope.md` there. All agents and skills save evidence to that
+directory using absolute paths, so files appear on the host in real time and survive
+snapshot restores.
 
 ```sh
-mkdir ../engagements/client-abc
-./kali claude   # Claude Code starts in /engagements
+./kali claude
+# Inside Claude Code, run:
+/scope-declare      # sets engagement ID, creates /engagements/{id}/, writes scope.md
 ```
 
 ---

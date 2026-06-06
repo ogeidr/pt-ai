@@ -11,7 +11,11 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`cat /work/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before scanning any cluster or host."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before scanning any cluster or host."`
+
+## Evidence directory for this engagement
+
+!`grep -m1 'Evidence directory:' /engagements/scope.md 2>/dev/null | sed 's/.*Evidence directory: //' || echo "/engagements (no scope declared — run /scope-declare first)"`
 
 ## Current kube context (if kubectl is configured)
 
@@ -28,9 +32,12 @@ You are mapping a Kubernetes attack surface. **Passive** hunting is reconnaissan
 cluster state — it is gated separately below. Note: kube-hunter is archived upstream;
 treat CVE mappings as a starting point and confirm versions independently.
 
+The **Evidence directory** shown above is `ENGAGEMENT_DIR`. Use it as an absolute
+path prefix for every output file in this skill. Never use relative paths.
+
 ### Step 1 — Confirm scope and authorization (MANDATORY)
 
-1. Read `/work/scope.md`. If missing, STOP and tell the user to run `/scope-declare`.
+1. Read `/engagements/scope.md`. If missing, STOP and tell the user to run `/scope-declare`.
 2. Confirm every target — each remote host, CIDR, or the local cluster — is named in
    the declared scope. If any target is out of scope, REFUSE it.
 3. **CIDR caution:** `--cidr` scans an entire range and will happily hit hosts the
@@ -54,20 +61,30 @@ and any IDS in path. `--active` is **LOUD** and state-changing. Confirm depth fi
 
 ### Step 4 — Choose scan vector
 
-Always add `--report json` and `--log INFO` for clean, parseable evidence.
+First, verify the evidence directory and set `ENGAGEMENT_DIR`:
+
+```sh
+test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
+ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+[ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+mkdir -p "$ENGAGEMENT_DIR"
+```
+
+Always add `--report json` and `--log INFO` for clean, parseable evidence. All output
+files use `$ENGAGEMENT_DIR/` as the absolute prefix.
 
 **Remote host(s)** — specific in-scope IPs/hostnames (preferred):
 
 ```
 kube-hunter --remote TARGET --report json --log INFO \
-  > kubehunter_{target}_{YYYYMMDD_HHMMSS}.json
+  > "$ENGAGEMENT_DIR/kubehunter_{target}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Network range** — ONLY when the entire CIDR is in scope:
 
 ```
 kube-hunter --cidr CIDR --report json --log INFO \
-  > kubehunter_{cidr}_{YYYYMMDD_HHMMSS}.json
+  > "$ENGAGEMENT_DIR/kubehunter_{cidr}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **From inside a pod** — internal attack-surface view (e.g., for a compromised-pod
@@ -75,25 +92,25 @@ scenario, where allowed):
 
 ```
 kube-hunter --pod --report json --log INFO \
-  > kubehunter_pod_{YYYYMMDD_HHMMSS}.json
+  > "$ENGAGEMENT_DIR/kubehunter_pod_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Active (intrusive) — ONLY with explicit authorization from Step 2:**
 
 ```
 kube-hunter --remote TARGET --active --report json --log INFO \
-  > kubehunter_active_{target}_{YYYYMMDD_HHMMSS}.json
+  > "$ENGAGEMENT_DIR/kubehunter_active_{target}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 ### Step 5 — Save evidence
 
 The redirected `*.json` files are the raw evidence — keep them. Then write a markdown
-summary with the Write tool:
+summary with the Write tool using an absolute path:
 
-- `k8srecon_{label}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/k8srecon_{label}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: scan vector and target, passive vs. active (and active authorization
-if used), engagement ID from `/work/scope.md`, and the collection timestamp.
+if used), engagement ID from `/engagements/scope.md`, and the collection timestamp.
 
 ### Step 6 — Present findings
 
@@ -117,4 +134,4 @@ Prioritize the high-impact exposures:
 - Exploitation of a finding (including `--active` follow-through) is a separate,
   explicitly authorized phase — passive `k8s-recon` only maps surface.
 
-Remind the user to secure or transfer the evidence files at session end.
+Remind the user that evidence is in `$ENGAGEMENT_DIR/` and synced to the host.

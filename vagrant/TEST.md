@@ -184,6 +184,10 @@ cat ~/.config/opencode/opencode.json     # anthropic/claude-sonnet-4-6
 # Synced dir
 ls /engagements/                # synced from host ../engagements/
 
+# Evidence path infrastructure (no /work/ should exist)
+test ! -d /work && echo "/work absent: OK" || echo "ERROR: /work still exists"
+test -d /engagements && test -w /engagements && echo "/engagements writable: OK"
+
 # Cloud-audit toolset (06-cloud.sh)
 echo $PATH | grep -o '\.local/bin'         # .local/bin present
 aws --version                              # aws-cli/2.x
@@ -255,21 +259,34 @@ unset ANTHROPIC_API_KEY
 
 ## Phase 7 — Snapshot / restore cycle
 
+Verifies that VM-local files are wiped by restore while `/engagements/` (host-synced)
+survives:
+
 ```sh
 ./kali snapshot pre-engagement
 
 ./kali ssh
-touch /tmp/engagement-artifact.txt
+touch /tmp/vm-local-artifact.txt
+touch /engagements/synced-artifact.txt
 exit
 
-./kali ssh -- "ls /tmp/engagement-artifact.txt"     # exists
+./kali ssh -- "ls /tmp/vm-local-artifact.txt"       # exists
+./kali ssh -- "ls /engagements/synced-artifact.txt" # exists
 
 ./kali restore pre-engagement
 
-./kali ssh -- "ls /tmp/engagement-artifact.txt 2>&1"   # No such file
+./kali ssh -- "ls /tmp/vm-local-artifact.txt 2>&1"       # No such file — wiped by restore
+./kali ssh -- "ls /engagements/synced-artifact.txt 2>&1" # still exists — host-synced
 ```
 
-**Pass:** Artifact absent after restore.
+Clean up:
+```sh
+rm -f ../engagements/synced-artifact.txt
+```
+
+**Pass:** VM-local artifact absent after restore; `/engagements/` artifact survives (confirm
+this distinction holds — engagement evidence saved to `/engagements/{id}/` will not be lost
+on restore).
 
 ---
 

@@ -10,7 +10,7 @@ allowed-tools: Write
 
 ## Current scope for this engagement
 
-!`cat /work/scope.md 2>/dev/null || echo "No scope declared yet for this engagement."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet for this engagement."`
 
 ## Instructions
 
@@ -39,10 +39,14 @@ engagement, scope letter, or equivalent legal document) for the declared scope?
   any offensive guidance can be provided. Obtain authorization and re-run
   /scope-declare."
 - Do NOT produce the [SCOPE DECLARED] log line.
-- Do NOT write to /work/scope.md.
+- Do NOT write any files.
 - Stop here.
 
 **If the user confirms authorization (yes):**
+
+Derive a safe directory name from the engagement ID: lowercase the ID, replace
+spaces and `/` with `-`, strip all characters except `a-z 0-9 - _`. Call this
+`{safe_id}`. Example: "Acme Corp / External 2026" → `acme-corp-external-2026`.
 
 Output the declaration in this exact format (agents use this to detect that
 scope has been set):
@@ -51,7 +55,9 @@ scope has been set):
 [SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: yes
 ```
 
-Then save to /work/scope.md using the Write tool:
+Then write to TWO locations using the Write tool:
+
+**1. `/engagements/scope.md`** — current-scope pointer, overwritten on each re-declaration:
 
 ```markdown
 # Engagement Scope
@@ -60,12 +66,18 @@ Then save to /work/scope.md using the Write tool:
 - **Type:** {type}
 - **Scope:** {summary}
 - **Authorization confirmed:** yes
+- **Evidence directory:** /engagements/{safe_id}
 
 ---
 
 [SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: yes
 ```
 
-Finally, confirm to the user: "Scope is set. All agents will operate within
-the declared boundaries. You can update scope at any time by re-running
-/scope-declare."
+**2. `/engagements/{safe_id}/scope.md`** — permanent engagement record (the Write tool
+creates the directory automatically):
+
+Same content as above.
+
+Finally, confirm to the user: "Scope is set. Evidence will be saved to
+`/engagements/{safe_id}/`. All agents will operate within the declared
+boundaries. You can update scope at any time by re-running `/scope-declare`."

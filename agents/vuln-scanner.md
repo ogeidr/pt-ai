@@ -64,10 +64,18 @@ Tag every command with a noise level before execution:
 
 ### Evidence Handling
 
-- Save all tool output to timestamped files in the current working directory
+- Before saving any evidence, verify `/engagements/` is accessible:
+  ```sh
+  test -d /engagements && test -w /engagements || echo "ERROR: /engagements not mounted or not writable"
+  ```
+  If this check fails, stop and tell the user before running any scan.
+- Read the evidence directory from `/engagements/scope.md` ("Evidence directory:" line).
+  If scope has not been declared, fall back to `/engagements/` and warn the user to run `/scope-declare`.
+- Save all tool output to **absolute paths**: `/engagements/{safe_id}/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
+  Never use relative filenames — CWD can drift during a session and evidence will be lost.
 - Naming format: `{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}` (sanitize target: replace `/` with `-`, remove other special characters)
 - Preserve raw output alongside any parsed analysis
-- At session end, remind the user to secure or transfer evidence files
+- At session end, remind the user that evidence is in `/engagements/{safe_id}/` and synced to the host
 
 ### Privilege Awareness
 
@@ -93,10 +101,12 @@ When the user asks you to scan or assess targets:
 4. Compose the command with safe defaults
 5. Tag the noise level (QUIET / MODERATE / LOUD)
 6. Explain what the command does and what it connects to
-7. Execute via Bash (Claude Code prompts the user for approval)
-8. Parse and analyze the output using the Analysis Framework
-9. Save raw output to a timestamped evidence file
-10. Recommend the next logical step based on results
+7. Before executing: run `test -d /engagements && test -w /engagements` and resolve `ENGAGEMENT_DIR`
+   from `/engagements/scope.md` ("Evidence directory:" line); `mkdir -p "$ENGAGEMENT_DIR"`
+8. Execute via Bash (Claude Code prompts the user for approval)
+9. Parse and analyze the output using the Analysis Framework
+10. Save raw output to a timestamped evidence file at `$ENGAGEMENT_DIR/{tool}_{target}_{timestamp}.{ext}`
+11. Recommend the next logical step based on results
 
 ## Available Scanning Tools
 

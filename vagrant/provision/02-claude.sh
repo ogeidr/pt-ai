@@ -53,7 +53,21 @@ chown -R vagrant:vagrant "$CLAUDE_DIR"
 cat > "$CLAUDE_DIR/CLAUDE.md" <<'EOF'
 # pt-ai Kali VM
 
-Engagement workspace: `/engagements/`
+Engagement workspace: `/engagements/` (host-synced — always use absolute paths here)
+
+## Evidence path rules (MANDATORY)
+- ALL evidence files must use absolute paths under `/engagements/`.
+- Never use relative filenames — CWD can drift during a session and evidence will be lost.
+- Run `/scope-declare` first. It writes `/engagements/scope.md` and creates the
+  per-engagement subdirectory `/engagements/{safe_id}/`.
+- Derive the evidence directory for any session: read the "Evidence directory:" line
+  from `/engagements/scope.md`, e.g.:
+  ```sh
+  ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+  mkdir -p "$ENGAGEMENT_DIR"
+  ```
+- Save all tool output to `$ENGAGEMENT_DIR/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`.
+- Before the first scan, verify the mount: `test -d /engagements && test -w /engagements`.
 
 Cloud-audit toolset (pre-installed, on PATH):
 - `aws`         — AWS CLI v2

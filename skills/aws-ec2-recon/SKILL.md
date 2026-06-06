@@ -11,7 +11,11 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`cat /work/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before enumerating any AWS account."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before enumerating any AWS account."`
+
+## Evidence directory for this engagement
+
+!`grep -m1 'Evidence directory:' /engagements/scope.md 2>/dev/null | sed 's/.*Evidence directory: //' || echo "/engagements (no scope declared — run /scope-declare first)"`
 
 ## Caller identity (which AWS account these credentials belong to)
 
@@ -23,9 +27,12 @@ You are running cloud reconnaissance against an AWS account. This is **read-only
 API enumeration** — `describe-*` calls only. Never create, modify, or delete
 resources from this skill.
 
+The **Evidence directory** shown above is `ENGAGEMENT_DIR`. Use it as an absolute
+path prefix for every output file in this skill. Never use relative paths.
+
 ### Step 1 — Confirm scope and authorization (MANDATORY)
 
-1. Read `/work/scope.md`. If it does not exist, STOP and tell the user to run
+1. Read `/engagements/scope.md`. If it does not exist, STOP and tell the user to run
    `/scope-declare` first.
 2. Compare the **Account** field from the caller-identity output above against
    the authorized scope. The AWS account ID (and/or account alias) MUST be named
@@ -77,15 +84,23 @@ done
 
 ### Step 4 — Save evidence
 
-Save raw JSON output before presenting analysis. Use the working directory and a
-timestamped name (sanitize the account ID, no special characters):
+First, verify the evidence directory and set `ENGAGEMENT_DIR`:
 
-- Per-region raw JSON: `awsec2_{accountid}_{region}_{YYYYMMDD_HHMMSS}.json`
-- Combined recon summary (markdown table): `awsec2_recon_{accountid}_{YYYYMMDD_HHMMSS}.md`
+```sh
+test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
+ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+[ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+mkdir -p "$ENGAGEMENT_DIR"
+```
 
-Write the markdown summary with the Write tool. Include a header noting the
-account ID, regions covered, the engagement ID from `/work/scope.md`, and the
-collection timestamp.
+Save raw JSON output before presenting analysis, using absolute paths:
+
+- Per-region raw JSON: `$ENGAGEMENT_DIR/awsec2_{accountid}_{region}_{YYYYMMDD_HHMMSS}.json`
+- Combined recon summary (markdown table): `$ENGAGEMENT_DIR/awsec2_recon_{accountid}_{YYYYMMDD_HHMMSS}.md`
+
+Write the markdown summary with the Write tool using the absolute path above. Include a
+header noting the account ID, regions covered, the engagement ID from
+`/engagements/scope.md`, and the collection timestamp.
 
 ### Step 5 — Present the recon summary
 
@@ -109,4 +124,4 @@ Suggest concrete follow-ups, for example:
 - `aws ec2 describe-instances` is metadata only — note that confirming live
   services still requires network-level recon against the in-scope hosts.
 
-Remind the user to secure or transfer the evidence files at session end.
+Remind the user that evidence is in `$ENGAGEMENT_DIR/` and synced to the host.
