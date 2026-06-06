@@ -4,7 +4,7 @@
 #
 # opencode runs inside the VM, so it shells out to Kali tools directly — no MCP
 # bridge needed (same architectural advantage Claude Code already enjoys here).
-# Auth reuses the existing ANTHROPIC_API_KEY plumbing (./kali key store / session
+# Auth reuses the existing ANTHROPIC_API_KEY plumbing (./pt-ai key store / session
 # forwarding).  OAuth-only users (Pro/Max) must add an API key — opencode does
 # not consume Claude Code's ~/.claude/ OAuth tokens.
 set -euo pipefail
@@ -89,7 +89,7 @@ chown -R vagrant:vagrant "$OPENCODE_DIR"
 # Native Anthropic provider, default model claude-sonnet-4-6.  Kept minimal so
 # additional providers (LM Studio, Ollama, OpenAI-compat) can be added with a
 # few-line edit.  Model can be overridden per session via PT_AI_OPENCODE_MODEL
-# (the ./kali opencode wrapper forwards it).
+# (the ./pt-ai opencode wrapper forwards it).
 cat > "$OPENCODE_DIR/opencode.json" <<'EOF'
 {
   "$schema": "https://opencode.ai/config.json",

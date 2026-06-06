@@ -11,7 +11,7 @@
 #     reason ARM "doesn't work by default". On x86_64 the native is prebuilt and
 #     the build step is skipped.
 #
-# Idempotent: every expensive step is gated on a presence check so `./kali
+# Idempotent: every expensive step is gated on a presence check so `./pt-ai
 # provision` re-runs are cheap.
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
@@ -20,7 +20,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Opt-out for the heaviest, most distro-fragile provisioner. The Vagrantfile
 # already drops this step when PTAI_SKIP_GHIDRASQL is set; this guard also
-# covers a direct `./kali provision` re-run with the flag exported.
+# covers a direct `./pt-ai provision` re-run with the flag exported.
 if [ -n "${PTAI_SKIP_GHIDRASQL:-}" ]; then
     echo "[07-ghidrasql] PTAI_SKIP_GHIDRASQL set — skipping" >&2
     exit 0

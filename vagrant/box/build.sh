@@ -307,6 +307,6 @@ vagrant box add --name "$BOX_NAME" "$BOX_FILE"
 
 info ""
 info "Done. Use with:"
-info "  PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./kali up"
+info "  PTAI_BOX=kali-arm64 VAGRANT_PROVIDER=vmware_desktop ./pt-ai up"
 
 rm -rf "$WORK_DIR"

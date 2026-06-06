@@ -85,7 +85,7 @@ cat > /etc/profile.d/pt-ai.sh <<'EOF'
 # ~/.local/bin holds pipx-installed CLIs (prowler, scoutsuite — see 06-cloud.sh).
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
 export PS1='\[\033[01;31m\][kali-ptai]\[\033[00m\] \[\033[01;34m\]\w\[\033[00m\]\$ '
-# Persistent API key — written by './kali key store' on the host.
+# Persistent API key — written by './pt-ai key store' on the host.
 [ -f "$HOME/.anthropic_key" ] && . "$HOME/.anthropic_key"
 EOF
 chmod 644 /etc/profile.d/pt-ai.sh
