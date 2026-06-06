@@ -1,0 +1,3 @@
+# Test runtime artifacts (not source)
+.vagrant-test/
+results/
