@@ -1,6 +1,6 @@
 # Additional tools installed on top of kali-linux-default.
 # One apt package name per line. Blank lines and comments are ignored.
-# Edit freely — re-run with: ./kali provision
+# Edit freely — re-run with: ./pt-ai provision
 
 burpsuite
 crackmapexec
