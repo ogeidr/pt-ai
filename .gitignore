@@ -25,3 +25,5 @@ node_modules/
 engagements/
 # Security review outputs (sensitive)
 reviews/
+# Features (sensitive)
+features/
