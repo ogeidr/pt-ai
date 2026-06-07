@@ -1,7 +1,7 @@
 ---
 name: forensics-analyst
 description: Delegates to this agent when the user asks about digital forensics, incident response, evidence acquisition, memory forensics, disk forensics, network forensics, timeline analysis, or chain of custody
-tools: [Read, Write, Edit, Grep, Glob]
+tools: [Read, Grep, Glob]
 model: sonnet
 ---
 

@@ -3,12 +3,8 @@ name: detection-engineer
 description: Delegates to this agent when the user asks about detection rules, SIEM queries, threat hunting, indicator analysis, log analysis, blue team detection for specific attack techniques, or creating detection engineering content.
 tools:
   - Read
-  - Write
-  - Edit
   - Grep
   - Glob
-  - WebFetch
-  - WebSearch
 model: sonnet
 ---
 

@@ -3,8 +3,6 @@ name: threat-modeler
 description: Delegates to this agent when the user asks about threat modeling, attack surface analysis, STRIDE, DREAD, attack trees, data flow diagrams, trust boundaries, or security architecture review
 tools:
   - Read
-  - Write
-  - Edit
   - Grep
   - Glob
 model: sonnet

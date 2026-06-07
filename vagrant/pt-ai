@@ -158,13 +158,11 @@ cmd_ssh() {
 }
 
 cmd_claude() {
-    extra_args=""
-    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then
-        shift
-        extra_args="$*"
-    fi
-
-    base_cmd="claude${extra_args:+ $extra_args}"
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
+    # Quote each user arg so `-- <args>` is inert data, not shell syntax. Without
+    # this, `claude -- --x; rm -rf /engagements/*` would run `rm` inside the VM
+    # (/engagements is a persistent host bind).
+    qargs=$(_shquote "$@")
 
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
         # Write key to a short-lived temp file in the VM, read it at session
@@ -173,42 +171,50 @@ cmd_claude() {
         # listings; `umask 077` makes the temp file 0600.
         printf '%s' "$ANTHROPIC_API_KEY" | \
             _vagrant ssh -- -T "umask 077; cat > /tmp/.ptai-key"
-        claude_cmd="export ANTHROPIC_API_KEY=\$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && $base_cmd"
+        key='export ANTHROPIC_API_KEY=$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && '
     else
-        claude_cmd="$base_cmd"
+        key=''
     fi
 
+    # The command crosses TWO remote shell-parse layers: the remote login shell
+    # (which extracts the `bash -c` argument) and the inner `bash -c`. qargs is
+    # already quoted for the inner layer; _shquote the whole script again so it
+    # survives the outer layer too. $(cat /tmp/.ptai-key) stays literal until the
+    # inner bash runs it on the VM.
+    script="cd /engagements && ${key}claude$qargs"
+
     # Login shell (-l) so /etc/profile.d/pt-ai.sh is sourced (PATH, PS1, stored key).
-    # shellcheck disable=SC2086
-    _vagrant ssh -- -t "bash -l -c 'cd /engagements && $claude_cmd'"
+    # shellcheck disable=SC2029
+    _vagrant ssh -- -t "bash -l -c $(_shquote "$script")"
 }
 
 cmd_opencode() {
-    extra_args=""
-    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then
-        shift
-        extra_args="$*"
-    fi
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
+    qargs=$(_shquote "$@")          # see cmd_claude — quote `-- <args>` as data
 
-    base_cmd="opencode${extra_args:+ $extra_args}"
-
-    # Model override is read at opencode startup; export inline.
+    # Model override is read at opencode startup; export inline. _shquote emits a
+    # leading space, stripped here so it reads `OPENCODE_MODEL=<quoted>`.
     model_prefix=""
     if [ -n "${PT_AI_OPENCODE_MODEL:-}" ]; then
-        model_prefix="OPENCODE_MODEL='${PT_AI_OPENCODE_MODEL}' "
+        mq=$(_shquote "$PT_AI_OPENCODE_MODEL")
+        model_prefix="OPENCODE_MODEL=${mq# } "
     fi
 
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
         # Same short-lived temp-file trick as cmd_claude — key via SSH stdin.
         printf '%s' "$ANTHROPIC_API_KEY" | \
             _vagrant ssh -- -T "umask 077; cat > /tmp/.ptai-key"
-        opencode_cmd="export ANTHROPIC_API_KEY=\$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && ${model_prefix}$base_cmd"
+        key='export ANTHROPIC_API_KEY=$(cat /tmp/.ptai-key) && rm -f /tmp/.ptai-key && '
     else
-        opencode_cmd="${model_prefix}$base_cmd"
+        key=''
     fi
 
-    # shellcheck disable=SC2086
-    _vagrant ssh -- -t "bash -l -c 'cd /engagements && $opencode_cmd'"
+    # _shquote the whole script for the outer (login-shell) layer; qargs is
+    # already quoted for the inner `bash -c`.  See cmd_claude for the rationale.
+    script="cd /engagements && ${key}${model_prefix}opencode$qargs"
+
+    # shellcheck disable=SC2029
+    _vagrant ssh -- -t "bash -l -c $(_shquote "$script")"
 }
 
 cmd_ghidrasql() {

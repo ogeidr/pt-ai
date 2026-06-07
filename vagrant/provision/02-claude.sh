@@ -26,19 +26,22 @@ mkdir -p "$CLAUDE_DIR"
 
 # Agents: copy source files into ~/.claude/agents/ and append the build-time
 # templates to any agent missing them:
-#   _scope-guard.md     — if the agent lacks both scope sentinels
-#   _findings-store.md  — if the agent lacks a "Findings Store" section
-# This guarantees every agent enforces scope and shares the findings store even
-# if the manual copy step was forgotten when the agent was authored.
+#   _scope-guard.md       — if the agent lacks both scope sentinels
+#   _findings-store.md    — if the agent lacks a "Findings Store" section
+#   _untrusted-output.md  — if the agent lacks an "Untrusted Tool Output" section
+# This guarantees every agent enforces scope, shares the findings store, and
+# treats tool output as untrusted data — even if the manual copy step was
+# forgotten when the agent was authored, and for any agent added in the future.
 # Re-provisioning regenerates the directory from source (idempotent).
 SCOPE_GUARD="/opt/pt-ai/agents/_scope-guard.md"
 FINDINGS_STORE="/opt/pt-ai/agents/_findings-store.md"
+UNTRUSTED_OUTPUT="/opt/pt-ai/agents/_untrusted-output.md"
 AGENTS_DST="$CLAUDE_DIR/agents"
 rm -rf "$AGENTS_DST"
 mkdir -p "$AGENTS_DST"
 for src in /opt/pt-ai/agents/*.md; do
     fname=$(basename "$src")
-    [[ "$fname" == _* ]] && continue   # exclude _scope-guard.md, _findings-store.md, any _*.md helpers
+    [[ "$fname" == _* ]] && continue   # exclude _*.md helpers (scope-guard, findings-store, untrusted-output)
     dst="$AGENTS_DST/$fname"
     cp "$src" "$dst"
     if ! grep -qE "Authorization Verification|Scope Enforcement" "$dst"; then
@@ -48,6 +51,10 @@ for src in /opt/pt-ai/agents/*.md; do
     if ! grep -q "Findings Store" "$dst"; then
         printf '\n' >> "$dst"
         cat "$FINDINGS_STORE" >> "$dst"
+    fi
+    if ! grep -q "Untrusted Tool Output" "$dst"; then
+        printf '\n' >> "$dst"
+        cat "$UNTRUSTED_OUTPUT" >> "$dst"
     fi
 done
 
