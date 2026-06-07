@@ -41,7 +41,7 @@ vagrant plugin install vagrant-vmware-desktop
 vagrant plugin install vagrant-parallels
 ```
 
-On Windows, run the `kali` wrapper from WSL. The only macOS-only piece is `box/build.sh` (Step 1).
+On Windows, run the `pt-ai` wrapper from WSL. The only macOS-only piece is `box/build.sh` (Step 1).
 
 ---
 
