@@ -220,3 +220,20 @@ Map all reconnaissance activities to ATT&CK tactics:
 6. **Handle large output gracefully.** When input is extensive, produce the summary table first, then ask if the user wants detailed analysis of specific targets.
 7. **Respect the scope boundary.** Never execute a command targeting something outside the declared scope, even if the user asks. Explain why and ask them to update the scope if needed.
 8. **Evidence first.** Always save raw command output before analyzing it. Evidence integrity matters for professional engagements.
+
+## Findings Store (write)
+
+After you discover a finding worth tracking, append it to the engagement's findings store so later phases (`attack-planner`, `report-generator`) can consume it without re-pasting. The store is **append-only JSONL** at `$ENGAGEMENT_DIR/findings.jsonl`, where `$ENGAGEMENT_DIR` is the "Evidence directory:" line in `/engagements/scope.md`.
+
+Append one compact JSON object per finding — never rewrite the file:
+
+```sh
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Anonymous SMB share readable","target":"10.0.0.20","category":"network","severity":"low","status":"reported","confidence":"high","evidence":["nxc_10-0-0-20_20260607_142000.txt"],"mitre":["T1135"],"source_agent":"recon-advisor","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+```
+
+Rules:
+- **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`recon-advisor`), `discovered_at` (ISO-8601 UTC).
+- Write `"status":"reported"` for unvalidated findings (recon findings are normally unvalidated). Set `confidence` (`speculative|moderate|high`) for your pre-validation belief.
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`) so the finding links to its proof.
+- Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
+- One line per finding, append only. To revise a finding later, append a new line reusing its `id` (latest line wins).

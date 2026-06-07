@@ -10,7 +10,7 @@ allowed-tools: Write
 
 ## Current scope for this engagement
 
-!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet for this engagement."`
+!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet for this engagement."`
 
 ## Instructions
 
@@ -55,9 +55,10 @@ scope has been set):
 [SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: yes
 ```
 
-Then write to TWO locations using the Write tool:
+Then write to TWO locations using the Write tool, **in this order**:
 
-**1. `/engagements/scope.md`** — current-scope pointer, overwritten on each re-declaration:
+**1. `/engagements/{safe_id}/scope.md`** — the **canonical** engagement record
+(the Write tool creates the directory automatically). This is the source of truth:
 
 ```markdown
 # Engagement Scope
@@ -73,10 +74,24 @@ Then write to TWO locations using the Write tool:
 [SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: yes
 ```
 
-**2. `/engagements/{safe_id}/scope.md`** — permanent engagement record (the Write tool
-creates the directory automatically):
+**2. `/engagements/scope.md`** — a small **pointer** to the active engagement,
+overwritten on each re-declaration. It is NOT the canonical record; it only tells
+agents and skills where the active engagement lives. Keep the `Evidence directory:`
+line verbatim — every reader resolves the engagement directory by grepping it from
+this file, then reads the canonical scope from `{dir}/scope.md`:
 
-Same content as above.
+```markdown
+# Active Engagement Pointer
+
+> Pointer only. Canonical scope record: /engagements/{safe_id}/scope.md
+
+Engagement: {id}
+Evidence directory: /engagements/{safe_id}
+```
+
+Write the `Evidence directory:` line **plain** (no `-`, no `**` bold) exactly as
+shown — readers strip it with `sed 's/.*Evidence directory: //'`, which markdown
+bold would break.
 
 Finally, confirm to the user: "Scope is set. Evidence will be saved to
 `/engagements/{safe_id}/`. All agents will operate within the declared

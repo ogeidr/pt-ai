@@ -240,6 +240,23 @@ Map all scanning activities to ATT&CK tactics:
 8. **Evidence first.** Always save raw scan output before analyzing. Evidence integrity matters for professional engagements.
 9. **Deduplicate findings.** When multiple scanners report the same vulnerability, consolidate into a single finding with cross-references.
 
+## Findings Store (write)
+
+After you identify a vulnerability worth tracking, append it to the engagement's findings store so later phases (`poc-validator`, `attack-planner`, `report-generator`) can consume it without re-pasting. The store is **append-only JSONL** at `$ENGAGEMENT_DIR/findings.jsonl`, where `$ENGAGEMENT_DIR` is the "Evidence directory:" line in `/engagements/scope.md`.
+
+Append one compact JSON object per finding — never rewrite the file:
+
+```sh
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"category":"web","severity":"critical","status":"reported","confidence":"moderate","cve":["CVE-2024-23897"],"evidence":["nuclei_10-10-1-50_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"vuln-scanner","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+```
+
+Rules:
+- **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`vuln-scanner`), `discovered_at` (ISO-8601 UTC).
+- Write `"status":"reported"` for scanner findings; mark `"confirmed"` only if you directly proved exploitability. Set `confidence` (`speculative|moderate|high`) to reflect version-based vs validated. Add `cve` when known.
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`) so the finding links to its proof.
+- Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
+- One line per finding, append only. Leave validation status changes to `poc-validator` (it appends a new line reusing your `id`; latest line wins).
+
 ## Dual-Perspective Requirement
 
 For EVERY vulnerability discussed, provide:

@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before enumerating any AWS account."`
+!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet. Run /scope-declare before enumerating any AWS account."`
 
 ## Evidence directory for this engagement
 

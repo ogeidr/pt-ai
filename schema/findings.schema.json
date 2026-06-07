@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pt-ai/schema/findings.schema.json",
+  "title": "pt-ai Finding",
+  "description": "One penetration-test finding. Stored one record per line (JSONL) in /engagements/{id}/findings.jsonl. The store is append-only; to update a finding, append a new line reusing its id — the latest line per id wins.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "target",
+    "category",
+    "severity",
+    "status",
+    "source_agent",
+    "discovered_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Schema contract version. Bump when adding/removing fields."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^F-[0-9]{4,}$",
+      "description": "Stable finding id, e.g. F-0001. Reuse the same id to update a finding."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "target": {
+      "type": "string",
+      "description": "Affected asset: ip, host, url, ARN, bucket, container, pod, etc."
+    },
+    "port": { "type": ["integer", "null"], "minimum": 0, "maximum": 65535 },
+    "service": { "type": "string" },
+    "category": {
+      "enum": ["network", "web", "ad", "cloud", "container", "host", "credential", "other"],
+      "description": "Finding domain. Distinct from the bench scenario checkpoint categories."
+    },
+    "phase": {
+      "enum": ["recon", "vuln-assessment", "exploitation", "post-exploitation", "reporting"],
+      "description": "Engagement phase that produced the finding."
+    },
+    "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
+    "cvss": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+    "confidence": {
+      "enum": ["speculative", "moderate", "high"],
+      "description": "Analyst confidence BEFORE validation. Validation outcome lives in status."
+    },
+    "status": {
+      "enum": ["reported", "confirmed", "false_positive", "remediated", "accepted_risk"],
+      "description": "Lifecycle state. reported=found, not yet validated; confirmed/false_positive=poc-validator outcome. Drives precision."
+    },
+    "cve": { "type": "array", "items": { "type": "string" } },
+    "cwe": { "type": "string" },
+    "mitre": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$" },
+      "description": "MITRE ATT&CK technique IDs, e.g. T1190 or T1021.002."
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths to raw evidence files under the engagement dir. The propagation glue: report-generator cites these."
+    },
+    "chain_id": { "type": ["string", "null"], "description": "Attack chain this finding belongs to." },
+    "chain_step": { "type": ["integer", "null"], "minimum": 1 },
+    "remediation": { "type": "string" },
+    "references": { "type": "array", "items": { "type": "string" } },
+    "source_agent": {
+      "type": "string",
+      "description": "Agent that produced or last updated this record, e.g. vuln-scanner, poc-validator."
+    },
+    "source_tool": { "type": "string", "description": "Tool that produced the evidence, e.g. nmap, nuclei." },
+    "engagement": { "type": "string", "description": "Engagement id (matches scope.md)." },
+    "discovered_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

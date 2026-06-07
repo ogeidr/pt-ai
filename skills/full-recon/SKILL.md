@@ -12,7 +12,7 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before any reconnaissance."`
+!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet. Run /scope-declare before any reconnaissance."`
 
 ## Evidence directory for this engagement
 
@@ -79,7 +79,7 @@ them requires network position inside/peered to the VPC — note this to the use
 
 ### Step 3 — Validate every target against scope (MANDATORY)
 
-For each normalized target, confirm the IP/hostname falls within `/engagements/scope.md`.
+For each normalized target, confirm the IP/hostname falls within the declared scope — read the canonical record at `$ENGAGEMENT_DIR/scope.md` (the root `/engagements/scope.md` is only a pointer to it).
 - DROP and report any target that is out of scope — do not scan it.
 - WorkSpaces/EC2 private IPs count only if the declared scope covers that range.
 - Present the final in-scope target list to the user before scanning.

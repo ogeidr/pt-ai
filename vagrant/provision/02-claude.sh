@@ -24,22 +24,30 @@ fi
 # --- pt-ai agents/skills --------------------------------------------------
 mkdir -p "$CLAUDE_DIR"
 
-# Agents: copy source files into ~/.claude/agents/ and append _scope-guard.md
-# to any agent that is missing both scope sentinels.  This guarantees every
-# agent enforces scope even if the manual copy step was forgotten when the
-# agent was authored.  Re-provisioning regenerates the directory from source.
+# Agents: copy source files into ~/.claude/agents/ and append the build-time
+# templates to any agent missing them:
+#   _scope-guard.md     — if the agent lacks both scope sentinels
+#   _findings-store.md  — if the agent lacks a "Findings Store" section
+# This guarantees every agent enforces scope and shares the findings store even
+# if the manual copy step was forgotten when the agent was authored.
+# Re-provisioning regenerates the directory from source (idempotent).
 SCOPE_GUARD="/opt/pt-ai/agents/_scope-guard.md"
+FINDINGS_STORE="/opt/pt-ai/agents/_findings-store.md"
 AGENTS_DST="$CLAUDE_DIR/agents"
 rm -rf "$AGENTS_DST"
 mkdir -p "$AGENTS_DST"
 for src in /opt/pt-ai/agents/*.md; do
     fname=$(basename "$src")
-    [[ "$fname" == _* ]] && continue   # exclude _scope-guard.md and any future _*.md helpers
+    [[ "$fname" == _* ]] && continue   # exclude _scope-guard.md, _findings-store.md, any _*.md helpers
     dst="$AGENTS_DST/$fname"
     cp "$src" "$dst"
     if ! grep -qE "Authorization Verification|Scope Enforcement" "$dst"; then
         printf '\n' >> "$dst"
         cat "$SCOPE_GUARD" >> "$dst"
+    fi
+    if ! grep -q "Findings Store" "$dst"; then
+        printf '\n' >> "$dst"
+        cat "$FINDINGS_STORE" >> "$dst"
     fi
 done
 
