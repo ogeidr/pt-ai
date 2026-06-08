@@ -1,0 +1,89 @@
+#!/bin/sh
+# pt-ai-guard.sh — Claude Code PreToolUse(Bash) safety hook for pt-ai.
+#
+# The *automated* gate behind the per-command permission prompt — the runtime
+# backstop the security reviews kept asking for. Two stages, both DENY on match:
+#
+#   Stage 1 — credential exfil (PENDING #1/#2). Blocks any command referencing
+#     the operator's LLM credential material, so an injected
+#     `cat ~/.anthropic_key | curl ...` is stopped even if the model is fooled.
+#       ~/.anthropic_key   ~/.claude/   /tmp/.ptai-key
+#     Deliberately TIGHT — does NOT block ~/.aws, ~/.ssh, or target-side secrets:
+#     the cloud-audit toolset (aws/prowler/pacu) reads ~/.aws legitimately and
+#     looting target keys is normal pentest work.
+#
+#   Stage 2 — catastrophic recursive delete (PENDING #2/#5 payload). Blocks
+#     `rm -r…` whose target is the filesystem root, a top-level system dir, the
+#     home dir, or the /engagements evidence ROOT (a host bind — wiping it
+#     destroys real data, e.g. `rm -rf /engagements/*`). Specific deep paths
+#     stay allowed (`rm -rf /engagements/<id>/old`) so normal cleanup works.
+#
+# Deliberately NOT here: filtering network traffic by destination (curl/nc/nmap
+# to "non-scope" hosts). A pentest agent's job is sending traffic to targets;
+# guessing scope from a command string is high-false-positive and the wrong
+# layer. Network egress belongs to the HOST egress allowlist (#1 control 3),
+# not a command parser. Stage 2 is defense-in-depth, not a sandbox — it does not
+# chase `find -delete` / `shred` / `dd` / truncation; the VM is ephemeral and
+# engagements are host-synced.
+#
+# Claude-front-end ONLY. The VM also runs opencode, which does not read
+# ~/.claude/settings.json; that path relies on the host egress allowlist.
+#
+# Contract: PreToolUse event JSON on stdin; print a deny decision to stdout
+# (exit 0) to block, or exit 0 with no output to defer to the normal flow.
+# Fails CLOSED (deny) if no JSON parser is available — that only happens on a
+# broken provision, and a loud failure is safer than a silently-disabled guard.
+
+input=$(cat)
+
+# Extract ONLY tool_input.command. The event JSON also carries transcript_path
+# (which contains "/.claude/"), so we must parse the field, never grep the blob.
+cmd=""
+parsed=0
+if command -v jq >/dev/null 2>&1; then
+    cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null) && parsed=1
+elif command -v python3 >/dev/null 2>&1; then
+    cmd=$(printf '%s' "$input" | python3 -c 'import sys, json
+try:
+    print(json.load(sys.stdin).get("tool_input", {}).get("command", "") or "")
+except Exception:
+    sys.exit(3)' 2>/dev/null) && parsed=1
+fi
+
+deny() {
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
+    exit 0
+}
+
+if [ "$parsed" -ne 1 ]; then
+    deny "pt-ai guard: no JSON parser (jq/python3) available; blocking as a precaution. Re-provision the VM."
+fi
+
+# --- Stage 1: operator LLM-credential exfil ---------------------------------
+# Substring match catches cat/base64/cp/scp/tar/curl-@file/xxd/etc. uniformly.
+# `/.claude` is matched at a boundary (dir itself or any file under it) but not
+# `.clauderc` etc.; `.anthropic_key` / `.ptai-key` are full filenames.
+if printf '%s' "$cmd" | grep -Eq '\.anthropic_key|/\.claude([^[:alnum:]]|$)|\.ptai-key'; then
+    deny "Blocked by pt-ai guard: command references the operator Anthropic/Claude credential (~/.anthropic_key, ~/.claude/, or /tmp/.ptai-key). Agents never need to read these. If a target-side path coincidentally matches, rename it or handle it outside the agent."
+fi
+
+# --- Stage 2: catastrophic recursive delete of a protected path -------------
+# Split the command into clauses (on ; & | newline) and, per clause, require ALL
+# of: an `rm` word, a recursive flag, and a protected target token. Splitting
+# first avoids cross-clause false positives (e.g. `rm -rf /tmp/x; cat /etc/x`).
+# Boundaries allow a leading/trailing space or double-quote (single-quoted globs
+# don't expand, so they are harmless); residual quoting tricks can evade — this
+# is a guard, not a jail.
+TARGETS='(^|[[:space:]"])(/|/\*|/engagements(/\*|/)?|~/?\*?|\$\{?HOME\}?/?\*?|/home/vagrant(/\*|/)?|/(bin|boot|dev|etc|lib|lib64|opt|proc|root|run|sbin|srv|sys|usr|var)(/\*|/)?)([[:space:]"]|$)'
+hit=$(printf '%s\n' "$cmd" | tr ';&|\n' '\n\n\n\n' | while IFS= read -r clause; do
+    printf '%s' "$clause" | grep -Eq '(^|[[:space:]]|/)rm([[:space:]]|$)'  || continue
+    printf '%s' "$clause" | grep -Eq '(-[[:alnum:]]*[rR]|--recursive)'     || continue
+    printf '%s' "$clause" | grep -Eq "$TARGETS"                            || continue
+    echo HIT
+done)
+if [ -n "$hit" ]; then
+    deny "Blocked by pt-ai guard: recursive delete targeting a protected path (filesystem root, a system dir, home, or the /engagements evidence root — a host bind). Delete a specific path under /engagements/<id>/ instead, or do bulk cleanup from the host."
+fi
+
+# Nothing matched — defer to the normal permission flow.
+exit 0

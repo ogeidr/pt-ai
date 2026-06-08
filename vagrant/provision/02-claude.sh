@@ -94,6 +94,24 @@ Cloud-audit toolset (pre-installed, on PATH):
 EOF
 chown vagrant:vagrant "$CLAUDE_DIR/CLAUDE.md"
 
+# --- Claude settings.json + hooks (runtime guardrails) --------------------
+# settings.json adds permission deny-rules and a PreToolUse(Bash) hook that
+# blocks any agent command touching the operator's Anthropic/Claude credential —
+# the runtime backstop for PENDING.md findings #1 (ambient credential read) and
+# #2 (prompt-injection-driven exfil). Claude Code front-end only; opencode reads
+# its own config, so the host egress allowlist covers that path.
+# Source lives in the repo at vagrant/config/claude/ (mounted at /vagrant).
+CLAUDE_SRC="/vagrant/config/claude"
+if [ -d "$CLAUDE_SRC" ]; then
+    cp "$CLAUDE_SRC/settings.json" "$CLAUDE_DIR/settings.json"
+    mkdir -p "$CLAUDE_DIR/hooks"
+    cp "$CLAUDE_SRC/hooks/"*.sh "$CLAUDE_DIR/hooks/"
+    chmod 0755 "$CLAUDE_DIR/hooks/"*.sh
+    chown -R vagrant:vagrant "$CLAUDE_DIR/settings.json" "$CLAUDE_DIR/hooks"
+else
+    echo "02-claude.sh: WARNING — $CLAUDE_SRC not found; settings.json/hooks not installed" >&2
+fi
+
 # --- Shell environment ----------------------------------------------------
 # profile.d for interactive-shell extras (PS1).
 cat > /etc/profile.d/pt-ai.sh <<'EOF'

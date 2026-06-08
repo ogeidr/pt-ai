@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(~/.anthropic_key)",
+      "Read(~/.claude/**)",
+      "Read(/tmp/.ptai-key)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/vagrant/.claude/hooks/pt-ai-guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
