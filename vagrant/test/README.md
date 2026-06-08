@@ -7,10 +7,10 @@ designed:
 | Case | Box | Expectation |
 |---|---|---|
 | **kali** | `kali-arm64` (built via `./box/build.sh`) | Full provision; **Kali-only steps run** (kali-rolling repo, `kali-linux-default`, Kali-pinned unattended-upgrades). |
-| **debian** | `bento/debian-13` (Debian 13 "trixie", arm64) | Framework layer provisions identically; **Kali-only steps skip**; ghidrasql still builds (apt-gated). |
+| **debian** | `bento/debian-13` (Debian 13 "trixie", arm64) | Framework layer provisions identically; **Kali-only steps skip**; ghidrasql + ghidra-rpc still build (apt-gated). |
 
 Target environment (per decision): **Apple Silicon + VMware Fusion**
-(`vmware_desktop`), arm64, **full** Debian run including ghidrasql.
+(`vmware_desktop`), arm64, **full** Debian run including ghidrasql and ghidra-rpc.
 
 ---
 
@@ -69,7 +69,7 @@ Useful overrides:
 
 ```sh
 KEEP=1            ./test/provision-test.sh both       # leave the test VM up to inspect
-TEST_DEBIAN_GHIDRA=0 ./test/provision-test.sh debian  # skip ghidrasql on Debian (faster)
+TEST_DEBIAN_GHIDRA=0 ./test/provision-test.sh debian  # skip ghidrasql + ghidra-rpc on Debian (faster)
 TEST_DEBIAN_BOX=foo/bar ./test/provision-test.sh debian
 ```
 
@@ -79,7 +79,7 @@ re-provision) against it:
 ```sh
 VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
   VAGRANT_PROVIDER=vmware_desktop \
-  ./pt-ai ssh -c "EXPECT_GHIDRASQL=1 bash /vagrant/test/provision-test.sh --assert"
+  ./pt-ai ssh -c "EXPECT_GHIDRASQL=1 EXPECT_GHIDRA_RPC=1 bash /vagrant/test/provision-test.sh --assert"
 ```
 
 ---
@@ -111,6 +111,10 @@ VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
 **ghidrasql (when expected)**
 
 - `/usr/local/bin/ghidrasql` present and `--help` runs
+
+**ghidra-rpc (when expected)**
+
+- `/usr/local/bin/ghidra-rpc` present and `--version` runs
 
 ---
 

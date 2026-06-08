@@ -52,6 +52,7 @@
 #                         apt-family box works; Kali-only steps auto-skip.
 #                         KALI_BOX is still honored as a fallback.
 #   PTAI_SKIP_GHIDRASQL   Set to skip the heavy ghidrasql provisioner.
+#   PTAI_SKIP_GHIDRA_RPC  Set to skip the ghidra-rpc provisioner.
 #   VAGRANT_PROVIDER      virtualbox | vmware_desktop | parallels (default: virtualbox)
 #   VAGRANT_MEMORY        VM memory MB (default: 4096)
 #   VAGRANT_CPUS          vCPU count (default: 4)
@@ -71,7 +72,9 @@ VAGRANT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
 
 # PTAI_BOX is primary; KALI_BOX kept as a back-compat fallback.
 PTAI_BOX="${PTAI_BOX:-${KALI_BOX:-kalilinux/rolling}}"
+# ghidrasql and ghidra-rpc are provisioned independently; each has its own skip.
 PTAI_SKIP_GHIDRASQL="${PTAI_SKIP_GHIDRASQL:-}"
+PTAI_SKIP_GHIDRA_RPC="${PTAI_SKIP_GHIDRA_RPC:-}"
 VAGRANT_PROVIDER="${VAGRANT_PROVIDER:-virtualbox}"
 VAGRANT_MEMORY="${VAGRANT_MEMORY:-4096}"
 VAGRANT_CPUS="${VAGRANT_CPUS:-4}"
@@ -82,6 +85,7 @@ _vagrant() {
       env \
         PTAI_BOX="$PTAI_BOX" \
         PTAI_SKIP_GHIDRASQL="$PTAI_SKIP_GHIDRASQL" \
+        PTAI_SKIP_GHIDRA_RPC="$PTAI_SKIP_GHIDRA_RPC" \
         VAGRANT_PROVIDER="$VAGRANT_PROVIDER" \
         VAGRANT_MEMORY="$VAGRANT_MEMORY" \
         VAGRANT_CPUS="$VAGRANT_CPUS" \
@@ -116,6 +120,11 @@ Commands:
   claude [-- <args>]     Start Claude Code inside VM
   opencode [-- <args>]   Start opencode inside VM (Anthropic provider)
   ghidrasql [args...]    Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
+  ghidra [args...]       Drive ghidra-rpc inside VM (Ghidra RE daemon).
+                         Lifecycle: ghidra start --project /engagements/x.gpr
+                                    ghidra load <binary> | decompile <bin> <fn>
+                                    ghidra stop
+                         start defaults to --headless --detach.
   key store              Store ANTHROPIC_API_KEY from host env into VM
   key clear              Remove stored API key from VM
   key status             Show whether an API key is stored in VM
@@ -139,6 +148,7 @@ Environment:
                        box works; Kali-only steps auto-skip. KALI_BOX honored
                        as a fallback.
   PTAI_SKIP_GHIDRASQL  Set to skip the heavy ghidrasql provisioner
+  PTAI_SKIP_GHIDRA_RPC Set to skip the ghidra-rpc provisioner
   VAGRANT_PROVIDER     virtualbox | vmware_desktop | parallels (default: virtualbox)
   VAGRANT_MEMORY       VM RAM in MB (default: 4096)
   VAGRANT_CPUS         vCPU count (default: 4)
@@ -239,6 +249,62 @@ cmd_ghidrasql() {
     _vagrant ssh -- -t "$env_setup; cd /engagements && /usr/local/bin/ghidrasql$qargs"
 }
 
+# ghidra-rpc lifecycle + passthrough. Runs ALONGSIDE ghidrasql (above) — the two
+# are independent so you can A/B them against the same /engagements binary.
+# ghidra-rpc is a warm daemon that embeds Ghidra via PyGhidra and exposes a verb
+# CLI (start/stop/load/decompile/xrefs-to/rename-function/set-comment/…). This
+# wrapper forwards to the in-VM `ghidra-rpc` binary, sources its env, runs in
+# /engagements, and adds two conveniences:
+#   * managed `start` defaults to --headless --detach so the daemon outlives the
+#     one-shot SSH session (operator-supplied --gui/--headless/--detach win);
+#   * the host's GHIDRA_RPC_PROJECT (if set) is forwarded so load/decompile/…
+#     resolve the right project without re-exporting it inside the VM.
+# Everything else is a straight passthrough to ghidra-rpc's own subcommands.
+cmd_ghidra() {
+    # Accept an optional leading `--` separator (like claude/opencode).
+    if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; fi
+    [ "$#" -eq 0 ] && set -- --help
+
+    # Source ghidra-rpc's env (GHIDRA_INSTALL_DIR, JAVA_HOME, ~/.local/bin on
+    # PATH). Forward the host's project selection if present.
+    env_setup=". /etc/profile.d/pt-ai-ghidra-rpc.sh"
+    if [ -n "${GHIDRA_RPC_PROJECT:-}" ]; then
+        env_setup="$env_setup; export GHIDRA_RPC_PROJECT=$(_shquote "$GHIDRA_RPC_PROJECT")"
+    fi
+
+    # Managed `start`: default to headless + detached unless the operator already
+    # chose a mode, so the warm daemon survives this single SSH invocation.
+    defaults=
+    if [ "$1" = "start" ]; then
+        _mode_set=false; _detach_set=false
+        for a in "$@"; do
+            case "$a" in
+                --gui|--headless) _mode_set=true ;;
+                --detach)         _detach_set=true ;;
+            esac
+        done
+        $_mode_set   || defaults="$defaults --headless"
+        $_detach_set || defaults="$defaults --detach"
+    fi
+
+    # Quote every argument so paths/comments/signatures with spaces, quotes, or
+    # parens survive the single remote-shell parse (no injection, no mangling).
+    # The trailing $defaults are literal, known-safe flags.
+    qargs=$(_shquote "$@")
+    # shellcheck disable=SC2029
+    _vagrant ssh -- -t "$env_setup; cd /engagements && ghidra-rpc$qargs$defaults"
+}
+
+# Best-effort: stop a running ghidra-rpc daemon so a live JVM/socket is not
+# captured in (snapshot) or left stale across (restore) a VM image. Never fails
+# the snapshot/restore — the daemon auto-restarts from the saved project on the
+# next command anyway.
+_ghidra_stop() {
+    _vagrant ssh -- -T \
+        '. /etc/profile.d/pt-ai-ghidra-rpc.sh 2>/dev/null || true; command -v ghidra-rpc >/dev/null 2>&1 && ghidra-rpc stop >/dev/null 2>&1; true' \
+        >/dev/null 2>&1 || true
+}
+
 cmd_key() {
     action="${1:-}"
     case "$action" in
@@ -277,6 +343,7 @@ cmd_snapshot() {
     if [ "$#" -lt 1 ]; then
         echo "pt-ai snapshot: missing <name>" >&2; exit 1
     fi
+    _ghidra_stop            # quiesce the ghidra-rpc daemon before capturing state
     _vagrant snapshot save "$1"
 }
 
@@ -285,6 +352,7 @@ cmd_restore() {
         echo "pt-ai restore: missing <name>" >&2; exit 1
     fi
     _vagrant snapshot restore "$1"
+    _ghidra_stop            # clear any stale daemon record from the restored image
 }
 
 cmd_halt()      { _vagrant halt; }
@@ -303,6 +371,7 @@ case "$sub" in
     claude)         cmd_claude "$@" ;;
     opencode)       cmd_opencode "$@" ;;
     ghidrasql)      cmd_ghidrasql "$@" ;;
+    ghidra)         cmd_ghidra "$@" ;;
     key)            cmd_key "$@" ;;
     snapshot)       cmd_snapshot "$@" ;;
     restore)        cmd_restore "$@" ;;

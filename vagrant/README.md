@@ -98,6 +98,7 @@ First run provisions the VM automatically (~30–60 min depending on network):
 - opencode CLI + pt-ai agents converted to opencode slash commands
 - Cloud-audit toolset: AWS CLI v2, prowler, scoutsuite, trufflehog (plus apt pacu, kube-hunter)
 - ghidrasql: Ghidra 12.0.4 + libghidra + ghidrasql (on aarch64, the native decompiler is built from source — adds time to the first provision)
+- ghidra-rpc: PyGhidra-backed RE daemon (cellebrite-labs/ghidra-rpc via `uv`), provisioned alongside ghidrasql and sharing the same Ghidra install
 
 Subsequent `./pt-ai up` calls boot in seconds — provisioning is skipped.
 
@@ -221,11 +222,29 @@ Edit `config/tools.txt` (one apt package per line) then re-provision:
 
 ---
 
-## ghidrasql
+## Reverse engineering: ghidrasql + ghidra-rpc
+
+Two complementary RE engines over Ghidra are provisioned **side by side** so you can
+use whichever fits the task (or run both and cross-validate). They share the same
+Ghidra install and, on aarch64, the same self-built native decompiler.
+
+- **ghidrasql** — declarative **SQL** over the program DB (57 tables / 77 views).
+  Best for bulk/relational work and set-based annotation (`UPDATE … ; save_database()`).
+- **ghidra-rpc** — imperative **verb CLI** (68 commands, JSON out) over a warm PyGhidra
+  daemon. Best for step-by-step RE, struct reconstruction, byte patching, and function
+  diffing.
+
+Each can be skipped independently (`PTAI_SKIP_GHIDRASQL`, `PTAI_SKIP_GHIDRA_RPC`).
+Two model-invocable skills wrap the end-to-end "full static disassembly analysis +
+report" workflow for each engine: **`/disasm-ghidrasql`** and **`/disasm-ghidra-rpc`**
+(authored once under `skills/`, auto-derived as opencode commands at provision time).
+
+### ghidrasql
 
 [`ghidrasql`](https://github.com/0xeb/ghidrasql) exposes a SQL interface over a
 binary's Ghidra analysis database — query functions, strings, decompiled pseudocode,
-and more, one-shot or over HTTP. The toolchain (Ghidra 12.0.4, JDK 21, the libghidra
+and more, one-shot or over HTTP; write-through annotation via `UPDATE`/`DELETE` +
+`save_database()`. The toolchain (Ghidra 12.0.4, JDK 21, the libghidra
 extension, and the ghidrasql binary) is provisioned by `provision/07-ghidrasql.sh`.
 
 **aarch64 note.** The official Ghidra release ships no `linux_arm_64` native
@@ -261,6 +280,38 @@ build compatibility. Drop the relevant patch once a fix lands upstream.
 Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
 `GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`).
 
+> **Security note.** ghidrasql's `--http`/`--serve` mode opens a local network
+> surface. It binds `127.0.0.1` by default — keep it there, and use `--auth <token>`
+> if your build supports it. The `/disasm-ghidrasql` skill does this and tears the
+> host down when done.
+
+### ghidra-rpc
+
+[`ghidra-rpc`](https://github.com/cellebrite-labs/ghidra-rpc) is a persistent RE
+daemon that embeds Ghidra in-process via PyGhidra and exposes a verb CLI returning
+JSON. Provisioned by `provision/08-ghidra-rpc.sh` (pure Python: `uv tool install` —
+no C++/Gradle build). Unlike ghidrasql it talks over a **Unix socket** (no network
+surface), supports **binary patching** (`assemble`/`write-bytes`) and **function
+diffing** (`function-diff`/`match-function`), and keeps the analysis session warm.
+
+The daemon has its own lifecycle, driven by `./pt-ai ghidra`:
+
+```sh
+# Start the warm daemon (defaults to --headless --detach), load, query
+./pt-ai ghidra start --project /engagements/demo.gpr
+./pt-ai ghidra load ./samples/target
+./pt-ai ghidra functions ls --limit 5
+./pt-ai ghidra decompile target main
+./pt-ai ghidra stop
+```
+
+`start` defaults to headless + detached so the daemon survives the one-shot SSH
+session. `GHIDRA_INSTALL_DIR` is exported VM-wide; the daemon needs it. The daemon
+is stopped automatically before `./pt-ai snapshot` and after `./pt-ai restore` so a
+live JVM/socket isn't captured in (or left stale across) a VM image.
+
+Override the source revision with `GHIDRA_RPC_REF` (a tag/commit; defaults to `main`).
+
 ---
 
 ## Using a different box
@@ -285,7 +336,8 @@ Non-apt boxes (Fedora, Arch, …) are out of scope: provisioning warns and skips
 its package steps rather than failing. `KALI_BOX` is still honored as a fallback
 for `PTAI_BOX`.
 
-To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
+To skip the heavy Ghidra-backed builds on any box, set `PTAI_SKIP_GHIDRASQL=1`
+and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 
 ---
 
@@ -295,6 +347,8 @@ To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
 |---|---|---|
 | `PTAI_BOX` | `kalilinux/rolling` | Vagrant box. Any apt-family box; Kali-only steps auto-skip (use `kali-arm64` on Apple Silicon) |
 | `PTAI_SKIP_GHIDRASQL` | — | Set to any value to skip the heavy ghidrasql provisioner |
+| `PTAI_SKIP_GHIDRA_RPC` | — | Set to any value to skip the ghidra-rpc provisioner |
+| `GHIDRA_RPC_REF` | `main` | ghidra-rpc source revision (tag/commit) to install |
 | `KALI_BOX` | — | Legacy alias for `PTAI_BOX` (still honored as a fallback) |
 | `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
@@ -311,6 +365,7 @@ To skip the heavy ghidrasql build on any box, set `PTAI_SKIP_GHIDRASQL=1`.
 ./pt-ai claude [-- <args>]    Start Claude Code session inside VM
 ./pt-ai opencode [-- <args>]  Start opencode session inside VM
 ./pt-ai ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
+./pt-ai ghidra [args...]      Drive ghidra-rpc inside VM (start/load/decompile/stop)
 ./pt-ai ssh                   Interactive shell inside VM
 ./pt-ai key store             Store ANTHROPIC_API_KEY from host env into VM
 ./pt-ai key clear             Remove stored API key from VM

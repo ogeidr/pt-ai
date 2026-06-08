@@ -108,6 +108,7 @@ This log should be available for review at any point during the session.
 
 ### Reverse Engineering
 - Static analysis with Ghidra, IDA, Binary Ninja, radare2
+- Automated Ghidra static analysis inside the VM via the `/disasm-ghidrasql` skill (SQL over the program DB) or `/disasm-ghidra-rpc` skill (verb CLI + warm daemon, with byte patching and function diffing for rev/pwn) — both save a report to the engagement directory
 - Dynamic analysis with GDB, x64dbg, WinDbg
 - Anti-debugging and obfuscation techniques
 - Malware analysis methodology

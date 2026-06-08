@@ -6,9 +6,13 @@ VAGRANT_PROVIDER = ENV.fetch("VAGRANT_PROVIDER", "virtualbox")
 VM_MEMORY       = ENV.fetch("VAGRANT_MEMORY",   "4096").to_i
 VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
 
-# The ghidrasql build is heavy and the most distro-fragile step — make it
-# opt-out via PTAI_SKIP_GHIDRASQL (set to any non-empty value to skip).
-GHIDRASQL_ENABLED = ENV.fetch("PTAI_SKIP_GHIDRASQL", "").strip.empty?
+# Two Ghidra-backed tools are provisioned side by side so they can be A/B tested
+# against the same binary. Both are heavy (each can download Ghidra; on aarch64
+# the native decompiler is built once and reused) — each is independently
+# opt-out. They share /opt/ghidra_<ver>_PUBLIC, so whichever runs first does the
+# download/build and the other reuses it.
+GHIDRASQL_ENABLED  = ENV.fetch("PTAI_SKIP_GHIDRASQL",  "").strip.empty?
+GHIDRA_RPC_ENABLED = ENV.fetch("PTAI_SKIP_GHIDRA_RPC", "").strip.empty?
 
 Vagrant.configure("2") do |config|
   config.vm.box      = BOX
@@ -88,5 +92,12 @@ Vagrant.configure("2") do |config|
   # Opt out with PTAI_SKIP_GHIDRASQL=1.
   if GHIDRASQL_ENABLED
     config.vm.provision "shell", path: "provision/07-ghidrasql.sh"
+  end
+
+  # ghidra-rpc — agent-driven RE daemon over Ghidra (PyGhidra). Runs alongside
+  # ghidrasql for comparison; reuses the same Ghidra install. Heavy on first run.
+  # Opt out with PTAI_SKIP_GHIDRA_RPC=1.
+  if GHIDRA_RPC_ENABLED
+    config.vm.provision "shell", path: "provision/08-ghidra-rpc.sh"
   end
 end

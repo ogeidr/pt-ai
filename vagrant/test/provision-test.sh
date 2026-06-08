@@ -27,10 +27,11 @@
 #   TEST_PROVIDER       vagrant provider               (default: vmware_desktop)
 #   TEST_KALI_BOX       Kali box name                  (default: kali-arm64)
 #   TEST_DEBIAN_BOX     Debian box name                (default: bento/debian-13)
-#   TEST_DEBIAN_GHIDRA  1=full incl. ghidrasql, 0=skip (default: 1)
+#   TEST_DEBIAN_GHIDRA  1=full incl. ghidrasql + ghidra-rpc, 0=skip (default: 1)
 #   KEEP                1=leave test VM running         (default: destroy each)
 # ENV (guest mode)
 #   EXPECT_GHIDRASQL    1|0  whether ghidrasql should be installed (default: 1)
+#   EXPECT_GHIDRA_RPC   1|0  whether ghidra-rpc should be installed (default: 1)
 #
 # OUTPUT
 #   test/results/<case>-provision.log   full `./pt-ai up` output
@@ -45,11 +46,13 @@ if [ "${1:-}" = "--assert" ]; then
     # Load the provisioned environment so claude/opencode/pipx CLIs and the
     # Ghidra env are on PATH even under a non-login `ssh -c` shell. /usr/sbin is
     # added because Debian keeps a regular user's PATH free of sbin.
-    [ -r /etc/profile.d/pt-ai.sh ]           && . /etc/profile.d/pt-ai.sh
-    [ -r /etc/profile.d/pt-ai-ghidrasql.sh ] && . /etc/profile.d/pt-ai-ghidrasql.sh
+    [ -r /etc/profile.d/pt-ai.sh ]            && . /etc/profile.d/pt-ai.sh
+    [ -r /etc/profile.d/pt-ai-ghidrasql.sh ]  && . /etc/profile.d/pt-ai-ghidrasql.sh
+    [ -r /etc/profile.d/pt-ai-ghidra-rpc.sh ] && . /etc/profile.d/pt-ai-ghidra-rpc.sh
     export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/sbin:/sbin:$PATH"
 
     EXPECT_GHIDRASQL="${EXPECT_GHIDRASQL:-1}"
+    EXPECT_GHIDRA_RPC="${EXPECT_GHIDRA_RPC:-1}"
 
     pass=0; fail=0
     ok(){ printf '  \033[32mPASS\033[0m %s\n' "$1"; pass=$((pass+1)); }
@@ -68,7 +71,7 @@ if [ "${1:-}" = "--assert" ]; then
     IS_KALI=false; [ "${ID:-}" = "kali" ] && IS_KALI=true
 
     echo "== pt-ai deployment assertions =="
-    echo "Guest: ${PRETTY:-unknown}  (ID=${ID:-?})  EXPECT_GHIDRASQL=$EXPECT_GHIDRASQL"
+    echo "Guest: ${PRETTY:-unknown}  (ID=${ID:-?})  EXPECT_GHIDRASQL=$EXPECT_GHIDRASQL  EXPECT_GHIDRA_RPC=$EXPECT_GHIDRA_RPC"
     echo
 
     echo "[framework layer — required on every box]"
@@ -114,6 +117,13 @@ if [ "${1:-}" = "--assert" ]; then
         check "ghidrasql --help runs"    bash -c '/usr/local/bin/ghidrasql --help'
     fi
 
+    if [ "$EXPECT_GHIDRA_RPC" = 1 ]; then
+        echo
+        echo "[ghidra-rpc]"
+        check "ghidra-rpc binary present" test -x /usr/local/bin/ghidra-rpc
+        check "ghidra-rpc --version runs" bash -c '/usr/local/bin/ghidra-rpc --version'
+    fi
+
     echo
     echo "== result: $pass passed, $fail failed =="
     [ "$fail" -eq 0 ]
@@ -145,19 +155,21 @@ SUMMARY="$RESULTS/summary.txt"
 record(){ printf '%s\n' "$1" | tee -a "$SUMMARY"; }
 
 # Reuse the kali wrapper so it is itself exercised end-to-end. Box / provider /
-# ghidrasql-skip are passed via the same env vars the wrapper forwards.
+# Ghidra-skip are passed via the same env vars the wrapper forwards. The single
+# skip/expect parameter governs BOTH Ghidra-backed tools (ghidrasql + ghidra-rpc).
 run_case(){ # name box skip_ghidra expect_ghidra
   local name="$1" box="$2" skip="$3" expect="$4"
   local plog="$RESULTS/${name}-provision.log"
   local alog="$RESULTS/${name}-assert.log"
 
-  say "CASE $name — box=$box provider=$PROVIDER skip_ghidrasql='${skip:-0}'"
+  say "CASE $name — box=$box provider=$PROVIDER skip_ghidra='${skip:-0}'"
 
   # Clean slate for the ISOLATED test machine only (never the user's VM).
   PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" ./pt-ai destroy >/dev/null 2>&1 || true
 
   say "$name: provisioning (this takes a while) → ${name}-provision.log"
-  PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" PTAI_SKIP_GHIDRASQL="$skip" \
+  PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" \
+      PTAI_SKIP_GHIDRASQL="$skip" PTAI_SKIP_GHIDRA_RPC="$skip" \
       ./pt-ai up 2>&1 | tee "$plog"
   local up_rc=${PIPESTATUS[0]}
   if [ "$up_rc" -ne 0 ]; then
@@ -168,7 +180,7 @@ run_case(){ # name box skip_ghidra expect_ghidra
 
   say "$name: running in-guest assertions → ${name}-assert.log"
   PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" \
-      ./pt-ai ssh -c "EXPECT_GHIDRASQL=$expect bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
+      ./pt-ai ssh -c "EXPECT_GHIDRASQL=$expect EXPECT_GHIDRA_RPC=$expect bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
   local as_rc=${PIPESTATUS[0]}
 
   if [ "$as_rc" -eq 0 ]; then

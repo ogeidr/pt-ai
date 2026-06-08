@@ -15,8 +15,8 @@ Work through phases in order. Stop and fix before continuing if anything fails.
 > automated **multi-box** provisioning + assertion test (Kali *and* Debian, verifying
 > the Kali-only steps gate correctly), use `./test/provision-test.sh` — see
 > [test/README.md](test/README.md). The box is selected with `PTAI_BOX` (`KALI_BOX`
-> is still honored as a fallback); skip the heavy ghidrasql build with
-> `PTAI_SKIP_GHIDRASQL=1`.
+> is still honored as a fallback); skip the heavy Ghidra-backed builds with
+> `PTAI_SKIP_GHIDRASQL=1` and/or `PTAI_SKIP_GHIDRA_RPC=1`.
 
 ---
 
@@ -139,6 +139,7 @@ Expected duration: 30–60 min. Milestones in order:
 | `05-opencode.sh` | opencode installed, agents converted, opencode.json written |
 | `06-cloud.sh` | pipx/unzip + build deps installed, AWS CLI v2 unpacked, trufflehog binary fetched, prowler + scoutsuite pipx venvs created |
 | `07-ghidrasql.sh` | Ghidra + ghidrasql built (skipped if `PTAI_SKIP_GHIDRASQL=1`; on aarch64 the native decompiler is built from source — slow) |
+| `08-ghidra-rpc.sh` | ghidra-rpc installed via `uv` (skipped if `PTAI_SKIP_GHIDRA_RPC=1`; reuses the Ghidra install + aarch64 decompiler from step 07) |
 
 Completes with no `ERROR` lines and the shell prompt returns.
 
