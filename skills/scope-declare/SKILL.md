@@ -10,7 +10,7 @@ allowed-tools: Write
 
 ## Current scope for this engagement
 
-!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet for this engagement."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet for this engagement."`
 
 ## Instructions
 

@@ -13,7 +13,7 @@ Each agent is a Markdown file in `.claude/agents/` with a YAML frontmatter block
 | **engagement-planner** | Scope, timeline, rules of engagement | — | Include environment size, tech stack, compliance requirements |
 | **threat-modeler** | STRIDE, attack trees, architecture review | — | Describe components and data flows in detail |
 | **attack-planner** | Correlate findings into attack chains | — | Paste all raw scan and BloodHound data |
-| **swarm-orchestrator** | Coordinate a full engagement lifecycle | ✓ | Use for full engagements only — it invokes other agents |
+| **swarm-orchestrator** | Engagement-lifecycle methodology reference (playbook) | — | Does NOT execute or delegate; to actually run an engagement use the `/engagement` skill |
 | **recon-advisor** | Analyze scan output; run nmap/dig/whois/curl | ✓ | Paste real output; declare scope before execution |
 | **osint-collector** | Passive OSINT, subdomain enum, target profiling | — | Specify passive-only vs. active |
 | **vuln-scanner** | Run nuclei/nikto, parse CVEs, prioritize findings | ✓ | Paste existing output for analysis without rescanning |
@@ -202,14 +202,25 @@ severity with remediation recommendations. [paste findings]
 
 ### Full-Engagement Automation
 
-For engagements where you want to automate the agent handoffs, use `swarm-orchestrator`.
+For engagements where you want real, automated agent handoffs, use the
+**`/engagement` skill** — not `swarm-orchestrator`. The skill runs in the main
+thread, so it can use the `Task` tool to delegate to each specialist agent in turn;
+a subagent (which is what `swarm-orchestrator` becomes when invoked) cannot spawn
+other subagents, so it can only describe the lifecycle, never run it.
+
+`/engagement` is **operator-gated**: it emits a per-delegation scope envelope,
+records phase state in `gates.jsonl`, and stops for your explicit approval at every
+phase transition (and a hard gate before exploitation). Every command a delegated
+agent composes still goes through Claude Code's per-command permission prompt.
 
 ```
-Run a full red team engagement against Acme Corp. Authorized scope is
-10.0.0.0/8 and corp.local. I need planning, recon, vulnerability assessment,
-exploitation, and a final report. Pause for my approval before each phase
-transition.
+/scope-declare      # set engagement id, scope, written-authorization = yes
+/engagement         # confirm the authorized agent set, then approve each phase
 ```
+
+> **opencode note:** opencode has no `Task` tool, so there is no automated fan-out
+> there. Under opencode, drive the lifecycle by hand using `swarm-orchestrator` as
+> the playbook and invoking each agent in turn.
 
 ---
 

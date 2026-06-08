@@ -12,7 +12,7 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet. Run /scope-declare before any reconnaissance."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before any reconnaissance."`
 
 ## Evidence directory for this engagement
 
@@ -24,7 +24,7 @@ allowed-tools: Bash, Read, Write
 
 ## Tool availability
 
-!`for t in nmap masscan dig whois curl whatweb nikto nc; do command -v "$t" >/dev/null 2>&1 && echo "$t: ok" || echo "$t: MISSING"; done`
+!`command -v nmap masscan dig whois curl whatweb nikto nc 2>/dev/null || echo "(one or more recon tools missing — check the install)"`
 
 ## Instructions
 

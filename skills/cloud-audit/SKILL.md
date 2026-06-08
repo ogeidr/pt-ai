@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet. Run /scope-declare before auditing any cloud account."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before auditing any cloud account."`
 
 ## Evidence directory for this engagement
 
@@ -23,7 +23,7 @@ allowed-tools: Bash, Read, Write
 
 ## Tool availability
 
-!`for t in prowler scout; do command -v "$t" >/dev/null 2>&1 && echo "$t: $(command -v $t)" || echo "$t: NOT FOUND"; done`
+!`command -v prowler scout || echo "prowler/scout: one or both NOT FOUND — check the cloud toolset install."`
 
 ## Instructions
 

@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Write
 
 ## Current scope for this engagement
 
-!`d=$(sed -n 's/.*Evidence directory: *//p' /engagements/scope.md 2>/dev/null | head -1); cat "${d:-/engagements}/scope.md" 2>/dev/null || echo "No scope declared yet. Run /scope-declare before scanning any cluster or host."`
+!`cat /engagements/scope.md 2>/dev/null || echo "No scope declared yet. Run /scope-declare before scanning any cluster or host."`
 
 ## Evidence directory for this engagement
 
@@ -23,7 +23,7 @@ allowed-tools: Bash, Read, Write
 
 ## Tool availability
 
-!`command -v kube-hunter >/dev/null 2>&1 && echo "kube-hunter: $(command -v kube-hunter)" || echo "kube-hunter: NOT FOUND"`
+!`command -v kube-hunter || echo "kube-hunter: NOT FOUND — install before active cluster scans."`
 
 ## Instructions
 

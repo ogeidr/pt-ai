@@ -64,7 +64,11 @@ if [ -d "$SKILLS_SRC" ]; then
     for skill in "$SKILLS_SRC"/*/SKILL.md; do
         [ -f "$skill" ] || continue
         name=$(basename "$(dirname "$skill")")
-        case "$name" in _*) continue ;; esac
+        # _* are shared blocks (skip). `engagement` is the Task-based orchestrator;
+        # opencode has no Task tool, so a flattened command would be a misleading
+        # half-working automation. Exclude it — under opencode, drive the lifecycle
+        # by hand using the swarm-orchestrator playbook (see docs/AGENT-GUIDE.md).
+        case "$name" in _*|engagement) continue ;; esac
         awk '
             BEGIN { state = 0; keep = 0 }
             /^---$/ {

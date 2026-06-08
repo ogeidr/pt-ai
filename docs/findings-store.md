@@ -95,3 +95,53 @@ runs the injection. Validate a record against the contract with any JSON Schema
 tool, e.g. `jsonschema -i <record> schema/findings.schema.json`. Note the `schema/`
 dir is not synced into the VM, so the agent blocks are self-contained (fields +
 append idiom inline) rather than pointing at the schema.
+
+---
+
+# Engagement Phase Gates (`gates.jsonl`)
+
+A sibling append-only state file in the same engagement dir
+(`/engagements/{safe_id}/gates.jsonl`), written by the **`/engagement` orchestrator
+skill**. Where `findings.jsonl` carries *what was found*, `gates.jsonl` carries
+*how far the engagement has progressed and what the operator approved* — so phase
+discipline survives session breaks instead of living only in per-session prose.
+
+## Why
+
+The rule "never auto-transition reconnaissance → exploitation" was previously
+prompt-only: a fresh session has no memory that recon happened, so the gate
+evaporated. Persisting phase state on disk makes the gate a real precondition the
+skill (and a human) can check, and records the operator's explicit approvals as an
+audit trail. This is the durable backing for PENDING #3 (phase-gate re-verification)
+and IMPROVEMENTS #4 (phase gates as state).
+
+## Location & format
+
+- Path: `/engagements/{safe_id}/gates.jsonl` (alongside `scope.md`, `findings.jsonl`).
+- One JSON object per line; **append-only, never rewrite.** Latest line per
+  `(phase, status)` wins.
+
+| Line type | Shape |
+|-----------|-------|
+| init | `{engagement, phase:"init", status:"declared", authorized_agents:[…], scope, ts, by:"engagement"}` |
+| phase complete | `{engagement, phase:"<name>", status:"complete", ts, by:"engagement"}` |
+| operator approval | `{engagement, phase:"<name>", status:"approved", ts, by:"operator"}` |
+
+- `authorized_agents` (recorded once at init) is the set the operator confirmed for
+  THIS engagement. The orchestrator refuses to delegate to anything outside it.
+- The **recon → exploitation hard gate**: the skill prints `GO` only when both a
+  `recon`/`complete` line and an `exploitation`/`approved` line exist; otherwise
+  `NO-GO` and it stops for operator approval. The `approved` line is written only on
+  an explicit operator decision — never inferred.
+
+## Example
+
+```json
+{"engagement":"acme-2026","phase":"init","status":"declared","authorized_agents":["recon-advisor","osint-collector","web-hunter","vuln-scanner","poc-validator","attack-planner","exploit-chainer","report-generator"],"scope":"10.10.1.0/24","ts":"2026-06-08T09:00:00Z","by":"engagement"}
+{"engagement":"acme-2026","phase":"recon","status":"complete","ts":"2026-06-08T10:30:00Z","by":"engagement"}
+{"engagement":"acme-2026","phase":"exploitation","status":"approved","ts":"2026-06-08T10:45:00Z","by":"operator"}
+```
+
+No JSON Schema ships for `gates.jsonl` in v1 — the three line shapes above are the
+whole contract, owned by the `/engagement` skill. Add a `schema/gates.schema.json`
+only if another tool starts consuming the file.
