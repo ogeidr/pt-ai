@@ -34,7 +34,6 @@ MIT — see `LICENSE`.
 
 ## Credits
 
-Forked from [`0xSteph/pentest-ai`](https://github.com/0xSteph/pentest-ai) by [0xSteph](https://github.com/0xSteph); several folders and files originated from that project. Upstream MIT license preserved in `ORIGINAL.LICENSE`.
-
+Initially forked from [`0xSteph/pentest-ai`](https://github.com/0xSteph/pentest-ai) by [0xSteph](https://github.com/0xSteph); several folders and files originated from that project. 
 
 
