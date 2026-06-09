@@ -70,6 +70,11 @@ case "$SCRIPT" in
 esac
 VAGRANT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
 
+# Host path of the engagements synced_folder (../engagements relative to vagrant/).
+# Engagement data (findings.jsonl, evidence, scope.md) lives here in plaintext on
+# the host disk; `pt-ai engagement purge` is the teardown path for it.
+ENGAGEMENTS_DIR="$VAGRANT_DIR/../engagements"
+
 # PTAI_BOX is primary; KALI_BOX kept as a back-compat fallback.
 PTAI_BOX="${PTAI_BOX:-${KALI_BOX:-kalilinux/rolling}}"
 # ghidrasql and ghidra-rpc are provisioned independently; each has its own skip.
@@ -128,6 +133,9 @@ Commands:
   key store              Store ANTHROPIC_API_KEY from host env into VM
   key clear              Remove stored API key from VM
   key status             Show whether an API key is stored in VM
+  engagement list        List engagements and their on-disk sizes
+  engagement purge <id>  Delete one engagement's data (add -y to skip the prompt)
+  engagement purge --all Delete all engagement data
   snapshot <name>        Save a VM snapshot
   restore  <name>        Restore a VM snapshot
   halt                   Shut down the VM
@@ -360,6 +368,76 @@ cmd_destroy()   { _vagrant destroy -f; }
 cmd_provision() { _vagrant provision; }
 cmd_status()    { _vagrant status; }
 
+# Host-side engagement data management. The engagements/ dir is a Vagrant
+# synced_folder, so deleting here also clears it inside the VM, and works whether
+# or not the VM is running. This operationalizes the framework's "ephemeral"
+# principle by giving engagement data an explicit teardown path. NOTE: on an
+# APFS/SSD host this is a logical delete (copy-on-write makes overwrite-erase
+# ineffective) — FileVault is the real at-rest guarantee (see docs/data-at-rest.md).
+cmd_engagement() {
+    action="${1:-}"
+    if [ "$#" -gt 0 ]; then shift; fi
+    case "$action" in
+        list|ls)
+            if [ ! -d "$ENGAGEMENTS_DIR" ]; then echo "(no engagements dir yet)"; return 0; fi
+            n=0
+            for d in "$ENGAGEMENTS_DIR"/*/; do
+                [ -d "$d" ] || continue
+                n=$((n + 1))
+                sz=$(du -sh "$d" 2>/dev/null | cut -f1)
+                printf '  %-24s %s\n' "$(basename "$d")" "${sz:-?}"
+            done
+            [ "$n" = 0 ] && echo "  (none)"
+            ;;
+        purge|rm)
+            force=0; target=""
+            for a in "$@"; do
+                case "$a" in
+                    -y|--force) force=1 ;;
+                    --all)      target="--all" ;;
+                    -*)         echo "pt-ai engagement: unknown flag: $a" >&2; exit 1 ;;
+                    *)          target="$a" ;;
+                esac
+            done
+            [ -n "$target" ] || { echo "Usage: pt-ai engagement purge <id> | --all [-y]" >&2; exit 1; }
+
+            if [ "$target" = "--all" ]; then
+                if [ "$force" != 1 ]; then
+                    printf 'Delete ALL engagement data under %s ? [y/N] ' "$ENGAGEMENTS_DIR"
+                    read -r ans || ans=""
+                    case "$ans" in y|Y|yes|YES) ;; *) echo "Aborted."; return 0 ;; esac
+                fi
+                # Wipe contents (incl. dotfiles like .DS_Store) but keep the synced
+                # mount point itself so the next `up` doesn't need to recreate it.
+                rm -rf "$ENGAGEMENTS_DIR"/* "$ENGAGEMENTS_DIR"/.[!.]* 2>/dev/null || true
+                echo "All engagement data purged from $ENGAGEMENTS_DIR."
+            else
+                # Path-traversal guard: only a bare, safe id may be deleted.
+                case "$target" in
+                    */*|*..*|.) echo "pt-ai engagement: invalid id: '$target'" >&2; exit 1 ;;
+                esac
+                dir="$ENGAGEMENTS_DIR/$target"
+                [ -d "$dir" ] || { echo "No such engagement: $target" >&2; exit 1; }
+                if [ "$force" != 1 ]; then
+                    printf 'Delete engagement %s (%s) ? [y/N] ' "$target" "$dir"
+                    read -r ans || ans=""
+                    case "$ans" in y|Y|yes|YES) ;; *) echo "Aborted."; return 0 ;; esac
+                fi
+                rm -rf "$dir"
+                echo "Purged engagement: $target"
+            fi
+            echo "Note: APFS/SSD logical delete — FileVault is the at-rest guarantee (docs/data-at-rest.md)."
+            ;;
+        *)
+            echo "Usage: pt-ai engagement <list|purge>" >&2
+            echo "  list                 List engagements and their on-disk sizes" >&2
+            echo "  purge <id> [-y]      Delete one engagement's data" >&2
+            echo "  purge --all [-y]     Delete all engagement data" >&2
+            exit 1
+            ;;
+    esac
+}
+
 if [ "$#" -lt 1 ]; then
     usage; exit 1
 fi
@@ -373,6 +451,7 @@ case "$sub" in
     ghidrasql)      cmd_ghidrasql "$@" ;;
     ghidra)         cmd_ghidra "$@" ;;
     key)            cmd_key "$@" ;;
+    engagement)     cmd_engagement "$@" ;;
     snapshot)       cmd_snapshot "$@" ;;
     restore)        cmd_restore "$@" ;;
     halt)           cmd_halt ;;

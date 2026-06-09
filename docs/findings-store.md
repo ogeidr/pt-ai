@@ -24,6 +24,8 @@ machine contract is [`schema/findings.schema.json`](../schema/findings.schema.js
 - **Append-only, latest-wins.** To update a finding (e.g. validation flips it from
   `reported` to `confirmed`), append a *new* line reusing the same `id` with a fresh
   `updated_at`. Readers collapse by `id`, taking the last line. History is preserved.
+- Stored in plaintext on the host (synced folder). For the at-rest threat model,
+  encryption guidance, and teardown, see [data-at-rest.md](data-at-rest.md).
 
 ## Lifecycle
 

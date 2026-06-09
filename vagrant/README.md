@@ -370,6 +370,9 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 ./pt-ai key store             Store ANTHROPIC_API_KEY from host env into VM
 ./pt-ai key clear             Remove stored API key from VM
 ./pt-ai key status            Show whether an API key is stored in VM
+./pt-ai engagement list       List engagements and their on-disk sizes
+./pt-ai engagement purge <id> Delete one engagement's data (-y to skip prompt)
+./pt-ai engagement purge --all Delete all engagement data
 ./pt-ai snapshot <name>       Save a VM snapshot
 ./pt-ai restore  <name>       Restore a VM snapshot
 ./pt-ai halt                  Shut down the VM
@@ -377,3 +380,7 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 ./pt-ai provision             Re-run all provisioners
 ./pt-ai status                Show VM status
 ```
+
+Engagement data (findings, evidence, scope) is stored under `engagements/` on the
+host (a synced folder, plaintext). See [docs/data-at-rest.md](../docs/data-at-rest.md)
+for the at-rest threat model, FileVault guidance, and teardown with `engagement purge`.
