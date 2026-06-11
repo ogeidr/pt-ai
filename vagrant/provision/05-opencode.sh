@@ -19,11 +19,11 @@ SKILLS_SRC="/opt/pt-ai/skills"
 # --- opencode CLI ---------------------------------------------------------
 # Installed as the vagrant user under the same npm-global prefix as Claude Code
 # so self-updates work without root.
+# Unconditional @latest: every `./pt-ai provision` pulls the newest release, so
+# the provisioner — not just opencode's self-updater — keeps the CLI current.
 sudo -u vagrant bash -c "
     npm config set prefix '$NPM_GLOBAL'
-    if ! '$NPM_GLOBAL/bin/opencode' --version >/dev/null 2>&1; then
-        npm install -g opencode-ai@latest
-    fi
+    npm install -g opencode-ai@latest
 "
 
 # --- agent / skill → opencode command conversion -------------------------
@@ -97,7 +97,49 @@ chown -R vagrant:vagrant "$OPENCODE_DIR"
 cat > "$OPENCODE_DIR/opencode.json" <<'EOF'
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "anthropic/claude-sonnet-4-6"
+  "model": "anthropic/claude-sonnet-4-6",
+  "permission": {
+    "read": {
+      "~/.anthropic_key": "deny",
+      "*/.anthropic_key": "deny",
+      "**/.anthropic_key": "deny",
+      "~/.claude/**": "deny",
+      "**/.claude/**": "deny",
+      "/tmp/.ptai-key": "deny",
+      "**/.ptai-key": "deny"
+    },
+    "bash": {
+      "*": "allow",
+      "*anthropic_key*": "deny",
+      "*/.claude/*": "deny",
+      "*/.claude": "deny",
+      "*.ptai-key*": "deny"
+    }
+  }
 }
 EOF
 chown vagrant:vagrant "$OPENCODE_DIR/opencode.json"
+
+# --- runtime safety guard (parity with the Claude PreToolUse hook) ---------
+# opencode does not read ~/.claude/, so the credential-exfil / catastrophic-rm
+# gate 02-claude.sh installs for Claude Code is wired here too — closing the
+# "Claude-front-end only" gap for PENDING #1/#2/#5. Two layers, like Claude:
+#   1. opencode.json `permission` denies (static, above) — covers the read tool.
+#   2. a tool.execute.before plugin that reuses the SAME pt-ai-guard.sh, so bash
+#      gets the precise, fail-closed gate (not just coarse globs).
+# The guard script is the single source of truth (lives in config/claude/hooks/);
+# we install a copy into opencode's dir so this path is self-contained.
+# Sources come from the default synced folder mounted at /vagrant (the repo's
+# vagrant/ dir) — the same mount 02-claude.sh reads its config from, NOT the
+# narrower /opt/pt-ai/{agents,skills} folders.
+GUARD_SRC="/vagrant/config/claude/hooks/pt-ai-guard.sh"
+PLUGIN_SRC="/vagrant/config/opencode/plugins/pt-ai-guard.js"
+if [ -f "$GUARD_SRC" ] && [ -f "$PLUGIN_SRC" ]; then
+    sudo -u vagrant mkdir -p "$OPENCODE_DIR/plugins"
+    sudo -u vagrant cp "$GUARD_SRC" "$OPENCODE_DIR/pt-ai-guard.sh"
+    sudo -u vagrant chmod +x "$OPENCODE_DIR/pt-ai-guard.sh"
+    sudo -u vagrant cp "$PLUGIN_SRC" "$OPENCODE_DIR/plugins/pt-ai-guard.js"
+    chown -R vagrant:vagrant "$OPENCODE_DIR/plugins" "$OPENCODE_DIR/pt-ai-guard.sh"
+else
+    echo "WARN: pt-ai-guard sources missing; opencode runtime guard NOT installed" >&2
+fi

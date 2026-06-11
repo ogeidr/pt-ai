@@ -9,11 +9,11 @@ NPM_GLOBAL="$VAGRANT_HOME/.npm-global"
 # --- Claude Code CLI -------------------------------------------------------
 # Install as the vagrant user with a user-local npm prefix so that Claude Code
 # can update itself without needing root (global npm is root-owned).
+# Unconditional @latest: every `./pt-ai provision` pulls the newest release, so
+# the provisioner — not just the tool's self-updater — keeps the CLI current.
 sudo -u vagrant bash -c "
     npm config set prefix '$NPM_GLOBAL'
-    if [ ! -d '$NPM_GLOBAL/lib/node_modules/@anthropic-ai/claude-code' ]; then
-        npm install -g @anthropic-ai/claude-code@latest
-    fi
+    npm install -g @anthropic-ai/claude-code@latest
 "
 
 # Add user npm bin to PATH for all sessions.
@@ -118,6 +118,9 @@ cat > /etc/profile.d/pt-ai.sh <<'EOF'
 # ~/.local/bin holds pipx-installed CLIs (prowler, scoutsuite — see 06-cloud.sh).
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
 export PS1='\[\033[01;31m\][kali-ptai]\[\033[00m\] \[\033[01;34m\]\w\[\033[00m\]\$ '
+# OPSEC ceiling default for the runtime guard (PENDING #14): QUIET|MODERATE|LOUD.
+# Override per engagement via /engagements/.opsec_ceiling or by exporting this var.
+export PT_AI_OPSEC_LIMIT="${PT_AI_OPSEC_LIMIT:-MODERATE}"
 # Persistent API key — written by './pt-ai key store' on the host.
 [ -f "$HOME/.anthropic_key" ] && . "$HOME/.anthropic_key"
 EOF

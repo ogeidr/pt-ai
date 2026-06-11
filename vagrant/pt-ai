@@ -122,8 +122,8 @@ Usage: pt-ai <command> [options]
 Commands:
   up                     Boot VM (provision on first run)
   ssh                    Interactive shell inside VM
-  claude [-- <args>]     Start Claude Code inside VM
-  opencode [-- <args>]   Start opencode inside VM (Anthropic provider)
+  claude [--fresh] [-- <args>]    Start Claude Code inside VM (--fresh wipes prior session history)
+  opencode [--fresh] [-- <args>]  Start opencode inside VM (--fresh wipes prior session history)
   ghidrasql [args...]    Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
   ghidra [args...]       Drive ghidra-rpc inside VM (Ghidra RE daemon).
                          Lifecycle: ghidra start --project /engagements/x.gpr
@@ -176,11 +176,19 @@ cmd_ssh() {
 }
 
 cmd_claude() {
+    # --fresh (PENDING #20): wipe cross-engagement Claude state before launch —
+    # ~/.claude/projects + history.jsonl — preserving credentials and settings.
+    # Must precede any `--`. Explicit opt-in (safer than auto-wipe-on-exit).
+    fresh=0
+    case "${1:-}" in --fresh) fresh=1; shift ;; esac
     if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
     # Quote each user arg so `-- <args>` is inert data, not shell syntax. Without
     # this, `claude -- --x; rm -rf /engagements/*` would run `rm` inside the VM
     # (/engagements is a persistent host bind).
     qargs=$(_shquote "$@")
+
+    wipe=''
+    [ "$fresh" -eq 1 ] && wipe='echo "[pt-ai] --fresh: clearing Claude session history (credentials preserved)"; rm -rf ~/.claude/projects ~/.claude/todos ~/.claude/shell-snapshots; rm -f ~/.claude/history.jsonl; '
 
     if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
         # Write key to a short-lived temp file in the VM, read it at session
@@ -199,7 +207,7 @@ cmd_claude() {
     # already quoted for the inner layer; _shquote the whole script again so it
     # survives the outer layer too. $(cat /tmp/.ptai-key) stays literal until the
     # inner bash runs it on the VM.
-    script="cd /engagements && ${key}claude$qargs"
+    script="cd /engagements && ${wipe}${key}claude$qargs"
 
     # Login shell (-l) so /etc/profile.d/pt-ai.sh is sourced (PATH, PS1, stored key).
     # shellcheck disable=SC2029
@@ -207,8 +215,15 @@ cmd_claude() {
 }
 
 cmd_opencode() {
+    # --fresh (PENDING #20): wipe opencode session storage + logs before launch,
+    # preserving auth. Must precede any `--`.
+    fresh=0
+    case "${1:-}" in --fresh) fresh=1; shift ;; esac
     if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
     qargs=$(_shquote "$@")          # see cmd_claude — quote `-- <args>` as data
+
+    wipe=''
+    [ "$fresh" -eq 1 ] && wipe='echo "[pt-ai] --fresh: clearing opencode session storage (auth preserved)"; rm -rf ~/.local/share/opencode/storage ~/.local/share/opencode/log ~/.local/share/opencode/project; '
 
     # Model override is read at opencode startup; export inline. _shquote emits a
     # leading space, stripped here so it reads `OPENCODE_MODEL=<quoted>`.
@@ -229,7 +244,7 @@ cmd_opencode() {
 
     # _shquote the whole script for the outer (login-shell) layer; qargs is
     # already quoted for the inner `bash -c`.  See cmd_claude for the rationale.
-    script="cd /engagements && ${key}${model_prefix}opencode$qargs"
+    script="cd /engagements && ${wipe}${key}${model_prefix}opencode$qargs"
 
     # shellcheck disable=SC2029
     _vagrant ssh -- -t "bash -l -c $(_shquote "$script")"

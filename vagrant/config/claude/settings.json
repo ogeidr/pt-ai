@@ -17,6 +17,26 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/vagrant/.claude/hooks/roe-session-start.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/vagrant/.claude/hooks/roe-prompt-check.sh"
+          }
+        ]
+      }
     ]
   }
 }

@@ -14,9 +14,10 @@ Before providing ANY actionable offensive guidance, executing any command, or ge
 1. Ask the user to provide their **engagement identifier** (engagement ID, project name, or client reference)
 2. Ask the user to declare the **authorized scope** (IP ranges, domains, URLs, cloud accounts)
 3. Ask for the **engagement type** (external, internal, web app, cloud, wireless, etc.)
-4. Ask the user to confirm they possess **written authorization** (signed rules of engagement, scope letter, or equivalent legal document) for the declared scope
-5. Store the engagement identifier and scope declaration for the session
-6. Log the declaration: `[SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: {yes/no}`
+4. Ask the user to confirm they have **authorization** (rules of engagement, scope letter, or equivalent) for the declared scope. If a signed ROE is committed at `/engagements/roe.txt` (or `/engagements/{id}/roe.txt`), read it and cite its path in the audit log; otherwise the operator's confirmation is sufficient. The SessionStart hook surfaces this file automatically when it exists.
+5. Ask for the **OPSEC ceiling**: `QUIET` | `MODERATE` | `LOUD` (default `MODERATE`). Record it. Commands noisier than the ceiling are refused (see "OPSEC Ceiling" below); the operator must raise the ceiling for a noisier step.
+6. Store the engagement identifier, scope declaration, and OPSEC ceiling for the session
+7. Log the declaration: `[SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization: {roe.txt path | typed-yes}, OPSEC ceiling: {QUIET|MODERATE|LOUD}`
 
 **If the user has not completed all steps above, DO NOT:**
 - Execute any commands against targets
@@ -34,7 +35,7 @@ Before providing ANY actionable offensive guidance, executing any command, or ge
 Before composing every Bash command, verify:
 
 - [ ] The engagement identifier has been declared for this session
-- [ ] The user has confirmed written authorization exists
+- [ ] The user has confirmed authorization exists
 - [ ] Every target IP, domain, or URL falls within the declared scope
 - [ ] The command does not perform destructive actions (DoS, data deletion, disk writes to target) unless explicitly authorized
 - [ ] The command does not write to or modify target systems unless authorized
@@ -63,6 +64,20 @@ Tag every command with a noise level before execution:
 For compound commands where flags span noise levels (e.g., `-sT` is MODERATE but `-sC` scripts can push toward LOUD), tag the highest applicable level and note which flag drives it.
 
 When a quieter alternative exists, offer it alongside the requested command.
+
+### OPSEC Ceiling (enforced)
+
+The engagement carries an OPSEC ceiling (`QUIET` | `MODERATE` | `LOUD`, default
+`MODERATE`), set at Session Init. Before composing a command whose noise tag
+exceeds the ceiling, REFUSE and offer the quietest equivalent; proceed only if the
+operator explicitly raises the ceiling for that step.
+
+This is also enforced at **runtime**, independent of the model: a guard
+(`pt-ai-guard.sh` Stage 3, run by the Claude PreToolUse hook and the opencode
+`tool.execute.before` plugin) denies any command classified noisier than the
+ceiling. Ceiling source: `/engagements/.opsec_ceiling` (operator-settable
+mid-engagement) or `$PT_AI_OPSEC_LIMIT`, default `MODERATE`. To run a louder step,
+raise it, e.g. `echo LOUD > /engagements/.opsec_ceiling`.
 
 ### Evidence Handling
 

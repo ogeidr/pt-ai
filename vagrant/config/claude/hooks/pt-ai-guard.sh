@@ -26,8 +26,9 @@
 # chase `find -delete` / `shred` / `dd` / truncation; the VM is ephemeral and
 # engagements are host-synced.
 #
-# Claude-front-end ONLY. The VM also runs opencode, which does not read
-# ~/.claude/settings.json; that path relies on the host egress allowlist.
+# Shared gate. Run by the Claude Code PreToolUse hook AND by the opencode
+# tool.execute.before plugin (05-opencode.sh installs a copy + plugin that
+# feeds this script the same event JSON), so both front-ends enforce it.
 #
 # Contract: PreToolUse event JSON on stdin; print a deny decision to stdout
 # (exit 0) to block, or exit 0 with no output to defer to the normal flow.
@@ -35,6 +36,12 @@
 # broken provision, and a loud failure is safer than a silently-disabled guard.
 
 input=$(cat)
+
+# Optional argv[1] = tool context ("bash"|"read"). The Claude PreToolUse hook is
+# Bash-only and passes nothing → defaults to "bash" (all stages). The opencode
+# plugin passes the tool name, so a "read" probe (a bare file path) runs only the
+# credential check below, not the rm / OPSEC command logic.
+ctx="${1:-bash}"
 
 # Extract ONLY tool_input.command. The event JSON also carries transcript_path
 # (which contains "/.claude/"), so we must parse the field, never grep the blob.
@@ -67,6 +74,10 @@ if printf '%s' "$cmd" | grep -Eq '\.anthropic_key|/\.claude([^[:alnum:]]|$)|\.pt
     deny "Blocked by pt-ai guard: command references the operator Anthropic/Claude credential (~/.anthropic_key, ~/.claude/, or /tmp/.ptai-key). Agents never need to read these. If a target-side path coincidentally matches, rename it or handle it outside the agent."
 fi
 
+# Stages 2-3 apply to real commands only; a read-tool probe is a bare file path
+# (no rm, no scanner), so skip them for ctx=read.
+if [ "$ctx" != "read" ]; then
+
 # --- Stage 2: catastrophic recursive delete of a protected path -------------
 # Split the command into clauses (on ; & | newline) and, per clause, require ALL
 # of: an `rm` word, a recursive flag, and a protected target token. Splitting
@@ -84,6 +95,33 @@ done)
 if [ -n "$hit" ]; then
     deny "Blocked by pt-ai guard: recursive delete targeting a protected path (filesystem root, a system dir, home, or the /engagements evidence root — a host bind). Delete a specific path under /engagements/<id>/ instead, or do bulk cleanup from the host."
 fi
+
+# --- Stage 3: OPSEC ceiling (PENDING #14) -----------------------------------
+# Refuse a command noisier than the engagement's OPSEC ceiling. Ceiling source,
+# in order: /engagements/.opsec_ceiling (operator-settable mid-engagement),
+# $PT_AI_OPSEC_LIMIT, then MODERATE. Heuristic classifier: a signature list bumps
+# to LOUD, passive recon to QUIET, everything else MODERATE. Shared by both
+# front-ends (the Claude hook and the opencode plugin both run this script).
+ceiling=""
+if [ -r /engagements/.opsec_ceiling ]; then
+    ceiling=$(tr -d '[:space:]' < /engagements/.opsec_ceiling 2>/dev/null)
+fi
+[ -z "$ceiling" ] && ceiling="${PT_AI_OPSEC_LIMIT:-MODERATE}"
+ceiling=$(printf '%s' "$ceiling" | tr '[:lower:]' '[:upper:]')
+_rank() { case "$1" in QUIET) echo 0 ;; LOUD) echo 2 ;; *) echo 1 ;; esac; }
+
+noise="MODERATE"
+case "$cmd" in
+    *nikto*|*masscan*|*responder*|*sqlmap*|*wpscan*|*nuclei*|*enum4linux*|*hydra*|*medusa*|*ncrack*|*patator*|*crackmapexec*|*netexec*|*" nxc "*|*--script*|*" -sS"*|*" -sU"*|*--min-rate*)
+        noise="LOUD" ;;
+    *whois*|*" dig "*|*nslookup*|*" host "*|*subfinder*|*theHarvester*|*" amass "*|*crt.sh*)
+        noise="QUIET" ;;
+esac
+if [ "$(_rank "$noise")" -gt "$(_rank "$ceiling")" ]; then
+    deny "Blocked by pt-ai guard: OPSEC ceiling is $ceiling but this command classifies as $noise. Use a quieter alternative, or raise the ceiling for this step (e.g. 'echo $noise > /engagements/.opsec_ceiling', or export PT_AI_OPSEC_LIMIT=$noise)."
+fi
+
+fi  # end: ctx != read
 
 # Nothing matched — defer to the normal permission flow.
 exit 0
