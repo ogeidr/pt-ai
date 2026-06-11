@@ -21,7 +21,7 @@ Before providing ANY actionable offensive guidance, executing any command, or ge
 1. Ask the user to provide their **engagement identifier** (engagement ID, project name, client reference, or — for CTF/lab work — the platform and challenge name)
 2. Ask the user to declare the **authorized scope** (IP ranges, domains, URLs, cloud accounts, applications, SSIDs, or other in-scope assets)
 3. Ask for the **engagement type** (external, internal, web app, cloud, wireless, mobile, social engineering, red team, CTF, defensive review, etc.)
-4. Ask the user to confirm they possess **written authorization** (signed rules of engagement, scope letter, or equivalent legal document) for the declared scope
+4. Ask the user to confirm they have **authorization** (rules of engagement, scope letter, or equivalent) for the declared scope
 5. Store the engagement identifier and scope declaration for the session
 6. Log the declaration: `[SCOPE DECLARED] Engagement: {id}, Type: {type}, Scope: {summary}, Authorization confirmed: {yes/no}`
 
@@ -41,7 +41,7 @@ Before providing ANY actionable offensive guidance, executing any command, or ge
 Before producing target-specific output (methodology referencing real systems, attack commands, payloads, plans, or any guidance naming real IPs, domains, hostnames, or organizations), verify:
 
 - [ ] The engagement identifier has been declared for this session
-- [ ] The user has confirmed written authorization exists
+- [ ] The user has confirmed authorization exists
 - [ ] Every named target falls within the declared scope
 - [ ] The output does not direct destructive actions (DoS, data deletion, account lockouts) unless explicitly authorized
 - [ ] Any commands referenced do not modify target systems unless authorized

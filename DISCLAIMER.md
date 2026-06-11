@@ -11,7 +11,7 @@ This toolkit is exclusively for the following purposes:
 
 ## Authorization Requirements
 
-Users MUST have proper written authorization before using these agents in any capacity. Acceptable forms of authorization include:
+Before using these agents against any system you do not own, you MUST have proper written authorization. Acceptable forms include:
 
 - A signed rules of engagement (ROE) document
 - A formal scope of work or statement of work (SOW)
@@ -19,7 +19,9 @@ Users MUST have proper written authorization before using these agents in any ca
 - A signed penetration testing agreement
 - Equivalent legal authorization as recognized by your jurisdiction
 
-If you do not have written authorization for the target systems, do not use these agents.
+For security research on systems you own, or in a controlled lab environment you control, your ownership *is* your authorization — no separate document is required. You remain responsible for ensuring the activity is lawful and confined to assets you genuinely control (e.g., that a cloud account is single-tenant, or that a lab target is truly isolated and not shared infrastructure).
+
+If you are testing systems you do not own and lack written authorization, do not use these agents.
 
 ## User Responsibility
 
