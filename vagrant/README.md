@@ -362,8 +362,8 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 
 ```
 ./pt-ai up                    Boot VM (provision on first run)
-./pt-ai claude [-- <args>]    Start Claude Code session inside VM
-./pt-ai opencode [-- <args>]  Start opencode session inside VM
+./pt-ai claude [--fresh] [-- <args>]    Start Claude Code session inside VM (--fresh wipes prior session history; creds preserved)
+./pt-ai opencode [--fresh] [-- <args>]  Start opencode session inside VM (--fresh wipes prior session history; auth preserved)
 ./pt-ai ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
 ./pt-ai ghidra [args...]      Drive ghidra-rpc inside VM (start/load/decompile/stop)
 ./pt-ai ssh                   Interactive shell inside VM
