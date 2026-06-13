@@ -1,6 +1,6 @@
 # pt-ai
 
-A minimalistic, ephemeral, agentic framework for penetration testing.
+A minimalistic, ephemeral, authorization-bound harness that turns Claude Code / opencode into a scope-guarded penetration-testing environment.
 
 ## Design Principles
 

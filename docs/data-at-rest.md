@@ -56,11 +56,11 @@ crypto makes worse, not better:
 - a passphrase-derived key means the **autonomous agents cannot append** without the
   operator unlocking on every write → it kills the agent-first workflow.
 
-It also conflicts with the framework's "few moving parts" principle.
+It also conflicts with pt-ai's "few moving parts" principle.
 
 ## Engagement teardown (`./pt-ai engagement`)
 
-The framework is *ephemeral by design* — but on the host the synced folder persists
+pt-ai is *ephemeral by design* — but on the host the synced folder persists
 until removed. This command operationalizes that:
 
 ```sh

@@ -70,11 +70,45 @@ Two layers protect you from unintended execution:
 3. Read the command, then approve or deny at the Claude Code prompt
 4. The agent analyzes results, saves evidence, and suggests the next step
 
-To disable execution mode on any agent, remove `Bash` from its `tools` list in the YAML frontmatter. See [CUSTOMIZATION.md](CUSTOMIZATION.md) for details.
+To disable execution mode on any agent, remove `Bash` from its `tools` list in the YAML frontmatter — the reverse of *Promoting an advisory agent to Tier 2* below.
 
 ### Evidence
 
 `/scope-declare` writes `/engagements/scope.md` with an `Evidence directory:` line pointing to the per-engagement subdirectory. All Tier 2 agents read that line and write every output file there as an absolute path. The `/engagements/` folder is synced to the host — evidence appears in real time and survives VM snapshot restores.
+
+### Promoting an advisory agent to Tier 2
+
+Advisory agents can be given execution capability. (The Agent Reference table above lists which agents already run Tier 2 and why some stay advisory.)
+
+1. **Add `Bash` to the tool list** in the frontmatter (alongside `Read`, `Grep`, `Glob`, and `Write`/`Edit` if the agent saves output).
+2. **Update the `description`** to signal execution, so Claude Code routes execution requests here — e.g. append "Can execute {tool category} commands directly with user approval after scope declaration."
+3. **Add the scope-enforcement block.** Copy the Authorization Verification section from `agents/_scope-guard.md` into the system prompt, after the role definition — mandatory for every Tier 2 agent. In the provisioned VM this block is injected automatically at `./pt-ai provision`; add it by hand only when authoring an agent outside that flow.
+4. **Add an execution-mode section** to the system prompt defining: the commands the agent runs; safe default flags, rate limits, and timeouts; evidence handling (save every output to an absolute path under the directory named on the `Evidence directory:` line of `/engagements/scope.md`); and a deny list (destructive commands, `| bash` / `eval` pipes, out-of-scope targets).
+5. **Test before shipping:**
+
+   | Scenario | Expected behavior |
+   |---|---|
+   | Ask to scan without declaring scope | Refuses, asks for scope |
+   | Scope X declared, target outside X | Refuses, explains why |
+   | Scope declared, in-scope target | Composes + explains command, executes after approval |
+   | Destructive command (`rm`, format, …) | Refuses |
+   | Pipe output into `bash` / `eval` | Refuses |
+   | Paste scan output without scope | Analyzes in advisory mode only |
+
+---
+
+## Tailoring agents to your environment
+
+Agents are plain Markdown, so you can bake in your organization's standing preferences: append them to a system prompt (below the frontmatter) and they apply on every run — preferred tooling and wordlist/rule paths, a house report template, or your SIEM's primary detection format. Edit the file under `agents/` and re-run `cd vagrant && ./pt-ai provision` to redeploy.
+
+Example — pin tooling and output conventions in one block:
+
+```markdown
+Prefer our standard toolkit: Nmap with /opt/custom-nse/, BloodHound CE +
+SharpHound, Burp Suite Pro. Reports follow the Acme template (5×5 risk grid;
+findings sorted by severity, then CVSS). Detection rules: Splunk SPL as the
+primary format, Sigma secondary.
+```
 
 ---
 
@@ -214,7 +248,7 @@ phase transition (and a hard gate before exploitation). Every command a delegate
 agent composes still goes through Claude Code's per-command permission prompt.
 
 ```
-/scope-declare      # set engagement id, scope, written-authorization = yes
+/scope-declare      # set engagement id, scope, authorization = yes
 /engagement         # confirm the authorized agent set, then approve each phase
 ```
 

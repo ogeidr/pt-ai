@@ -2,7 +2,7 @@
 
 ## Authorized Use Only
 
-This toolkit is exclusively for the following purposes:
+pt-ai is exclusively for the following purposes:
 
 - **Authorized penetration testing** conducted under a signed statement of work, rules of engagement, or equivalent legal authorization
 - **Red team exercises** performed with explicit organizational approval and defined scope
@@ -35,16 +35,16 @@ Users are solely responsible for:
 
 ## Limitation of Liability
 
-The authors and contributors of this toolkit accept no liability for:
+The authors and contributors of pt-ai accept no liability for:
 
 - Misuse of any kind, including but not limited to unauthorized access to systems or data
-- Any damages, direct or indirect, resulting from the use of this toolkit
+- Any damages, direct or indirect, resulting from the use of pt-ai
 - Legal consequences arising from unauthorized or improper use
 - Data loss, system damage, or service disruption caused by activities performed using guidance from these agents
 
 ## Recommended Qualifications
 
-Users of this toolkit should hold one or more of the following certifications, or demonstrate equivalent competency through professional experience:
+Users of pt-ai should hold one or more of the following certifications, or demonstrate equivalent competency through professional experience:
 
 - OSCP (Offensive Security Certified Professional)
 - GPEN (GIAC Penetration Tester)
@@ -90,7 +90,7 @@ However, users must be aware:
 
 - **Third-party processing:** Any data included in your prompts (scan output, IP addresses, findings) is sent to the LLM provider for processing
 - **Sensitive data:** Users are responsible for redacting PII, internal credentials, client-identifiable information, and proprietary data before submission, unless they have verified the LLM provider's data retention and training policies
-- **Client policies:** Check your rules of engagement and client NDAs for restrictions on third-party AI data processing before using this toolkit on professional engagements
+- **Client policies:** Check your rules of engagement and client NDAs for restrictions on third-party AI data processing before using pt-ai on professional engagements
 - **Compliance:** Ensure usage complies with applicable regulations (HIPAA, PCI-DSS, FedRAMP, etc.)
 
 For sensitive engagements, users are encouraged to:
@@ -113,4 +113,4 @@ Users should follow responsible disclosure practices for any vulnerabilities dis
 
 ## Acceptance
 
-By using this toolkit, you acknowledge that you have read, understood, and agree to the terms outlined in this disclaimer. If you do not agree with these terms, do not use this toolkit.
+By using pt-ai, you acknowledge that you have read, understood, and agree to the terms outlined in this disclaimer. If you do not agree with these terms, do not use pt-ai.
