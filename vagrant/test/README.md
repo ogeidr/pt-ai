@@ -92,7 +92,11 @@ VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
 - `~/.claude/CLAUDE.md` exists and carries the **Evidence path rules**
 - `~/.claude/agents/*.md` populated; `recon-advisor.md` references
   `/engagements` and has **no** legacy `/work/` path
-- `~/.config/opencode/commands/*.md` derived
+- **opencode parity:** `~/.config/opencode/agents/*.md` subagents generated and
+  carry the injected scope guard; advisory agents (e.g. `report-generator`)
+  get `bash: deny` while Tier-2 agents (e.g. `recon-advisor`) do not; skills are
+  discovered via the `~/.claude/skills` Claude-compat symlink; the legacy
+  `~/.config/opencode/commands/` dir is **absent**
 - `/engagements` exists and is **writable** (real touch/rm probe)
 - `net.ipv4.ip_forward=1`; SSH password auth + root login disabled
 - `unattended-upgrades` installed; `aws` (v2), `trufflehog`, `prowler` present

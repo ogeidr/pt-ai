@@ -84,7 +84,12 @@ if [ "${1:-}" = "--assert" ]; then
     check  "agents dir populated"                    bash -c 'ls "$HOME"/.claude/agents/*.md >/dev/null 2>&1'
     check  "recon-advisor references /engagements"   grep -q "/engagements" "$HOME/.claude/agents/recon-advisor.md"
     checkn "recon-advisor has no legacy /work/ path" grep -q "/work/" "$HOME/.claude/agents/recon-advisor.md"
-    check  "opencode commands derived"               bash -c 'ls "$HOME"/.config/opencode/commands/*.md >/dev/null 2>&1'
+    check  "opencode subagents generated"            bash -c 'ls "$HOME"/.config/opencode/agents/*.md >/dev/null 2>&1'
+    check  "opencode subagent carries scope guard"   grep -qE "Authorization Verification|Scope Enforcement" "$HOME/.config/opencode/agents/recon-advisor.md"
+    check  "advisory subagent denies bash"           grep -q "bash: deny" "$HOME/.config/opencode/agents/report-generator.md"
+    checkn "Tier-2 subagent does not deny bash"      grep -q "bash: deny" "$HOME/.config/opencode/agents/recon-advisor.md"
+    check  "opencode discovers skills (claude-compat symlink)" test -e "$HOME/.claude/skills/full-recon/SKILL.md"
+    checkn "legacy opencode commands dir absent"     test -d "$HOME/.config/opencode/commands"
     check  "/engagements exists and is writable"     bash -c 't=/engagements/.ptai-write-test.$$; test -d /engagements && touch "$t" && rm -f "$t"'
     check  "ip_forward enabled"                      bash -c '[ "$(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null)" = 1 ]'
     check  "SSH password auth disabled"              grep -qE '^PasswordAuthentication no' /etc/ssh/sshd_config
