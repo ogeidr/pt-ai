@@ -252,9 +252,15 @@ agent composes still goes through Claude Code's per-command permission prompt.
 /engagement         # confirm the authorized agent set, then approve each phase
 ```
 
-> **opencode note:** opencode has no `Task` tool, so there is no automated fan-out
-> there. Under opencode, drive the lifecycle by hand using `swarm-orchestrator` as
-> the playbook and invoking each agent in turn.
+> **opencode note:** opencode discovers `engagement` as a native skill
+> (model-invoked, not a slash command) and the pt-ai agents become opencode
+> subagents, so the lifecycle runs there too — verified working. Two caveats:
+> (1) per-command approval comes from opencode's permission gate plus the
+> `pt-ai-guard` plugin, not Claude Code's prompt; (2) orchestration quality is
+> model-bound — small local models (e.g. `gpt-oss-20b`) call tools reliably but
+> reason weakly across a multi-phase engagement, so use a stronger model (or
+> cloud) for real orchestration and keep small local models for the lighter,
+> tool-call-heavy skills.
 
 ---
 

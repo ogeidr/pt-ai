@@ -11,10 +11,59 @@ This guide covers running pt-ai fully offline with local models.
 - **No vendor lock-in.** If any provider pulls the plug or changes their acceptable use policy, your tooling keeps working.
 - **No subscription costs.** After the hardware investment, ongoing costs are electricity only.
 
-## Option 1: Ollama (Recommended)
+## How the VM is wired
 
-Ollama runs on your host and exposes an OpenAI-compatible API. opencode inside the
-Kali VM connects directly to it — no translation proxy needed.
+`./pt-ai provision` writes `~/.config/opencode/opencode.json` inside the VM with the
+native Anthropic provider as the default (`anthropic/claude-sonnet-4-6`). To go local
+you add a second provider block (below) and switch the active model. The
+`./pt-ai opencode` wrapper forwards `PT_AI_OPENCODE_MODEL`, so once a provider is
+defined you can flip models per session without editing the file again:
+
+```sh
+PT_AI_OPENCODE_MODEL=lmstudio/gpt-oss-20b ./pt-ai opencode
+```
+
+**Host address from the VM** depends on your Vagrant provider:
+
+- **VirtualBox** (the default): the host is `10.0.2.2` over the NAT interface.
+- **VMware / Parallels**: use the host-only address reachable from the guest
+  (e.g. `172.16.145.1` or `192.168.161.1` on VMware Fusion — check `ip route` in
+  the VM for the gateway). `10.0.2.2` will **not** work here.
+
+## Option 1: LM Studio (Recommended)
+
+[LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
+models with an OpenAI-compatible API. opencode inside the Kali VM speaks OpenAI
+natively — no translation proxy needed. This is the path verified with pt-ai:
+**`gpt-oss-20b`** is a reliable tool-caller for the agent workflow.
+
+**Assumptions:** LM Studio is installed on the host, a model is loaded, and the local
+server is started with **"Serve on Local Network" enabled** (otherwise it binds to
+localhost only and the VM can't reach it). Note the model identifier in the server tab.
+
+Edit `~/.config/opencode/opencode.json` inside the VM (`./pt-ai ssh`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://172.16.145.1:1234/v1" },
+      "models": { "gpt-oss-20b": { "name": "gpt-oss-20b" } }
+    }
+  },
+  "model": "lmstudio/gpt-oss-20b"
+}
+```
+
+Replace the `baseURL` host with your provider's host address (see above) and the
+model id with whatever LM Studio shows. Then run `./pt-ai opencode`.
+
+## Option 2: Ollama
+
+Ollama runs on your host and exposes an OpenAI-compatible API. opencode connects
+directly to it — no translation proxy needed.
 
 **Assumptions:** Ollama is installed on the host and the desired model is pulled.
 
@@ -36,7 +85,7 @@ Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
-      "options": { "baseURL": "http://10.0.2.2:11434/v1" },
+      "options": { "baseURL": "http://172.16.145.1:11434/v1" },
       "models": { "qwen2.5-coder:32b": { "name": "qwen2.5-coder:32b" } }
     }
   },
@@ -44,12 +93,9 @@ Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
 }
 ```
 
-`10.0.2.2` is the host as seen from a VirtualBox NAT guest; on VMware/Parallels use
-the host's address reachable from the VM. Then start a session:
-
-```sh
-./pt-ai opencode
-```
+Replace the `baseURL` host with your provider's host address (see above), then
+`./pt-ai opencode`. Smaller Ollama models vary in tool-calling reliability — if the
+agents misbehave, prefer the LM Studio + `gpt-oss-20b` path above.
 
 ### Multi-GPU Setup
 
@@ -63,35 +109,6 @@ OLLAMA_NUM_GPU=2 ollama serve
 # For specific GPU selection
 CUDA_VISIBLE_DEVICES=0,1 ollama serve
 ```
-
-## Option 2: LM Studio
-
-[LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
-models with an OpenAI-compatible API. opencode inside the Kali VM speaks OpenAI
-natively — no translation proxy needed.
-
-**Assumptions:** LM Studio is installed on the host, the local server is started
-(bound to the network, not just localhost), and a model is loaded. Note the model
-identifier shown in LM Studio's server tab.
-
-Edit `~/.config/opencode/opencode.json` inside the VM (`./pt-ai ssh`):
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "lmstudio": {
-      "npm": "@ai-sdk/openai-compatible",
-      "options": { "baseURL": "http://10.0.2.2:1234/v1" },
-      "models": { "<model-id-from-lm-studio>": { "name": "<model-id-from-lm-studio>" } }
-    }
-  },
-  "model": "lmstudio/<model-id-from-lm-studio>"
-}
-```
-
-Then run `./pt-ai opencode`. As with Ollama, replace `10.0.2.2` with the host
-address reachable from your VM.
 
 ## Option 3: Raw System Prompts (Any LLM)
 
@@ -165,9 +182,9 @@ print(response.choices[0].message.content)
 
 ## Choosing Between Cloud and Local
 
-| Factor | Cloud (Claude Code) | Local (Ollama + OpenCode) |
+| Factor | Cloud (Claude Code) | Local (LM Studio/Ollama + opencode) |
 |--------|-------------------|--------------------------|
-| Model quality | Best available (Claude, GPT-4) | Good with 70B+, moderate with smaller |
+| Model quality | Best available (frontier Claude) | Good with 70B+, moderate with smaller |
 | Privacy | Data goes to Anthropic/OpenAI | Nothing leaves your machine |
 | Content policy | Some security terms may be filtered | No filtering |
 | Cost | $20-100/month subscription | Hardware cost only |
@@ -181,7 +198,7 @@ print(response.choices[0].message.content)
 The agent files are designed to be portable:
 
 1. **Core content is plain markdown.** The methodology, techniques, and tool references are text. No provider-specific API calls or SDK dependencies.
-2. **YAML frontmatter is the only Claude-specific part.** The `opencode-setup.sh` script strips it for other platforms.
+2. **YAML frontmatter is the only Claude-specific part.** `./pt-ai provision` derives the opencode commands from `skills/` at provision time, stripping/translating the frontmatter for opencode automatically.
 3. **Tool names map directly.** Claude Code's `Bash`, `Read`, `Write`, `Edit`, `Grep`, `Glob` map 1:1 to OpenCode's `bash`, `view`, `write`, `edit`, `grep`, `glob`.
 4. **No proprietary features used.** The agents don't use Claude-specific features like artifacts, projects, or memory. They're pure system prompts.
 

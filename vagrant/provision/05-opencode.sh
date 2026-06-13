@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 05-opencode.sh: Install opencode CLI; convert pt-ai agents to opencode commands;
-# write opencode.json with the native Anthropic provider.
+# 05-opencode.sh: Install opencode CLI; expose pt-ai skills (Claude-compat) and
+# convert pt-ai agents to opencode subagents; write opencode.json (Anthropic).
 #
 # opencode runs inside the VM, so it shells out to Kali tools directly — no MCP
 # bridge needed (same architectural advantage Claude Code already enjoys here).
@@ -12,9 +12,8 @@ set -euo pipefail
 VAGRANT_HOME="/home/vagrant"
 NPM_GLOBAL="$VAGRANT_HOME/.npm-global"
 OPENCODE_DIR="$VAGRANT_HOME/.config/opencode"
-CMD_DIR="$OPENCODE_DIR/commands"
 AGENTS_SRC="/opt/pt-ai/agents"
-SKILLS_SRC="/opt/pt-ai/skills"
+AGENTS_DST="$OPENCODE_DIR/agents"
 
 # --- opencode CLI ---------------------------------------------------------
 # Installed as the vagrant user under the same npm-global prefix as Claude Code
@@ -26,64 +25,87 @@ sudo -u vagrant bash -c "
     npm install -g opencode-ai@latest
 "
 
-# --- agent / skill → opencode command conversion -------------------------
-# opencode commands accept YAML frontmatter (description / agent / model)
-# plus a markdown body.  Two sources feed into ~/.config/opencode/commands/:
-#
-#   agents/<name>.md         → strip frontmatter, emit body only
-#                              (agents become commands so users can type
-#                               /recon-advisor etc.)
-#   skills/<name>/SKILL.md   → rewrite frontmatter to keep only `description:`,
-#                              emit body (bang-prefix preambles transplant
-#                              verbatim — opencode honours them too)
-#
-# Precedence: skills override agents on filename collision.
-# _* files are shared prompt blocks, not standalone commands — skip them.
-# Re-runs cleanly: previously-generated files in CMD_DIR are removed first so
-# deletions on the host propagate.
-sudo -u vagrant mkdir -p "$CMD_DIR"
-sudo -u vagrant find "$CMD_DIR" -maxdepth 1 -type f -name '*.md' -delete
+# --- skills: nothing to convert ------------------------------------------
+# opencode discovers ~/.claude/skills/<name>/SKILL.md natively (Claude-compat
+# path) and 02-claude.sh symlinks /opt/pt-ai/skills there. 02 runs before 05
+# (numbered ordering), so the symlink is already in place and every pt-ai skill
+# is a model-invoked opencode skill for free — bundles, names, and descriptions
+# carry over unchanged; opencode ignores the extra frontmatter fields.
+# We deliberately do NOT also symlink ~/.config/opencode/skills: opencode would
+# then scan the same target via two roots and flag duplicate skill names.
 
-# Pass 1 — agents (strip frontmatter, body only)
+# --- agents → opencode subagents -----------------------------------------
+# opencode does not read ~/.claude/agents/, so each /opt/pt-ai/agents/<name>.md
+# is rewritten to ~/.config/opencode/agents/<name>.md with opencode frontmatter:
+#   description: carried verbatim from the source (drives @mention delegation)
+#   mode: subagent
+#   permission.bash: deny — emitted only for advisory agents (no Bash in the
+#                           source `tools:` list), preserving the advisory vs
+#                           Tier-2 boundary Claude enforces via tool grants.
+# The same shared blocks 02-claude.sh injects are appended here (same source
+# files, same grep-guarded conditions) so opencode agents carry the scope guard,
+# findings store, and untrusted-output rules. _* files are shared blocks, not
+# standalone agents — skip them. rm -rf first so host-side deletions propagate
+# on re-provision (mirrors 02). Files are written as root and chowned to vagrant
+# by the existing `chown -R` below.
+SCOPE_GUARD="$AGENTS_SRC/_scope-guard.md"
+FINDINGS_STORE="$AGENTS_SRC/_findings-store.md"
+UNTRUSTED_OUTPUT="$AGENTS_SRC/_untrusted-output.md"
+
+# Native skills + subagents replace the old flatten-to-commands output; clear
+# any stale generated commands from a previous provision.
+rm -rf "$OPENCODE_DIR/commands"
+rm -rf "$AGENTS_DST"
+mkdir -p "$AGENTS_DST"
+
 if [ -d "$AGENTS_SRC" ]; then
-    for agent in "$AGENTS_SRC"/*.md; do
-        [ -f "$agent" ] || continue
-        name=$(basename "$agent" .md)
+    for src in "$AGENTS_SRC"/*.md; do
+        [ -f "$src" ] || continue
+        name=$(basename "$src" .md)
         case "$name" in _*) continue ;; esac
-        awk 'BEGIN{found=0} /^---$/ && found<2 {found++; next} found>=2{print}' \
-            "$agent" > "$CMD_DIR/${name}.md"
-    done
-fi
+        dst="$AGENTS_DST/${name}.md"
 
-# Pass 2 — skills (derived; overrides agents — skill is the source of truth)
-# The awk keeps the opening `---`, retains only `description:` (plus its YAML
-# folded-scalar continuation lines) from the skill frontmatter, emits the
-# closing `---`, and passes the body through unchanged.  The body's
-# `!`cmd`` bang preambles work in opencode without any rewrite.
-if [ -d "$SKILLS_SRC" ]; then
-    for skill in "$SKILLS_SRC"/*/SKILL.md; do
-        [ -f "$skill" ] || continue
-        name=$(basename "$(dirname "$skill")")
-        # _* are shared blocks (skip). `engagement` is the Task-based orchestrator;
-        # opencode has no Task tool, so a flattened command would be a misleading
-        # half-working automation. Exclude it — under opencode, drive the lifecycle
-        # by hand using the swarm-orchestrator playbook (see docs/AGENT-GUIDE.md).
-        case "$name" in _*|engagement) continue ;; esac
-        awk '
-            BEGIN { state = 0; keep = 0 }
-            /^---$/ {
-                state++
-                if (state <= 2) { print; next }
+        # Does the source frontmatter grant Bash? Advisory agents omit it.
+        bash_perm=""
+        if ! awk '
+            /^---$/ { n++; if (n>=2) exit; next }
+            n==1 && /^[[:space:]]*-[[:space:]]*Bash[[:space:]]*$/ { found=1 }
+            n==1 && /^tools:.*Bash/ { found=1 }
+            END { exit !found }
+        ' "$src"; then
+            bash_perm=$'permission:\n  bash: deny\n'
+        fi
+
+        # Carry the `description:` block verbatim (folded-scalar lines included):
+        # from the description line until the next top-level key or end of frontmatter.
+        desc=$(awk '
+            /^---$/ { n++; if (n>=2) exit; next }
+            n==1 {
+                if (/^description:/) { grab=1; print; next }
+                if (grab && /^[A-Za-z][A-Za-z0-9_-]*:/) { grab=0 }
+                if (grab) print
             }
-            state == 1 {
-                if (/^[A-Za-z][A-Za-z0-9_-]*:/) {
-                    keep = /^description:/
-                }
-                if (keep) print
-                next
-            }
-            state >= 2 { print }
-        ' "$skill" > "$CMD_DIR/${name}.md"
+        ' "$src")
+
+        {
+            printf -- '---\n'
+            printf '%s\n' "$desc"
+            printf 'mode: subagent\n'
+            [ -n "$bash_perm" ] && printf '%s' "$bash_perm"
+            printf -- '---\n'
+            awk 'BEGIN{n=0} /^---$/ && n<2 {n++; next} n>=2{print}' "$src"
+        } > "$dst"
+
+        # Inject shared blocks (same conditions as 02-claude.sh).
+        if ! grep -qE "Authorization Verification|Scope Enforcement" "$dst"; then
+            printf '\n' >> "$dst"; cat "$SCOPE_GUARD" >> "$dst"
+        fi
+        if ! grep -q "Findings Store" "$dst"; then
+            printf '\n' >> "$dst"; cat "$FINDINGS_STORE" >> "$dst"
+        fi
+        if ! grep -q "Untrusted Tool Output" "$dst"; then
+            printf '\n' >> "$dst"; cat "$UNTRUSTED_OUTPUT" >> "$dst"
+        fi
     done
 fi
 
