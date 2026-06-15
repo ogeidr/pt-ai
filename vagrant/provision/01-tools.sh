@@ -44,11 +44,21 @@ sudo -u vagrant bash -c '
 '
 # kerbrute ships a linux binary for amd64 only (no arm64 as of v1.0.3 — the
 # aarch64 asset 404s), so install on x86_64 and skip elsewhere quietly: it's an
-# upstream gap, not an install failure, so no warning on arm64.
+# upstream gap, not an install failure, so no warning on arm64. Pinned to v1.0.3
+# + SHA-256 (upstream frozen since 2021); verified before install so a tampered
+# or partial download is never placed on PATH. Best-effort: a failure skips
+# kerbrute without aborting the toolset provision.
+KERBRUTE_VERSION="${KERBRUTE_VERSION:-v1.0.3}"
+KERBRUTE_SHA256="${KERBRUTE_SHA256:-710a9d2653c8bd3689e451778dab9daec0de4c4c75f900788ccf23ef254b122a}"
 if ! command -v kerbrute >/dev/null 2>&1 && [ "$(uname -m)" = x86_64 ]; then
-    curl -fsSL "https://github.com/ropnop/kerbrute/releases/latest/download/kerbrute_linux_amd64" \
-        -o /usr/local/bin/kerbrute && chmod 0755 /usr/local/bin/kerbrute \
-        || echo "Warning: kerbrute download failed — skipping" >&2
+    kb_tmp="$(mktemp -d)"
+    if curl -fsSL "https://github.com/ropnop/kerbrute/releases/download/${KERBRUTE_VERSION}/kerbrute_linux_amd64" -o "$kb_tmp/kerbrute" \
+       && echo "${KERBRUTE_SHA256}  ${kb_tmp}/kerbrute" | sha256sum -c - ; then
+        install -m 0755 "$kb_tmp/kerbrute" /usr/local/bin/kerbrute
+    else
+        echo "Warning: kerbrute download/checksum failed — skipping" >&2
+    fi
+    rm -rf "$kb_tmp"
 fi
 
 apt-get clean

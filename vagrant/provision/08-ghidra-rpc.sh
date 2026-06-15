@@ -50,6 +50,8 @@ fi
 GHIDRA_VERSION="${GHIDRA_VERSION:-12.0.4}"
 GHIDRA_RELEASE_TAG="${GHIDRA_RELEASE_TAG:-Ghidra_12.0.4_build}"
 GHIDRA_ZIP="${GHIDRA_ZIP:-ghidra_12.0.4_PUBLIC_20260303.zip}"
+# SHA-256 of GHIDRA_ZIP from the NSA release page — keep in sync with 07-ghidrasql.sh.
+GHIDRA_SHA256="${GHIDRA_SHA256:-c3b458661d69e26e203d739c0c82d143cc8a4a29d9e571f099c2cf4bda62a120}"
 GHIDRA_URL="https://github.com/NationalSecurityAgency/ghidra/releases/download/${GHIDRA_RELEASE_TAG}/${GHIDRA_ZIP}"
 GHIDRA_INSTALL_DIR="/opt/ghidra_${GHIDRA_VERSION}_PUBLIC"
 
@@ -116,7 +118,9 @@ if [ ! -x "$GHIDRA_INSTALL_DIR/support/analyzeHeadless" ]; then
     log "Downloading Ghidra ${GHIDRA_VERSION}"
     tmp="$(mktemp -d)"
     curl -fL --retry 3 --retry-delay 5 --retry-connrefused "$GHIDRA_URL" -o "$tmp/ghidra.zip"
-    log "Ghidra SHA-256: $(sha256sum "$tmp/ghidra.zip" | awk '{print $1}') (cross-check against the release page)"
+    if ! echo "${GHIDRA_SHA256}  ${tmp}/ghidra.zip" | sha256sum -c - ; then
+        log "FATAL: Ghidra checksum mismatch — refusing to install"; rm -rf "$tmp"; exit 1
+    fi
     unzip -q "$tmp/ghidra.zip" -d /opt
     # The zip extracts to /opt/ghidra_<ver>_PUBLIC; normalize if the inner dir
     # name differs from our expected path (build-date suffixes, etc.).

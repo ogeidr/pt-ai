@@ -27,6 +27,13 @@ apt-get install -y --no-install-recommends pipx unzip python3-dev build-essentia
 # Arch-aware; official bundle to /usr/local/aws-cli with `aws` symlinked into
 # /usr/local/bin.  --update is safe whether or not it's already installed but
 # we still gate on "is v2 present" so we don't re-download ~50 MB every run.
+# The bundle tracks "latest" (no version pin), so integrity is enforced via
+# AWS's detached GPG signature: verify the .sig against AWS's published signing
+# key (config/aws-cli-pgp-key.asc, uid "AWS CLI Team") in an isolated keyring,
+# confirming the key's fingerprint is exactly the pinned one, BEFORE unzip.
+# Fail-closed: a bad/absent signature aborts rather than installing untrusted code.
+AWS_PGP_KEY="/vagrant/config/aws-cli-pgp-key.asc"
+AWS_PGP_FPR="FB5DB77FD5C118B80511ADA8A6310ACC4672475C"
 if ! aws --version 2>/dev/null | grep -q "aws-cli/2"; then
     arch=$(uname -m)
     case "$arch" in
@@ -35,7 +42,15 @@ if ! aws --version 2>/dev/null | grep -q "aws-cli/2"; then
         *) echo "AWS CLI v2: unsupported arch $arch" >&2; exit 1 ;;
     esac
     tmp=$(mktemp -d)
-    curl -fsSL "https://awscli.amazonaws.com/${awszip}" -o "$tmp/awscliv2.zip"
+    curl -fsSL "https://awscli.amazonaws.com/${awszip}"     -o "$tmp/awscliv2.zip"
+    curl -fsSL "https://awscli.amazonaws.com/${awszip}.sig" -o "$tmp/awscliv2.sig"
+    # Isolated keyring (subshell) so GNUPGHOME never leaks to later steps.
+    (
+        export GNUPGHOME="$tmp/gnupg"; mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+        gpg --batch --quiet --import "$AWS_PGP_KEY"
+        gpg --batch --with-colons --fingerprint | grep -q "$AWS_PGP_FPR"
+        gpg --batch --verify "$tmp/awscliv2.sig" "$tmp/awscliv2.zip"
+    ) || { echo "FATAL: AWS CLI signature verification failed — refusing to install" >&2; rm -rf "$tmp"; exit 1; }
     unzip -q "$tmp/awscliv2.zip" -d "$tmp"
     "$tmp/aws/install" --update
     rm -rf "$tmp"
