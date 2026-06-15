@@ -1,3 +1,4 @@
 # Test runtime artifacts (not source)
 .vagrant-test/
+.vagrant-debian/
 results/

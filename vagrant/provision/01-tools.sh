@@ -30,5 +30,26 @@ if [ -f "$TOOLS_FILE" ]; then
     done < "$TOOLS_FILE"
 fi
 
+# Offensive tools with no apt package on any supported box (verified 2026-06-14).
+# Same non-apt patterns 06-cloud.sh uses; kept here because this is the offensive
+# toolset's owning script. All best-effort so they can never block provisioning.
+#   frida-tools, objection — mobile instrumentation (pipx, per-user)
+#   kerbrute               — AD user-enum/spray (Go binary, system-wide)
+# pipx normally arrives in 06-cloud (runs later), so ensure it here first.
+command -v pipx >/dev/null 2>&1 || apt-get install -y --no-install-recommends pipx
+sudo -u vagrant bash -c '
+    pipx ensurepath >/dev/null 2>&1 || true
+    [ -d "$HOME/.local/share/pipx/venvs/frida-tools" ] || pipx install frida-tools || echo "Warning: frida-tools install failed — skipping" >&2
+    [ -d "$HOME/.local/share/pipx/venvs/objection" ]   || pipx install objection   || echo "Warning: objection install failed — skipping" >&2
+'
+# kerbrute ships a linux binary for amd64 only (no arm64 as of v1.0.3 — the
+# aarch64 asset 404s), so install on x86_64 and skip elsewhere quietly: it's an
+# upstream gap, not an install failure, so no warning on arm64.
+if ! command -v kerbrute >/dev/null 2>&1 && [ "$(uname -m)" = x86_64 ]; then
+    curl -fsSL "https://github.com/ropnop/kerbrute/releases/latest/download/kerbrute_linux_amd64" \
+        -o /usr/local/bin/kerbrute && chmod 0755 /usr/local/bin/kerbrute \
+        || echo "Warning: kerbrute download failed — skipping" >&2
+fi
+
 apt-get clean
 rm -rf /var/lib/apt/lists/*

@@ -14,5 +14,20 @@ responder
 seclists
 sqlmap
 
-# Cloud / Kubernetes recon companion (cloud-audit toolset proper lives in provision/06-cloud.sh)
+# AD / web / mobile / wireless (apt; present in Kali repos — verified 2026-06-14)
+apktool
+jadx
+bettercap
+hostapd
+bloodhound
+certipy-ad
+subfinder
+enum4linux-ng
+
+# Cloud / Kubernetes (apt). The cloud-audit toolset proper, and the CLIs with no
+# apt package (aws, prowler, scoutsuite, trufflehog, gcloud, gitleaks, kubeaudit),
+# live in provision/06-cloud.sh.
 pacu
+kubectl
+trivy
+azure-cli
