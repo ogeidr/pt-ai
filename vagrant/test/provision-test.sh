@@ -98,6 +98,10 @@ if [ "${1:-}" = "--assert" ]; then
     check  "aws CLI v2 present"                      bash -c 'aws --version 2>&1 | grep -q aws-cli/2'
     check  "trufflehog present"                      command -v trufflehog
     check  "prowler present"                         command -v prowler
+    # New 06-cloud installers — cross-box (binary/apt-repo), so verify they landed.
+    check  "gitleaks present (GitHub-release binary)" command -v gitleaks
+    check  "kubeaudit present (GitHub-release binary)" command -v kubeaudit
+    check  "gcloud present (vendor apt repo)"        command -v gcloud
     check  "_lib.sh present and apt-detected"        bash -c '. /vagrant/provision/_lib.sh; [ "$IS_APT" = true ]'
 
     echo

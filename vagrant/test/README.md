@@ -99,7 +99,7 @@ VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
   `~/.config/opencode/commands/` dir is **absent**
 - `/engagements` exists and is **writable** (real touch/rm probe)
 - `net.ipv4.ip_forward=1`; SSH password auth + root login disabled
-- `unattended-upgrades` installed; `aws` (v2), `trufflehog`, `prowler` present
+- `unattended-upgrades` installed; cloud tooling present: `aws` (v2, GPG-verified install), `trufflehog`, `prowler`, plus the new `06-cloud` installers `gitleaks`, `kubeaudit`, `gcloud`
 - `/vagrant/provision/_lib.sh` present and detects `IS_APT`
 
 **Kali case — Kali-only steps PRESENT**
