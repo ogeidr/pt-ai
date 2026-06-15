@@ -132,12 +132,12 @@ Expected duration: 30–60 min. Milestones in order:
 |---|---|
 | Inline | `kali-ptai` hostname set, resolv.conf written |
 | `00-update.sh` | NodeSource repo added, `nodejs` installed, system updated |
-| `01-tools.sh` | `kali-linux-default` and extras installed |
+| `01-tools.sh` | `kali-linux-default` and `config/tools.txt` extras installed; non-apt offensive tools (frida, objection, kerbrute pinned to v1.0.3 + SHA) |
 | `02-claude.sh` | Claude Code installed, CLAUDE.md written |
 | `03-network.sh` | iptables policy set, openvpn/proxychains configured |
 | `04-harden.sh` | SSH key-only, vagrant password locked, unattended-upgrades enabled |
-| `05-opencode.sh` | opencode installed, agents converted, opencode.json written |
-| `06-cloud.sh` | pipx/unzip + build deps installed, AWS CLI v2 unpacked, trufflehog binary fetched, prowler + scoutsuite pipx venvs created |
+| `05-opencode.sh` | opencode installed; skills read natively + agents written as opencode subagents (`~/.config/opencode/agents/`); opencode.json written |
+| `06-cloud.sh` | pipx/unzip/gnupg + build deps installed, AWS CLI v2 GPG-verified + unpacked, trufflehog + gitleaks + kubeaudit binaries fetched, gcloud apt repo added, prowler + scoutsuite pipx venvs created |
 | `07-ghidrasql.sh` | Ghidra + ghidrasql built (skipped if `PTAI_SKIP_GHIDRASQL=1`; on aarch64 the native decompiler is built from source — slow) |
 | `08-ghidra-rpc.sh` | ghidra-rpc installed via `uv` (skipped if `PTAI_SKIP_GHIDRA_RPC=1`; reuses the Ghidra install + aarch64 decompiler from step 07) |
 
@@ -187,8 +187,9 @@ ls -la ~/.claude/skills         # symlink → /opt/pt-ai/skills
 # opencode config
 which opencode                  # /home/vagrant/.npm-global/bin/opencode
 opencode --version              # prints version
-ls ~/.config/opencode/          # commands/  opencode.json
-ls ~/.config/opencode/commands/ | head   # recon-advisor.md, vuln-scanner.md, ...
+ls ~/.config/opencode/          # agents/  opencode.json  (no commands/ — retired)
+ls ~/.config/opencode/agents/ | head      # recon-advisor.md, vuln-scanner.md, ... (subagents)
+ls -L ~/.claude/skills/ | head             # skills read natively via Claude-compat symlink
 cat ~/.config/opencode/opencode.json     # anthropic/claude-sonnet-4-6
 
 # Synced dir
@@ -404,10 +405,10 @@ unset ANTHROPIC_API_KEY
 ```sh
 # On host: edit agents/recon-advisor.md (add a marker line)
 ./pt-ai provision   # re-runs 05-opencode.sh
-./pt-ai ssh -- "grep -c MARKER ~/.config/opencode/commands/recon-advisor.md"
+./pt-ai ssh -- "grep -c MARKER ~/.config/opencode/agents/recon-advisor.md"
 ```
 
-**Pass:** opencode starts, slash commands listed, model responds, model override visible in UI, stored key honored after unset, agent edits propagate after `./pt-ai provision`.
+**Pass:** opencode starts, skills discoverable + subagents (`@recon-advisor`) available, model responds, model override visible in UI, stored key honored after unset, agent edits propagate after `./pt-ai provision`.
 
 ---
 
@@ -445,6 +446,20 @@ pacu --list-modules 2>&1 | head -3          # modules enumerate
 
 # kube-hunter — passive list (no scan)
 kube-hunter --list 2>&1 | head -5           # known hunters listed
+
+# gitleaks — version + a local scan (no network)
+gitleaks version                            # prints version
+gitleaks detect --source /vagrant --no-banner 2>&1 | tail -3   # runs; non-zero if it finds leaks
+
+# kubeaudit — version (no cluster needed)
+kubeaudit version                           # prints version
+
+# gcloud — version only (no auth/API calls)
+gcloud --version | head -1                  # "Google Cloud SDK ..."
+
+# trivy + kubectl (apt) — local version checks
+trivy --version | head -1                   # "Version: ..."
+kubectl version --client=true -o yaml | head -1
 ```
 
 ```sh
@@ -469,4 +484,4 @@ import error). STS / scan calls that need real creds may fail with explicit
 - [ ] Phase 7 — snapshot/restore cycle works
 - [ ] Phase 8 — halt + cold boot skips provisioning
 - [ ] Phase 10 — opencode session works end-to-end
-- [ ] Phase 11 — cloud-audit tools (aws v2 / prowler / scoutsuite / trufflehog / pacu / kube-hunter) execute
+- [ ] Phase 11 — cloud-audit tools (aws v2 / prowler / scoutsuite / trufflehog / gitleaks / kubeaudit / gcloud / trivy / kubectl / pacu / kube-hunter) execute

@@ -198,7 +198,7 @@ print(response.choices[0].message.content)
 The agent files are designed to be portable:
 
 1. **Core content is plain markdown.** The methodology, techniques, and tool references are text. No provider-specific API calls or SDK dependencies.
-2. **YAML frontmatter is the only Claude-specific part.** `./pt-ai provision` derives the opencode commands from `skills/` at provision time, stripping/translating the frontmatter for opencode automatically.
+2. **YAML frontmatter is the only platform-specific part.** opencode reads `skills/` natively via the Claude-compat path, and `./pt-ai provision` translates `agents/` into opencode subagents — the markdown body is shared verbatim across both.
 3. **Tool names map directly.** Claude Code's `Bash`, `Read`, `Write`, `Edit`, `Grep`, `Glob` map 1:1 to OpenCode's `bash`, `view`, `write`, `edit`, `grep`, `glob`.
 4. **No proprietary features used.** The agents don't use Claude-specific features like artifacts, projects, or memory. They're pure system prompts.
 

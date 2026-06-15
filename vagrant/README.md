@@ -92,11 +92,11 @@ source config/.env
 
 First run provisions the VM automatically (~30–60 min depending on network):
 - System update + base dependencies
-- Kali toolset (`kali-linux-default`, Kali boxes only) + extras from `config/tools.txt`
+- Kali toolset (`kali-linux-default`, Kali boxes only) + apt extras from `config/tools.txt`, plus a few non-apt offensive tools (`frida`, `objection`, `kerbrute`)
 - Claude Code CLI (installed as the vagrant user so self-updates work)
 - Network config: IP forwarding, iptables open policy, openvpn/proxychains
-- opencode CLI + pt-ai agents converted to opencode slash commands
-- Cloud-audit toolset: AWS CLI v2, prowler, scoutsuite, trufflehog (plus apt pacu, kube-hunter)
+- opencode CLI + pt-ai skills (read natively) and agents (as opencode subagents)
+- Cloud-audit toolset: AWS CLI v2 (GPG-signature verified), prowler, scoutsuite, trufflehog, gitleaks, gcloud, kubeaudit (plus apt pacu, kubectl, trivy, azure-cli, kube-hunter)
 - ghidrasql: Ghidra 12.0.4 + libghidra + ghidrasql (on aarch64, the native decompiler is built from source — adds time to the first provision)
 - ghidra-rpc: PyGhidra-backed RE daemon (cellebrite-labs/ghidra-rpc via `uv`), provisioned alongside ghidrasql and sharing the same Ghidra install
 
@@ -148,7 +148,7 @@ This captures the fully-provisioned, authenticated state. Restore to it between 
 
 ### Step 5 — (Optional) opencode
 
-opencode is installed alongside Claude Code. Use it when you want a provider-agnostic CLI or want to invoke pt-ai agents as slash commands (e.g. `/recon-advisor`, `/vuln-scanner`).
+opencode is installed alongside Claude Code. Use it when you want a provider-agnostic CLI: pt-ai's skills are discovered natively (model-invoked, same as in Claude Code) and its agents are available as opencode subagents (e.g. `@recon-advisor`).
 
 ```sh
 ./pt-ai opencode
@@ -171,7 +171,7 @@ export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
 ./pt-ai opencode
 ```
 
-Agents are converted to opencode commands at provision time. To pick up agent edits made on the host, re-run `./pt-ai provision`.
+Skills are read natively (via the `~/.claude/skills` symlink) and agents are generated as opencode subagents at provision time. To pick up host-side skill/agent edits, re-run `./pt-ai provision`.
 
 ---
 
@@ -237,7 +237,7 @@ Ghidra install and, on aarch64, the same self-built native decompiler.
 Each can be skipped independently (`PTAI_SKIP_GHIDRASQL`, `PTAI_SKIP_GHIDRA_RPC`).
 Two model-invocable skills wrap the end-to-end "full static disassembly analysis +
 report" workflow for each engine: **`/disasm-ghidrasql`** and **`/disasm-ghidra-rpc`**
-(authored once under `skills/`, auto-derived as opencode commands at provision time).
+(authored once under `skills/`, read natively by both Claude Code and opencode).
 
 ### ghidrasql
 
@@ -278,7 +278,9 @@ starting with `.` (so `./proj` fails; use `/tmp/…` or `/engagements/…`).
 build compatibility. Drop the relevant patch once a fix lands upstream.
 
 Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
-`GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`).
+`GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`). The Ghidra and Gradle zips are
+verified against pinned SHA-256 sums (`GHIDRA_SHA256`, `GRADLE_SHA256`) before install
+and provisioning **fails closed** on mismatch — bump the SHA whenever you bump the version.
 
 > **Security note.** ghidrasql's `--http`/`--serve` mode opens a local network
 > surface. It binds `127.0.0.1` by default — keep it there, and use `--auth <token>`
