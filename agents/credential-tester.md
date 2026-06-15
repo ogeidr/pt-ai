@@ -109,7 +109,7 @@ This log should be available for review at any point during the session.
 - Supports: SSH, FTP, HTTP, SMB, MSSQL, MySQL, PostgreSQL, VNC, RDP
 
 **CrackMapExec / NetExec (AD-focused):**
-- Password spray: `crackmapexec smb {target} -u users.txt -p 'Password1!' --no-bruteforce`
+- Password spray: `crackmapexec smb {target} -u users.txt -p '{SPRAY_PASSWORD}' --no-bruteforce`
 - Hash spray: `crackmapexec smb {target} -u {user} -H {ntlm_hash}`
 - Check local admin: `crackmapexec smb {target} -u {user} -p {pass} --local-auth`
 
@@ -162,12 +162,22 @@ This log should be available for review at any point during the session.
 1. Enumerate the password policy first (lockout threshold, observation window, reset timer)
 2. Use ONE password per spray round
 3. Wait the full observation window between rounds
-4. Start with the most likely passwords:
-   - Season+Year: `Spring2026!`, `Winter2025!`
-   - Company+digits: `CompanyName1!`, `Company2026`
-   - Common patterns: `Welcome1!`, `Password1!`, `Changeme1!`
+4. Build the candidate list from engagement OSINT. The patterns below are
+   *shapes to derive from*, NOT passwords to spray verbatim:
+   - Season+Year: `{Season}{Year}!`
+   - Company+digits: `{Company}{Year}!`, `{Company}1!`
+   - Greeting/keyboard patterns — derive one for this engagement; do not reuse a shipped guess
 5. Monitor for lockouts after each round
 6. Log all attempts for evidence
+
+### Credential-Specific Pre-Execution (refuse to compose a spray command if any item is unchecked)
+
+- [ ] Lockout policy retrieved (`crackmapexec smb {dc} -u {user} -p {pass} --pass-pol`) and threshold N recorded
+- [ ] Passwords attempted this round = 1
+- [ ] Wait between rounds ≥ the observation window
+- [ ] Operator has explicitly accepted lockout risk for this target
+- [ ] `--continue-on-success` is intentional (default: omit it)
+- [ ] `{SPRAY_PASSWORD}` is an engagement-specific guess the operator supplied — never a shipped literal
 
 **AD password spray workflow:**
 ```
@@ -177,13 +187,13 @@ crackmapexec smb {dc} -u {user} -p {pass} --pass-pol
 # Step 2: Get user list
 crackmapexec smb {dc} -u {user} -p {pass} --users
 
-# Step 3: Spray one password (wait between sprays)
-crackmapexec smb {dc} -u users.txt -p 'Spring2026!' --no-bruteforce --continue-on-success
+# Step 3: Spray ONE engagement-specific password (wait the observation window between rounds)
+crackmapexec smb {dc} -u users.txt -p '{SPRAY_PASSWORD}' --no-bruteforce
 ```
 
 **Kerbrute (faster, stealthier for AD):**
 ```
-kerbrute passwordspray -d {domain} --dc {dc_ip} users.txt 'Spring2026!'
+kerbrute passwordspray -d {domain} --dc {dc_ip} users.txt '{SPRAY_PASSWORD}'
 ```
 
 ### Default Credential Checks
@@ -249,8 +259,8 @@ cewl {target_url} -d 3 -m 5 -w site_words.txt
 # Add common mutations
 hashcat --stdout site_words.txt -r /usr/share/hashcat/rules/best64.rule > mutated.txt
 
-# Combine with known patterns
-echo -e "Spring2026!\nWinter2025!\nCompany2026!" >> targeted.txt
+# Combine with engagement-specific patterns derived from OSINT (fill from {Company}/{Season}/{Year})
+echo -e "{Season}{Year}!\n{Company}{Year}!\n{Company}1!" >> targeted.txt
 ```
 
 ## Analysis Framework

