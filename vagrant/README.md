@@ -257,19 +257,20 @@ decompiler source bundled in the release. This is the slowest step of the first
 provision. If the build fails, ghidrasql still runs but decompiler-backed tables
 (`pseudocode`, `decomp_*`) will error.
 
-The command runs in `/engagements`, so `--binary` relative paths resolve there.
-The **`--project` path must be absolute** — Ghidra rejects any path element
+ghidrasql runs inside the VM — open a shell with `./pt-ai ssh` (a login shell that
+sources its env) and run it from `/engagements`, so `--binary` relative paths resolve
+there. The **`--project` path must be absolute** — Ghidra rejects any path element
 starting with `.` (so `./proj` fails; use `/tmp/…` or `/engagements/…`).
 
 ```sh
 # One-shot query against a binary
-./pt-ai ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+ghidrasql --binary ./samples/target --project /tmp/gsql --project-name demo \
   --analyze -q "SELECT name, printf('0x%X', address) AS addr FROM funcs ORDER BY size DESC LIMIT 5"
 
-# Background HTTP mode, then query over curl from inside the VM
-./pt-ai ghidrasql -- --binary ./samples/target --project /tmp/gsql --project-name demo \
+# Background HTTP mode, then query over curl (from the same VM shell)
+ghidrasql --binary ./samples/target --project /tmp/gsql --project-name demo \
   --analyze --http --port 8081 --max-runtime 0
-# (from ./pt-ai ssh) curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
+# curl -s -X POST http://127.0.0.1:8081/query --data "SELECT COUNT(*) FROM funcs;"
 ```
 
 `GHIDRA_INSTALL_DIR` is exported VM-wide, so `--ghidra` is auto-filled. For
@@ -300,21 +301,22 @@ no C++/Gradle build). Unlike ghidrasql it talks over a **Unix socket** (no netwo
 surface), supports **binary patching** (`assemble`/`write-bytes`) and **function
 diffing** (`function-diff`/`match-function`), and keeps the analysis session warm.
 
-The daemon has its own lifecycle, driven by `./pt-ai ghidra`:
+The daemon has its own lifecycle, driven inside the VM (`./pt-ai ssh`, then from
+`/engagements`) via the `ghidra-rpc` binary:
 
 ```sh
-# Start the warm daemon (defaults to --headless --detach), load, query
-./pt-ai ghidra start --project /engagements/demo.gpr
-./pt-ai ghidra load ./samples/target
-./pt-ai ghidra functions ls --limit 5
-./pt-ai ghidra decompile target main
-./pt-ai ghidra stop
+# Start the warm daemon (--headless --detach so it survives the shell), load, query
+ghidra-rpc start --headless --detach --project /engagements/demo.gpr
+ghidra-rpc load ./samples/target
+ghidra-rpc functions ls --limit 5
+ghidra-rpc decompile target main
+ghidra-rpc stop
 ```
 
-`start` defaults to headless + detached so the daemon survives the one-shot SSH
-session. `GHIDRA_INSTALL_DIR` is exported VM-wide; the daemon needs it. The daemon
-is stopped automatically before `./pt-ai snapshot` and after `./pt-ai restore` so a
-live JVM/socket isn't captured in (or left stale across) a VM image.
+Pass `--headless --detach` so the daemon survives the shell session.
+`GHIDRA_INSTALL_DIR` is exported VM-wide; the daemon needs it. The daemon is stopped
+automatically before `./pt-ai snapshot` and after `./pt-ai restore` so a live
+JVM/socket isn't captured in (or left stale across) a VM image.
 
 Override the source revision with `GHIDRA_RPC_REF` (a tag/commit; defaults to `main`).
 
@@ -370,8 +372,6 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 ./pt-ai up                    Boot VM (provision on first run)
 ./pt-ai claude [--fresh] [-- <args>]    Start Claude Code session inside VM (--fresh wipes prior session history; creds preserved)
 ./pt-ai opencode [--fresh] [-- <args>]  Start opencode session inside VM (--fresh wipes prior session history; auth preserved)
-./pt-ai ghidrasql [args...]   Run ghidrasql inside VM (Ghidra SQL/HTTP interface)
-./pt-ai ghidra [args...]      Drive ghidra-rpc inside VM (start/load/decompile/stop)
 ./pt-ai ssh                   Interactive shell inside VM
 ./pt-ai key store             Store ANTHROPIC_API_KEY from host env into VM
 ./pt-ai key clear             Remove stored API key from VM

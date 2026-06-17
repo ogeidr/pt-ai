@@ -215,8 +215,8 @@ retry 3 20 -- sudo -u "$VAGRANT_USER" env \
     "PATH=/usr/local/bin:/usr/bin:/bin" \
     bash -lc "uv tool install --reinstall '$RPC_SRC'"
 
-# Surface the two entry points on the system PATH so the in-VM agent (and the
-# host `./pt-ai ghidra` wrapper) reach them without depending on ~/.local/bin.
+# Surface the two entry points on the system PATH so the in-VM agent (and any
+# interactive `./pt-ai ssh` shell) reach them without depending on ~/.local/bin.
 for ep in ghidra-rpc ghidra-rpcd; do
     if [ -x "$VAGRANT_HOME/.local/bin/$ep" ]; then
         ln -sf "$VAGRANT_HOME/.local/bin/$ep" "/usr/local/bin/$ep"
@@ -230,7 +230,7 @@ test -x /usr/local/bin/ghidra-rpc || {
 # (and JAVA_HOME) and make sure the uv tool bin is on PATH for login shells.
 # A separate profile.d file from ghidrasql's; both export the same values
 # (harmless). GHIDRA_RPC_PROJECT is intentionally NOT set here — it is per-
-# engagement, supplied by `./pt-ai ghidra start --project …` (or by the agent).
+# engagement, supplied by `ghidra-rpc start --project …` inside the VM (or by the agent).
 cat > "$PROFILE_D" <<EOF
 # pt-ai: ghidra-rpc / Ghidra environment
 export GHIDRA_INSTALL_DIR="$GHIDRA_INSTALL_DIR"
