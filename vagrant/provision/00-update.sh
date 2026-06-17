@@ -45,9 +45,18 @@ apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv
 
-# Node 20 via NodeSource (supports Kali/Debian/Ubuntu) — packaged node may be older
+# Node 20 via NodeSource (supports Kali/Debian/Ubuntu) — packaged node may be older.
+# Add the repo manually (keyring + signed-by) instead of piping setup_20.x into
+# root bash: apt-GPG then verifies every nodejs package. `nodistro` is the
+# distro-agnostic suite, so this works on any apt-family box. Mirrors the gcloud
+# keyring add in 06-cloud.sh.
 if ! node --version 2>/dev/null | grep -qE "^v2[0-9]"; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    install -d -m 0755 /usr/share/keyrings
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
+    echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" \
+        > /etc/apt/sources.list.d/nodesource.list
+    apt-get update -y
     apt-get install -y nodejs
 fi
 

@@ -102,13 +102,29 @@ export JAVA_HOME
 log "JAVA_HOME=$JAVA_HOME ($(java -version 2>&1 | head -1))"
 
 # --- 2. uv (standalone; installs ghidra-rpc and can manage Python 3.11+) --
-# Install uv system-wide to /usr/local/bin so it's on PATH for everyone. The
-# installer's UV_INSTALL_DIR controls the target; UV_NO_MODIFY_PATH stops it
-# editing shell profiles (we manage PATH ourselves in step 6).
+# Install uv system-wide to /usr/local/bin so it's on PATH for everyone. Pinned
+# release tarball + SHA-256 verify instead of piping astral's install.sh into a
+# root shell. uv is a hard dependency here, so this is fail-closed: a checksum
+# mismatch aborts under `set -e` and the guard below catches a missing binary.
+# Bump UV_VERSION ⇒ refresh both SHAs from the per-asset uv-<triple>.tar.gz.sha256.
+UV_VERSION="${UV_VERSION:-0.11.21}"
+UV_SHA256_x86_64="${UV_SHA256_x86_64:-8c88519b0ef0af9801fcdee419bbb12116bd9e6b18e162ae093c932d8b264050}"
+UV_SHA256_aarch64="${UV_SHA256_aarch64:-88e800834007cc5efd4675f166eb2a51e7e3ad19876d85fa8805a6fb5c922397}"
 if [ ! -x "$UV_BIN" ]; then
-    log "Installing uv"
-    retry 3 10 -- bash -c \
-        'curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh'
+    log "Installing uv ${UV_VERSION}"
+    case "$(uname -m)" in
+        x86_64)  uv_triple=x86_64-unknown-linux-gnu;  uv_sha=$UV_SHA256_x86_64 ;;
+        aarch64) uv_triple=aarch64-unknown-linux-gnu; uv_sha=$UV_SHA256_aarch64 ;;
+        *) echo "FATAL: no pinned uv build for $(uname -m)" >&2; exit 1 ;;
+    esac
+    uv_tmp=$(mktemp -d)
+    retry 3 10 -- curl -fsSL \
+        "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${uv_triple}.tar.gz" \
+        -o "$uv_tmp/uv.tgz"
+    echo "${uv_sha}  ${uv_tmp}/uv.tgz" | sha256sum -c -
+    tar -xzf "$uv_tmp/uv.tgz" -C "$uv_tmp" --strip-components=1
+    install -m 0755 "$uv_tmp/uv" "$uv_tmp/uvx" /usr/local/bin/
+    rm -rf "$uv_tmp"
 fi
 test -x "$UV_BIN" || { echo "FATAL: uv not installed at $UV_BIN" >&2; exit 1; }
 log "uv: $($UV_BIN --version 2>&1)"

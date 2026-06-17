@@ -57,10 +57,29 @@ if ! aws --version 2>/dev/null | grep -q "aws-cli/2"; then
 fi
 
 # --- trufflehog -----------------------------------------------------------
-# Official install script; binary lands in /usr/local/bin (system-wide).
+# Pinned release tarball + SHA-256 verify (instead of piping install.sh into a
+# root shell). Dual-arch; best-effort — a download/checksum failure warns and
+# skips. Bump TRUFFLEHOG_VERSION ⇒ refresh both SHAs from the release's
+# trufflehog_<ver>_checksums.txt.
+TRUFFLEHOG_VERSION="${TRUFFLEHOG_VERSION:-3.95.5}"
+TRUFFLEHOG_SHA256_amd64="${TRUFFLEHOG_SHA256_amd64:-8d151a19465973bec226be5992a2a11b053f4ab92c77861f642089892ae9aa58}"
+TRUFFLEHOG_SHA256_arm64="${TRUFFLEHOG_SHA256_arm64:-bb876c4e5a84fa4fdbda4fc24143ed2d12eac32cfd3f7e41c79cbd7d33607b4a}"
 if ! command -v trufflehog >/dev/null 2>&1; then
-    curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
-        | sh -s -- -b /usr/local/bin
+    case "$(uname -m)" in
+        x86_64)  th_arch=amd64; th_sha=$TRUFFLEHOG_SHA256_amd64 ;;
+        aarch64) th_arch=arm64; th_sha=$TRUFFLEHOG_SHA256_arm64 ;;
+        *)       th_arch="" ;;
+    esac
+    th_tmp=$(mktemp -d)
+    if [ -n "$th_arch" ] \
+       && curl -fsSL "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_${th_arch}.tar.gz" -o "$th_tmp/t.tgz" \
+       && echo "${th_sha}  ${th_tmp}/t.tgz" | sha256sum -c - \
+       && tar -xzf "$th_tmp/t.tgz" -C "$th_tmp" trufflehog; then
+        install -m 0755 "$th_tmp/trufflehog" /usr/local/bin/trufflehog
+    else
+        echo "Warning: trufflehog ${TRUFFLEHOG_VERSION} (${th_arch:-unsupported arch}) verify/install failed — skipping" >&2
+    fi
+    rm -rf "$th_tmp"
 fi
 
 # --- gitleaks + kubeaudit (Go binaries via GitHub release) ----------------
