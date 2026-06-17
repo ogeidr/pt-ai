@@ -2,7 +2,6 @@
 # back-compat. Any apt-family box works — Kali-specific provisioning auto-skips
 # on non-Kali guests (see provision/_lib.sh).
 BOX             = ENV.fetch("PTAI_BOX") { ENV.fetch("KALI_BOX", "kalilinux/rolling") }
-VAGRANT_PROVIDER = ENV.fetch("VAGRANT_PROVIDER", "virtualbox")
 VM_MEMORY       = ENV.fetch("VAGRANT_MEMORY",   "4096").to_i
 VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
 
@@ -21,7 +20,9 @@ Vagrant.configure("2") do |config|
   # on first boot after box cloning.
 
   # --- Providers -----------------------------------------------------------
-  # Select with: VAGRANT_PROVIDER=vmware_desktop ./pt-ai up
+  # Provider selection lives in the pt-ai wrapper, which passes `--provider`
+  # ($VAGRANT_PROVIDER, default vmware_desktop) to `vagrant up`. Override there:
+  #   VAGRANT_PROVIDER=virtualbox ./pt-ai up
   config.vm.provider "virtualbox" do |v|
     v.name   = "kali-ptai"
     v.memory = VM_MEMORY

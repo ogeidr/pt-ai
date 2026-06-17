@@ -25,10 +25,11 @@ PT_AI_OPENCODE_MODEL=lmstudio/gpt-oss-20b ./pt-ai opencode
 
 **Host address from the VM** depends on your Vagrant provider:
 
-- **VirtualBox** (the default): the host is `10.0.2.2` over the NAT interface.
-- **VMware / Parallels**: use the host-only address reachable from the guest
-  (e.g. `172.16.145.1` or `192.168.161.1` on VMware Fusion — check `ip route` in
-  the VM for the gateway). `10.0.2.2` will **not** work here.
+- **VMware** (the default) **/ Parallels**: use the host-only address reachable
+  from the guest (e.g. `172.16.145.1` or `192.168.161.1` on VMware Fusion — check
+  `ip route` in the VM for the gateway). `10.0.2.2` will **not** work here.
+- **VirtualBox** (`VAGRANT_PROVIDER=virtualbox`): the host is `10.0.2.2` over the
+  NAT interface.
 
 ## Option 1: LM Studio (Recommended)
 

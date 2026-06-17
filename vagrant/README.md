@@ -25,15 +25,19 @@ Both Claude Code and opencode run directly inside the VM and invoke Kali tools v
 
 | Platform | Provider | Notes |
 |---|---|---|
-| Apple Silicon Mac | VMware Fusion 13+ Pro (free) | Recommended — tested |
-| Intel Mac / Linux | VirtualBox | Default, no extra config |
-| macOS (either) | Parallels Desktop | Requires plugin |
+| Apple Silicon Mac | VMware Fusion 13+ (free) | Default — tested; needs the `kali-arm64` box (Step 1) |
+| Intel Mac / Linux | VMware Workstation/Fusion (free) | Default; uses the official `kalilinux/rolling` box |
+| Any platform | VirtualBox | Opt out: `VAGRANT_PROVIDER=virtualbox` — no plugin needed |
+| macOS | Parallels Desktop | `VAGRANT_PROVIDER=parallels` — requires plugin |
+
+`vmware_desktop` is the default provider on every platform. VirtualBox remains
+supported as a no-plugin fallback via `VAGRANT_PROVIDER=virtualbox`.
 
 ```sh
 # All platforms
 brew install vagrant
 
-# VMware Fusion (Apple Silicon)
+# VMware (default provider — all platforms)
 vagrant plugin install vagrant-vmware-desktop
 # Also install the VMware Utility: https://developer.hashicorp.com/vagrant/install/vmware
 
@@ -47,7 +51,7 @@ On Windows, run the `pt-ai` wrapper from WSL. The only macOS-only piece is `box/
 
 ### Step 1 — Build the Kali ARM64 box (Apple Silicon only)
 
-**Skip on Intel Mac / Linux** — VirtualBox uses the official `kalilinux/rolling` box automatically. `box/build.sh` exists only because there is no official Kali ARM64 VMware box.
+**Skip on Intel Mac / Linux** — the official `kalilinux/rolling` box (which ships a `vmware_desktop` variant) is used automatically. `box/build.sh` exists only because there is no official Kali ARM64 VMware box.
 
 ```sh
 ./box/build.sh
@@ -63,12 +67,12 @@ Downloads the Kali ARM64 installer ISO (~4 GB), installs it inside VMware Fusion
 cp config/engagement.env.example config/.env
 ```
 
-For Apple Silicon, set the provider and box:
+For Apple Silicon, set the box (`vmware_desktop` is already the default provider,
+so it no longer needs to be set explicitly):
 
 ```sh
 # config/.env
 export PTAI_BOX=kali-arm64
-export VAGRANT_PROVIDER=vmware_desktop
 ```
 
 To build on a non-Kali, apt-family box instead, set `PTAI_BOX` to any such box
@@ -352,7 +356,7 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 | `PTAI_SKIP_GHIDRA_RPC` | — | Set to any value to skip the ghidra-rpc provisioner |
 | `GHIDRA_RPC_REF` | `main` | ghidra-rpc source revision (tag/commit) to install |
 | `KALI_BOX` | — | Legacy alias for `PTAI_BOX` (still honored as a fallback) |
-| `VAGRANT_PROVIDER` | `virtualbox` | `vmware_desktop` for Apple Silicon |
+| `VAGRANT_PROVIDER` | `vmware_desktop` | Set `virtualbox` to use VirtualBox (no plugin needed) |
 | `VAGRANT_MEMORY` | `4096` | VM RAM in MB |
 | `VAGRANT_CPUS` | `4` | vCPU count |
 | `ANTHROPIC_API_KEY` | — | Optional — forwarded per-session if set; see `./pt-ai key` for persistent storage. Used by both Claude Code and opencode |

@@ -53,7 +53,7 @@
 #                         KALI_BOX is still honored as a fallback.
 #   PTAI_SKIP_GHIDRASQL   Set to skip the heavy ghidrasql provisioner.
 #   PTAI_SKIP_GHIDRA_RPC  Set to skip the ghidra-rpc provisioner.
-#   VAGRANT_PROVIDER      virtualbox | vmware_desktop | parallels (default: virtualbox)
+#   VAGRANT_PROVIDER      vmware_desktop | virtualbox | parallels (default: vmware_desktop)
 #   VAGRANT_MEMORY        VM memory MB (default: 4096)
 #   VAGRANT_CPUS          vCPU count (default: 4)
 #
@@ -80,7 +80,7 @@ PTAI_BOX="${PTAI_BOX:-${KALI_BOX:-kalilinux/rolling}}"
 # ghidrasql and ghidra-rpc are provisioned independently; each has its own skip.
 PTAI_SKIP_GHIDRASQL="${PTAI_SKIP_GHIDRASQL:-}"
 PTAI_SKIP_GHIDRA_RPC="${PTAI_SKIP_GHIDRA_RPC:-}"
-VAGRANT_PROVIDER="${VAGRANT_PROVIDER:-virtualbox}"
+VAGRANT_PROVIDER="${VAGRANT_PROVIDER:-vmware_desktop}"
 VAGRANT_MEMORY="${VAGRANT_MEMORY:-4096}"
 VAGRANT_CPUS="${VAGRANT_CPUS:-4}"
 
@@ -157,7 +157,7 @@ Environment:
                        as a fallback.
   PTAI_SKIP_GHIDRASQL  Set to skip the heavy ghidrasql provisioner
   PTAI_SKIP_GHIDRA_RPC Set to skip the ghidra-rpc provisioner
-  VAGRANT_PROVIDER     virtualbox | vmware_desktop | parallels (default: virtualbox)
+  VAGRANT_PROVIDER     vmware_desktop | virtualbox | parallels (default: vmware_desktop)
   VAGRANT_MEMORY       VM RAM in MB (default: 4096)
   VAGRANT_CPUS         vCPU count (default: 4)
 

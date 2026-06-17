@@ -27,3 +27,4 @@ engagements/
 reviews/
 # Features (sensitive)
 features/
+vagrant/config/engagement.env

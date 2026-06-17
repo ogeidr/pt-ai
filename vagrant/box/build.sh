@@ -12,8 +12,8 @@
 #
 # Platform: macOS only. This builds an ARM64 box for Apple Silicon, which is
 # the one case with no official Kali VMware box. Intel Mac and Linux users do
-# not need this script — the default VirtualBox setup uses the official
-# kalilinux/rolling box and is fully cross-platform.
+# not need this script — the official kalilinux/rolling box ships a
+# vmware_desktop variant (the default provider) and is fully cross-platform.
 #
 # Usage: ./box/build.sh
 set -euo pipefail
@@ -21,8 +21,8 @@ set -euo pipefail
 err() { echo "Error: $*" >&2; exit 1; }
 
 [ "$(uname -s)" = "Darwin" ] || err "box/build.sh runs only on macOS with VMware Fusion.
-On Intel Mac or Linux you don't need it — use the default VirtualBox setup
-(box defaults to kalilinux/rolling; override with PTAI_BOX). See README.md."
+On Intel Mac or Linux you don't need it — the default kalilinux/rolling box has a
+vmware_desktop variant (override the box with PTAI_BOX). See README.md."
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 WORK_DIR="$SCRIPT_DIR/.build"
