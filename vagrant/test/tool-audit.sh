@@ -20,7 +20,7 @@ echo "== pt-ai tool audit on: ${PRETTY_NAME:-unknown} (ID=${ID:-?}) =="
 # Tool groups -> the agent/skill area that needs them. "name:binary" when the
 # binary differs from the package/common name.
 groups="
-recon-skill(full-recon): nmap masscan dig host whois nikto whatweb wafw00f sslscan
+recon-skill(full-recon): nmap masscan dig whois curl whatweb nikto nc
 web/recon(agents):        ffuf gobuster feroxbuster dirb sqlmap nuclei amass subfinder httpx dnsenum dnsrecon theharvester
 ad(agents):               crackmapexec netexec evil-winrm responder ldapsearch kerbrute certipy-ad bloodhound smbclient smbmap rpcclient enum4linux-ng
 impacket(agents):         impacket-GetUserSPNs impacket-GetNPUsers impacket-secretsdump

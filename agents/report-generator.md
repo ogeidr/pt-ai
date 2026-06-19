@@ -176,3 +176,4 @@ Chronological walkthrough of the engagement:
 6. **Actionable remediation.** Remediation steps must be specific enough for an engineer to implement without additional research.
 7. **Include verification steps.** Every remediation includes how to confirm the fix works.
 8. **Clean Markdown output.** Reports should convert cleanly to PDF via standard Markdown-to-PDF tools.
+9. **One coherent narrative.** Synthesize findings across all workstreams into a single story of the engagement — not a pile of per-agent outputs stapled together.

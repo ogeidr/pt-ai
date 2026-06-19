@@ -119,8 +119,9 @@ Then highlight high-value observations for the next phase:
 
 Suggest concrete follow-ups, for example:
 - `aws ec2 describe-security-groups` to map ingress rules on exposed instances.
-- Hand public IPs/DNS names to the `recon-advisor` agent for nmap/service scans
-  (those targets must also be in scope).
+- Hand public IPs/DNS names to the `/full-recon` skill for a sweep (it sources EC2
+  the same way), or to the `recon-advisor` agent for targeted scans (those targets
+  must also be in scope).
 - `aws ec2 describe-instances` is metadata only — note that confirming live
   services still requires network-level recon against the in-scope hosts.
 

@@ -13,8 +13,7 @@ Each agent is a Markdown file in `.claude/agents/` with a YAML frontmatter block
 | **engagement-planner** | Scope, timeline, rules of engagement | — | Include environment size, tech stack, compliance requirements |
 | **threat-modeler** | STRIDE, attack trees, architecture review | — | Describe components and data flows in detail |
 | **attack-planner** | Correlate findings into attack chains | — | Paste all raw scan and BloodHound data |
-| **swarm-orchestrator** | Engagement-lifecycle methodology reference (playbook) | — | Does NOT execute or delegate; to actually run an engagement use the `/engagement` skill |
-| **recon-advisor** | Analyze scan output; run nmap/dig/whois/curl | ✓ | Paste real output; declare scope before execution |
+| **recon-advisor** | Analyze scan output; targeted/deep host enumeration | ✓ | Paste real output; for a broad multi-host sweep use the `/full-recon` skill |
 | **osint-collector** | Passive OSINT, subdomain enum, target profiling | — | Specify passive-only vs. active |
 | **vuln-scanner** | Run nuclei/nikto, parse CVEs, prioritize findings | ✓ | Paste existing output for analysis without rescanning |
 | **web-hunter** | Directory brute force, SQLi, parameter fuzzing | ✓ | Name the tech stack for tailored wordlists |
@@ -116,6 +115,23 @@ primary format, Sigma secondary.
 
 The agents are designed to work together across the phases of a complete engagement.
 
+At a glance — each phase, its primary agents, and where its output flows next:
+
+| Phase | Primary agents | Hands off to |
+|---|---|---|
+| 0. Threat modeling (optional) | `threat-modeler` | engagement-planner |
+| 1. Planning & scoping | `engagement-planner` | reconnaissance agents |
+| 2. Reconnaissance | `osint-collector`, `recon-advisor`, `web-hunter` (broad sweep via the `/full-recon` skill) | vuln-scanner, attack-planner |
+| 3. Vulnerability assessment | `vuln-scanner` → `poc-validator` | attack-planner, exploit-chainer |
+| 4. Attack planning | `attack-planner`, `exploit-chainer` | exploitation specialists |
+| 5. **Exploitation** (gated) | `exploit-chainer`, `ad-attacker`, `web-hunter`, `cloud-security`, `api-security`, `bizlogic-hunter`, `privesc-advisor` | credential & lateral movement |
+| 6. Credential & lateral movement | `credential-tester`, `ad-attacker` | detection, reporting |
+| 7. Detection engineering | `detection-engineer`, `threat-modeler` | report-generator |
+| 8. Compliance mapping (if required) | `stig-analyst` | report-generator |
+| 9. Reporting | `report-generator` | client delivery |
+
+Each phase is detailed below. Crossing a phase boundary requires operator approval; the reconnaissance → exploitation transition is a **hard gate** (see *Execution Mode* and the `/engagement` skill, which enforces it with state in `gates.jsonl`).
+
 ### Phase 0: Threat Modeling (Optional Pre-Engagement)
 
 Before scoping, use `threat-modeler` to understand the attack surface from an architectural perspective.
@@ -138,7 +154,7 @@ The scope includes 10.0.0.0/8 and all Active Directory domains. Exclude the
 
 ### Phase 2: Reconnaissance
 
-Run OSINT and passive recon with `osint-collector` before touching the network. Then feed active scan results to `recon-advisor` for prioritization.
+Run OSINT and passive recon with `osint-collector` before touching the network. Run the broad first-pass active sweep with the `/full-recon` skill (many hosts, ranges, or AWS-sourced targets), then feed its results to `recon-advisor` for prioritization and targeted deep-dives.
 
 ```
 # OSINT first (passive, no target interaction)
@@ -237,10 +253,10 @@ severity with remediation recommendations. [paste findings]
 ### Full-Engagement Automation
 
 For engagements where you want real, automated agent handoffs, use the
-**`/engagement` skill** — not `swarm-orchestrator`. The skill runs in the main
-thread, so it can use the `Task` tool to delegate to each specialist agent in turn;
-a subagent (which is what `swarm-orchestrator` becomes when invoked) cannot spawn
-other subagents, so it can only describe the lifecycle, never run it.
+**`/engagement` skill**. The skill runs in the main thread, so it can use the `Task`
+tool to delegate to each specialist agent in turn; a subagent cannot spawn other
+subagents, which is why this lifecycle has to be driven from a skill (or by hand),
+not from a single coordinating agent.
 
 `/engagement` is **operator-gated**: it emits a per-delegation scope envelope,
 records phase state in `gates.jsonl`, and stops for your explicit approval at every

@@ -66,18 +66,20 @@ and report quality. Full types/enums in the JSON Schema; highlights:
 
 | Agent | Writes | Reads |
 |-------|--------|-------|
-| recon-advisor, vuln-scanner, web-hunter, ad-attacker, cloud-security … | new `reported` findings + `evidence[]` | — |
+| recon-advisor, vuln-scanner, web-hunter, ad-attacker, cloud-security …; `full-recon` (skill) | new `reported` findings + `evidence[]` | — |
 | poc-validator | appends `confirmed` / `false_positive` updates | `reported` findings |
 | attack-planner | `chain_id`/`chain_step` updates | `confirmed` findings |
 | report-generator | — | all (collapsed, latest-wins) |
 
 > **Wiring status (complete):** every agent carries a Findings Store section.
-> `recon-advisor`, `vuln-scanner`, and `web-hunter` embed tailored producer
+> `recon-advisor`, `vuln-scanner`, `web-hunter`, and the `full-recon` skill embed tailored producer
 > write-blocks; all other agents — remaining producers and the consumers
 > (`poc-validator`, `attack-planner`, `report-generator`) — receive the canonical
 > role-based block (`agents/_findings-store.md`) injected at provision time by
 > `provision/02-claude.sh`, mirroring the `_scope-guard.md` pattern. Idempotent:
-> re-provisioning skips any agent that already has the section.
+> re-provisioning skips any agent that already has the section. Skill producers
+> (e.g. the `full-recon` skill) embed their write-block **inline** — injection only
+> reaches `agents/`, not `skills/`.
 
 ## Example
 

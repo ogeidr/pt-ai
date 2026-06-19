@@ -33,6 +33,12 @@ You are running full network reconnaissance against in-scope hosts. This skill
 targets (no exploitation, no writes to target systems). Default to the least
 aggressive option at every step.
 
+**When to use this (vs `recon-advisor`).** Use `/full-recon` for the broad first
+pass: many hosts, ranges, or AWS-sourced (EC2/WorkSpaces) targets — host discovery,
+port/service scanning, DNS/WHOIS, and web fingerprinting across the whole list. For
+deep enumeration of a single chosen host, CVE prioritization, or analysis of pasted
+scan output, hand off to the `recon-advisor` agent (Step 9).
+
 The **Evidence directory** shown above is `ENGAGEMENT_DIR`. Use it as an absolute
 path prefix for every output file in this skill. Never use relative paths.
 
@@ -103,8 +109,8 @@ mkdir -p "$ENGAGEMENT_DIR"
 ```
 
 Per in-scope target, save raw output to `$ENGAGEMENT_DIR/` (absolute path, sanitize
-target: `/`→`-`). Defaults follow the recon-advisor conventions (non-root `-sT`,
-rate-limited, timeouts).
+target: `/`→`-`). The **canonical** scan defaults live in the `recon-advisor` agent
+(non-root `-sT`, rate-limited, timeouts); they are mirrored here for standalone use.
 
 ```
 # 1) Liveness / host discovery (skip -Pn unless ICMP is filtered)
@@ -168,9 +174,35 @@ Per-host attack-surface table:
 Then highlight high-value targets: management interfaces, outdated service versions,
 exposed databases, default/misconfigured services, dev/staging in production.
 
-### Step 8 — Recommend next steps
+### Step 8 — Record findings to the store
+
+Append the notable surface findings from this sweep to the engagement's append-only
+findings store at `$ENGAGEMENT_DIR/findings.jsonl`, so later phases (`recon-advisor`,
+`attack-planner`, `report-generator`) can consume them without re-pasting. Log
+**surface facts** — open ports, exposed/outdated services, web stacks, anonymous
+shares — as `"status":"reported"` (usually `info`/`low`, higher when a management
+interface or clearly outdated service is exposed). Never rewrite the file; one
+compact JSON object per line:
+
+```sh
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2.4.29) on web host","target":"10.0.1.15","category":"web","severity":"medium","status":"reported","confidence":"high","evidence":["nmap_svc_10-0-1-15_20260620_140000.txt"],"mitre":["T1046"],"source_agent":"full-recon","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+```
+
+Rules:
+- **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check
+  the file's existing ids first), `title`, `target`, `category`
+  (`network|web|ad|cloud|container|host|credential|other`), `severity`
+  (`info|low|medium|high|critical`), `status`, `source_agent` (`full-recon`),
+  `discovered_at` (ISO-8601 UTC).
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`).
+- Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
+
+### Step 9 — Recommend next steps
 
 - Hand specific findings to `recon-advisor` for deeper enumeration of a chosen host.
+  When you have already logged a finding above, tell `recon-advisor` to **enrich that
+  record (reuse its `id`)** with CVE/prioritization rather than re-reporting it, so a
+  surface fact and its analysis stay one finding.
 - For AWS-hosted targets, cross-reference open ports with `cloud-audit` security-group
   findings (a port open on the host but blocked by SG vs. genuinely internet-facing).
 - Confirmed exploitation is a separate, explicitly authorized phase — this skill maps
