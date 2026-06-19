@@ -50,7 +50,7 @@ apt-get install -y --no-install-recommends \
 # root bash: apt-GPG then verifies every nodejs package. `nodistro` is the
 # distro-agnostic suite, so this works on any apt-family box. Mirrors the gcloud
 # keyring add in 06-cloud.sh.
-if ! node --version 2>/dev/null | grep -qE "^v2[0-9]"; then
+if ! node --version 2>/dev/null | grep -qE "^v(2[0-9]|[3-9][0-9])"; then
     install -d -m 0755 /usr/share/keyrings
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
         | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
@@ -58,6 +58,15 @@ if ! node --version 2>/dev/null | grep -qE "^v2[0-9]"; then
         > /etc/apt/sources.list.d/nodesource.list
     apt-get update -y
     apt-get install -y nodejs
+fi
+
+# Ensure npm separately: Kali/Debian package npm apart from nodejs (and ship a
+# node newer than NodeSource's 20.x, so the block above is skipped and never
+# supplies npm). Without this, 02-claude.sh / 05-opencode.sh die on
+# `npm: command not found`. On a NodeSource box npm is already bundled, so this
+# is a no-op there.
+if ! command -v npm >/dev/null 2>&1; then
+    apt-get install -y npm
 fi
 
 
