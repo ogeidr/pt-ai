@@ -52,8 +52,9 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "../agents",      "/opt/pt-ai/agents"
   config.vm.synced_folder "../skills",      "/opt/pt-ai/skills"
 
-  # Private network for host <-> VM access without NAT overhead
-  config.vm.network "private_network", type: "dhcp"
+  # Single NAT adapter only (added implicitly by Vagrant) — provides outbound
+  # internet + SSH. The host-only `private_network` was removed; the VM reaches
+  # the host (e.g. LM Studio for the local-model path) via the NAT host IP.
 
   # --- Provisioners (run once on first `vagrant up`) -----------------------
   # Ensure root is mounted read-write before any other provisioner runs.
