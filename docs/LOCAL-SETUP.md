@@ -34,7 +34,7 @@ PT_AI_OPENCODE_MODEL=lmstudio/gpt-oss-20b ./pt-ai opencode
 ## Option 1: LM Studio (Recommended)
 
 [LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
-models with an OpenAI-compatible API. opencode inside the Kali VM speaks OpenAI
+models with an OpenAI-compatible API. opencode inside the VM speaks OpenAI
 natively — no translation proxy needed. This is the path verified with pt-ai:
 **`gpt-oss-20b`** is a reliable tool-caller for the agent workflow.
 

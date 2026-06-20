@@ -68,7 +68,7 @@ The agents work on methodology and patterns. They don't need real IPs to give yo
 ### Option 3: Local Models (Maximum Privacy)
 
 For the highest data sensitivity, run a local LLM that never sends data off-machine.
-Run Ollama or LM Studio on your host and point opencode (inside the Kali VM) at it —
+Run Ollama or LM Studio on your host and point opencode (inside the VM) at it —
 opencode speaks OpenAI-compatible APIs natively, so no translation proxy is needed:
 
 ```bash

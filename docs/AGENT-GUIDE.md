@@ -35,6 +35,7 @@ Each agent is a Markdown file in `.claude/agents/` with a YAML frontmatter block
 | **stig-analyst** | STIG compliance, remediation, keep-open justifications | — | Reference specific V-XXXXXX IDs |
 | **forensics-analyst** | DFIR, evidence acquisition, timeline analysis | — | Paste Volatility/Plaso output directly |
 | **malware-analyst** | Static/dynamic analysis, IOC extraction | — | Always work from an isolated environment |
+| **ctf-solver** | CTF / HackTheBox / TryHackMe challenge methodology (web, pwn, crypto, rev, forensics) | — | Standalone use — not part of the client-engagement chain |
 | **report-generator** | Professional pentest reports, executive summaries | — | Specify audience: technical team vs. executives |
 
 **Tier 2 (✓)** agents have the `Bash` tool enabled and compose and execute commands directly after you approve each one. **Advisory (—)** agents analyze pasted data and produce guidance but do not run commands.
@@ -114,6 +115,8 @@ primary format, Sigma secondary.
 ## Workflow Chaining
 
 The agents are designed to work together across the phases of a complete engagement.
+For the visual version of everything below — the orchestrator state machine, the
+delegation protocol, and the safety layers — see [`WORKFLOW.md`](WORKFLOW.md).
 
 At a glance — each phase, its primary agents, and where its output flows next:
 
@@ -131,6 +134,8 @@ At a glance — each phase, its primary agents, and where its output flows next:
 | 9. Reporting | `report-generator` | client delivery |
 
 Each phase is detailed below. Crossing a phase boundary requires operator approval; the reconnaissance → exploitation transition is a **hard gate** (see *Execution Mode* and the `/engagement` skill, which enforces it with state in `gates.jsonl`).
+
+The flow is **forward-only**: it does not auto-trigger a fresh recon phase when exploitation reaches new hosts. In-scope discoveries are enumerated by the pivot specialists; out-of-scope ones are refused; and incorporating new attack surface is a manual `/scope-declare` re-run. See *§8 "What the orchestrator does NOT do"* in [`WORKFLOW.md`](WORKFLOW.md) for the exact limits, including the existence-based gate caveat.
 
 ### Phase 0: Threat Modeling (Optional Pre-Engagement)
 
