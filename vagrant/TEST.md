@@ -522,5 +522,5 @@ import error). STS / scan calls that need real creds may fail with explicit
 - [ ] Phase 6 — API key store/clear/status all work
 - [ ] Phase 7 — snapshot/restore cycle works
 - [ ] Phase 8 — halt + cold boot skips provisioning
-- [ ] Phase 10 — opencode session works end-to-end
+- [ ] Phase 10 — opencode works on key + local-model (durable across provision) + preflight gate aborts when no model
 - [ ] Phase 11 — cloud-audit tools (aws v2 / prowler / scoutsuite / trufflehog / gitleaks / kubeaudit / gcloud / trivy / kubectl / pacu / kube-hunter) execute
