@@ -90,13 +90,13 @@ First, verify the evidence directory and set `ENGAGEMENT_DIR`:
 test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
 ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
 [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
-mkdir -p "$ENGAGEMENT_DIR"
+mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports"
 ```
 
 Save raw JSON output before presenting analysis, using absolute paths:
 
-- Per-region raw JSON: `$ENGAGEMENT_DIR/awsec2_{accountid}_{region}_{YYYYMMDD_HHMMSS}.json`
-- Combined recon summary (markdown table): `$ENGAGEMENT_DIR/awsec2_recon_{accountid}_{YYYYMMDD_HHMMSS}.md`
+- Per-region raw JSON: `$ENGAGEMENT_DIR/scans/awsec2_{accountid}_{region}_{YYYYMMDD_HHMMSS}.json`
+- Combined recon summary (markdown table): `$ENGAGEMENT_DIR/reports/awsec2_recon_{accountid}_{YYYYMMDD_HHMMSS}.md`
 
 Write the markdown summary with the Write tool using the absolute path above. Include a
 header noting the account ID, regions covered, the engagement ID from

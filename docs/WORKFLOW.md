@@ -246,8 +246,16 @@ are **auto-injected** into every routable agent at `./pt-ai provision` by
     ├── scope.md                  # canonical scope record (source of truth)
     ├── findings.jsonl            # append-only findings (what was found)
     ├── gates.jsonl               # append-only phase state (operator approvals)
-    └── <evidence files>          # nmap/nuclei/poc outputs, host-synced
+    ├── scans/                    # raw tool output (nmap/nuclei/ffuf/trufflehog…)
+    ├── reports/                  # consolidated markdown summaries (fullrecon/cloudaudit…)
+    ├── exploit/                  # PoC scripts, attack-chain steps, exploitation artifacts
+    ├── re/                       # reverse-engineering work (Ghidra projects, triage)
+    └── samples/                  # user-provided binaries for RE
 ```
+
+Control files (`scope.md`, `findings.jsonl`, `gates.jsonl`) live at the engagement
+root; everything else is bucketed by category. The `evidence` field in each finding
+is a path **relative to the engagement dir** (e.g. `scans/nmap_svc_….txt`).
 
 Everything under `/engagements/` is synced to the host: evidence appears in real
 time and survives VM snapshot restores.

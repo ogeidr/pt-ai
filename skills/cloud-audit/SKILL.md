@@ -57,7 +57,7 @@ First, verify the evidence directory and set `ENGAGEMENT_DIR`:
 test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
 ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
 [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
-mkdir -p "$ENGAGEMENT_DIR"
+mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports"
 ```
 
 Ask: which provider (`aws` / `azure` / `gcp` / `kubernetes`) and full sweep vs.
@@ -69,7 +69,7 @@ targeted? Both tools default to AWS.
 # Full AWS audit, JSON + HTML evidence into a timestamped dir
 prowler aws \
   --output-formats csv json-ocsf html \
-  --output-directory "$ENGAGEMENT_DIR/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
+  --output-directory "$ENGAGEMENT_DIR/scans/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 ```
@@ -77,7 +77,7 @@ prowler aws \
 prowler aws --severity critical high \
   --service iam s3 ec2 \
   --output-formats json-ocsf \
-  --output-directory "$ENGAGEMENT_DIR/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
+  --output-directory "$ENGAGEMENT_DIR/scans/prowler_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 ```
@@ -90,7 +90,7 @@ prowler aws --list-services
 
 ```
 scout aws --no-browser \
-  --report-dir "$ENGAGEMENT_DIR/scoutsuite_{accountid}_{YYYYMMDD_HHMMSS}"
+  --report-dir "$ENGAGEMENT_DIR/scans/scoutsuite_{accountid}_{YYYYMMDD_HHMMSS}"
 ```
 
 For other providers: `scout azure`, `scout gcp --project-id <id>`, `scout kubernetes`.
@@ -101,7 +101,7 @@ Both tools already write to the `--output-directory` / `--report-dir` you pass â
 keep those timestamped dirs as the raw evidence (don't overwrite them). Then write
 a markdown summary with the Write tool using an absolute path:
 
-- `$ENGAGEMENT_DIR/cloudaudit_{accountid}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/reports/cloudaudit_{accountid}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: provider, account/subscription/project ID, engagement ID from
 `/engagements/scope.md`, tools + versions run, and the collection timestamp.

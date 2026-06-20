@@ -105,48 +105,48 @@ First, verify the evidence directory is accessible and set it:
 test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
 ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
 [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
-mkdir -p "$ENGAGEMENT_DIR"
+mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports"
 ```
 
-Per in-scope target, save raw output to `$ENGAGEMENT_DIR/` (absolute path, sanitize
+Per in-scope target, save raw output to `$ENGAGEMENT_DIR/scans/` (absolute path, sanitize
 target: `/`→`-`). The **canonical** scan defaults live in the `recon-advisor` agent
 (non-root `-sT`, rate-limited, timeouts); they are mirrored here for standalone use.
 
 ```
 # 1) Liveness / host discovery (skip -Pn unless ICMP is filtered)
-nmap -sn TARGET -oN "$ENGAGEMENT_DIR/nmap_ping_{target}_{YYYYMMDD_HHMMSS}.txt"
+nmap -sn TARGET -oN "$ENGAGEMENT_DIR/scans/nmap_ping_{target}_{YYYYMMDD_HHMMSS}.txt"
 
 # 2) Service + default-script scan, top ports, rate-limited (MODERATE)
 nmap -sT -sV -sC --top-ports 1000 \
   --min-rate 100 --max-rate 1000 --host-timeout 300s \
-  TARGET -oN "$ENGAGEMENT_DIR/nmap_svc_{target}_{YYYYMMDD_HHMMSS}.txt"
+  TARGET -oN "$ENGAGEMENT_DIR/scans/nmap_svc_{target}_{YYYYMMDD_HHMMSS}.txt"
 
 # 3) Full TCP port sweep when thoroughness is wanted (slower)
 nmap -sT -p- --min-rate 100 --max-rate 1000 --host-timeout 600s \
-  TARGET -oN "$ENGAGEMENT_DIR/nmap_allports_{target}_{YYYYMMDD_HHMMSS}.txt"
+  TARGET -oN "$ENGAGEMENT_DIR/scans/nmap_allports_{target}_{YYYYMMDD_HHMMSS}.txt"
 ```
 
 For large in-scope ranges, discover first with masscan (rate-limited), then nmap the
 live hosts:
 
 ```
-masscan TARGET_RANGE -p1-65535 --rate 1000 -oL "$ENGAGEMENT_DIR/masscan_{range}_{YYYYMMDD_HHMMSS}.txt"
+masscan TARGET_RANGE -p1-65535 --rate 1000 -oL "$ENGAGEMENT_DIR/scans/masscan_{range}_{YYYYMMDD_HHMMSS}.txt"
 ```
 
 For hostnames, add passive/name intelligence:
 
 ```
-whois HOSTNAME            > "$ENGAGEMENT_DIR/whois_{host}_{YYYYMMDD_HHMMSS}.txt"
-dig ANY HOSTNAME +noall +answer > "$ENGAGEMENT_DIR/dig_{host}_{YYYYMMDD_HHMMSS}.txt"
+whois HOSTNAME            > "$ENGAGEMENT_DIR/scans/whois_{host}_{YYYYMMDD_HHMMSS}.txt"
+dig ANY HOSTNAME +noall +answer > "$ENGAGEMENT_DIR/scans/dig_{host}_{YYYYMMDD_HHMMSS}.txt"
 ```
 
 When web ports (80/443/8080/8443) are open, fingerprint the web layer:
 
 ```
-curl -sILk --connect-timeout 10 --max-time 30 http://TARGET/  > "$ENGAGEMENT_DIR/http_hdr_{target}_{YYYYMMDD_HHMMSS}.txt"
-whatweb -a 3 TARGET                                            > "$ENGAGEMENT_DIR/whatweb_{target}_{YYYYMMDD_HHMMSS}.txt"
+curl -sILk --connect-timeout 10 --max-time 30 http://TARGET/  > "$ENGAGEMENT_DIR/scans/http_hdr_{target}_{YYYYMMDD_HHMMSS}.txt"
+whatweb -a 3 TARGET                                            > "$ENGAGEMENT_DIR/scans/whatweb_{target}_{YYYYMMDD_HHMMSS}.txt"
 # nikto is LOUD — only with user opt-in:
-# nikto -host TARGET -output "$ENGAGEMENT_DIR/nikto_{target}_{YYYYMMDD_HHMMSS}.txt"
+# nikto -host TARGET -output "$ENGAGEMENT_DIR/scans/nikto_{target}_{YYYYMMDD_HHMMSS}.txt"
 ```
 
 Rules:
@@ -159,7 +159,7 @@ Rules:
 Keep all raw output files above. Then write a consolidated summary using the Write tool
 with an absolute path:
 
-- `$ENGAGEMENT_DIR/fullrecon_{engagement}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/reports/fullrecon_{engagement}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: engagement ID from `/engagements/scope.md`, target sources used
 (direct / EC2 / WorkSpaces), the final in-scope target list, tools run, and timestamps.
@@ -185,7 +185,7 @@ interface or clearly outdated service is exposed). Never rewrite the file; one
 compact JSON object per line:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2.4.29) on web host","target":"10.0.1.15","category":"web","severity":"medium","status":"reported","confidence":"high","evidence":["nmap_svc_10-0-1-15_20260620_140000.txt"],"mitre":["T1046"],"source_agent":"full-recon","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2.4.29) on web host","target":"10.0.1.15","category":"web","severity":"medium","status":"reported","confidence":"high","evidence":["scans/nmap_svc_10-0-1-15_20260620_140000.txt"],"mitre":["T1046"],"source_agent":"full-recon","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
@@ -194,7 +194,7 @@ Rules:
   (`network|web|ad|cloud|container|host|credential|other`), `severity`
   (`info|low|medium|high|critical`), `status`, `source_agent` (`full-recon`),
   `discovered_at` (ISO-8601 UTC).
-- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`).
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nmap_svc_…`).
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 
 ### Step 9 — Recommend next steps

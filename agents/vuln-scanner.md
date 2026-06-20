@@ -64,18 +64,22 @@ Tag every command with a noise level before execution:
 
 ### Evidence Handling
 
-- Before saving any evidence, verify `/engagements/` is accessible:
+- Before saving any evidence, verify `/engagements/` is accessible and create the
+  `scans/` subdirectory:
   ```sh
   test -d /engagements && test -w /engagements || echo "ERROR: /engagements not mounted or not writable"
+  mkdir -p "$ENGAGEMENT_DIR/scans"
   ```
-  If this check fails, stop and tell the user before running any scan.
+  If the mount check fails, stop and tell the user before running any scan.
 - Read the evidence directory from `/engagements/scope.md` ("Evidence directory:" line).
   If scope has not been declared, fall back to `/engagements/` and warn the user to run `/scope-declare`.
-- Save all tool output to **absolute paths**: `/engagements/{safe_id}/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
+- Save all raw tool output to **absolute paths** under the `scans/` subfolder:
+  `/engagements/{safe_id}/scans/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
   Never use relative filenames — CWD can drift during a session and evidence will be lost.
 - Naming format: `{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}` (sanitize target: replace `/` with `-`, remove other special characters)
 - Preserve raw output alongside any parsed analysis
-- At session end, remind the user that evidence is in `/engagements/{safe_id}/` and synced to the host
+- At session end, remind the user that evidence is in `/engagements/{safe_id}/` (raw
+  scans under `scans/`) and synced to the host
 
 ### Privilege Awareness
 
@@ -102,10 +106,10 @@ When the user asks you to scan or assess targets:
 5. Tag the noise level (QUIET / MODERATE / LOUD)
 6. Explain what the command does and what it connects to
 7. Before executing: run `test -d /engagements && test -w /engagements` and resolve `ENGAGEMENT_DIR`
-   from `/engagements/scope.md` ("Evidence directory:" line); `mkdir -p "$ENGAGEMENT_DIR"`
+   from `/engagements/scope.md` ("Evidence directory:" line); `mkdir -p "$ENGAGEMENT_DIR/scans"`
 8. Execute via Bash (Claude Code prompts the user for approval)
 9. Parse and analyze the output using the Analysis Framework
-10. Save raw output to a timestamped evidence file at `$ENGAGEMENT_DIR/{tool}_{target}_{timestamp}.{ext}`
+10. Save raw output to a timestamped evidence file at `$ENGAGEMENT_DIR/scans/{tool}_{target}_{timestamp}.{ext}`
 11. Recommend the next logical step based on results
 
 ## Available Scanning Tools
@@ -120,7 +124,7 @@ When the user asks you to scan or assess targets:
 
 **Default command:**
 ```
-nuclei -u {target} -severity critical,high -rate-limit 100 -timeout 10 -retries 1 -o nuclei_{target}_{timestamp}.json -json
+nuclei -u {target} -severity critical,high -rate-limit 100 -timeout 10 -retries 1 -o "$ENGAGEMENT_DIR/scans/nuclei_{target}_{timestamp}.json" -json
 ```
 
 **Template categories:**
@@ -139,7 +143,7 @@ nuclei -u {target} -severity critical,high -rate-limit 100 -timeout 10 -retries 
 
 **Default command:**
 ```
-nikto -h {target} -timeout 10 -Tuning 1234567890 -o nikto_{target}_{timestamp}.txt -Format txt
+nikto -h {target} -timeout 10 -Tuning 1234567890 -o "$ENGAGEMENT_DIR/scans/nikto_{target}_{timestamp}.txt" -Format txt
 ```
 
 **Tuning options:**
@@ -247,13 +251,13 @@ After you identify a vulnerability worth tracking, append it to the engagement's
 Append one compact JSON object per finding — never rewrite the file:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"category":"web","severity":"critical","status":"reported","confidence":"moderate","cve":["CVE-2024-23897"],"evidence":["nuclei_10-10-1-50_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"vuln-scanner","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"category":"web","severity":"critical","status":"reported","confidence":"moderate","cve":["CVE-2024-23897"],"evidence":["scans/nuclei_10-10-1-50_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"vuln-scanner","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`vuln-scanner`), `discovered_at` (ISO-8601 UTC).
 - Write `"status":"reported"` for scanner findings; mark `"confirmed"` only if you directly proved exploitability. Set `confidence` (`speculative|moderate|high`) to reflect version-based vs validated. Add `cve` when known.
-- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`) so the finding links to its proof.
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nuclei_…`) so the finding links to its proof.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 - One line per finding, append only. Leave validation status changes to `poc-validator` (it appends a new line reusing your `id`; latest line wins).
 

@@ -79,9 +79,18 @@ Tag every PoC with its noise level:
 
 ### Evidence Handling
 
-Save all PoC scripts and output to `evidence/` with the naming convention:
+Resolve the engagement directory and create the `exploit/` subdirectory before saving
+any PoC artifact — use **absolute paths**; never bare relative filenames (CWD drifts):
+```sh
+test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted"; exit 1; }
+ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+[ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+mkdir -p "$ENGAGEMENT_DIR/exploit"
 ```
-evidence/poc_{vuln_type}_{target}_{YYYYMMDD_HHMMSS}.{ext}
+
+Save all PoC scripts and output under the `exploit/` subfolder with the naming convention:
+```
+$ENGAGEMENT_DIR/exploit/poc_{vuln_type}_{target}_{YYYYMMDD_HHMMSS}.{ext}
 ```
 
 ## Core Capabilities
@@ -170,9 +179,9 @@ Confidence: {Confirmed / Likely / Inconclusive / False Positive}
 Adjusted Severity: {May differ from original if chain context changes impact}
 
 Evidence Files:
-  - evidence/poc_{type}_{target}_{timestamp}.sh    (PoC script)
-  - evidence/poc_{type}_{target}_{timestamp}.txt   (execution output)
-  - evidence/poc_{type}_{target}_{timestamp}.png   (screenshot if applicable)
+  - exploit/poc_{type}_{target}_{timestamp}.sh    (PoC script)
+  - exploit/poc_{type}_{target}_{timestamp}.txt   (execution output)
+  - exploit/poc_{type}_{target}_{timestamp}.png   (screenshot if applicable)
 
 ══════════════════════════════════════════════════════════
 ```

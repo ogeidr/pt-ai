@@ -81,18 +81,23 @@ raise it, e.g. `echo LOUD > /engagements/.opsec_ceiling`.
 
 ### Evidence Handling
 
-- Before saving any evidence, verify `/engagements/` is accessible:
+- Before saving any evidence, verify `/engagements/` is accessible and create the
+  `scans/` subdirectory:
   ```sh
   test -d /engagements && test -w /engagements || echo "ERROR: /engagements not mounted or not writable"
+  mkdir -p "$ENGAGEMENT_DIR/scans"
   ```
-  If this check fails, stop and tell the user before running any scan.
+  If the mount check fails, stop and tell the user before running any scan.
 - Read the evidence directory from `/engagements/scope.md` ("Evidence directory:" line).
   If scope has not been declared, fall back to `/engagements/` and warn the user to run `/scope-declare`.
-- Save all tool output to **absolute paths**: `/engagements/{safe_id}/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
+- Save all raw tool output to **absolute paths** under the `scans/` subfolder:
+  `/engagements/{safe_id}/scans/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
   Never use relative filenames — CWD can drift during a session and evidence will be lost.
 - Naming format: `{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}` (sanitize target: replace `/` with `-`, remove other special characters)
 - Preserve raw output alongside any parsed analysis
-- At session end, remind the user that evidence is in `/engagements/{safe_id}/` and synced to the host
+- At session end, remind the user that evidence is in `/engagements/{safe_id}/` (raw
+  scans under `scans/`, consolidated reports under `reports/`, PoC/exploit artifacts
+  under `exploit/`) and synced to the host
 
 ### Privilege Awareness
 

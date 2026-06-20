@@ -69,45 +69,45 @@ First, verify the evidence directory and set `ENGAGEMENT_DIR`:
 test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
 ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
 [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
-mkdir -p "$ENGAGEMENT_DIR"
+mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports"
 ```
 
 Always include `--no-update` (don't self-update mid-engagement) and `--json` (for evidence).
-All output files use `$ENGAGEMENT_DIR/` as the absolute prefix.
+Raw scan files use `$ENGAGEMENT_DIR/scans/` as the absolute prefix.
 
 **S3 bucket** (single bucket, or whole account if authorized):
 
 ```
 # Detect only, no verification (default-safe)
 trufflehog s3 --bucket=BUCKET_NAME --no-update --results=unknown,unverified --json \
-  > "$ENGAGEMENT_DIR/trufflehog_s3_BUCKET_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/trufflehog_s3_BUCKET_{YYYYMMDD_HHMMSS}.json"
 ```
 
 ```
 # Scan all buckets the in-scope role can reach (broader; mind CloudTrail volume)
 trufflehog s3 --no-update --results=unknown,unverified --json \
-  > "$ENGAGEMENT_DIR/trufflehog_s3_{accountid}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/trufflehog_s3_{accountid}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **GCS bucket:**
 
 ```
 trufflehog gcs --bucket=BUCKET_NAME --no-update --results=unknown,unverified --json \
-  > "$ENGAGEMENT_DIR/trufflehog_gcs_BUCKET_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/trufflehog_gcs_BUCKET_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Git repository** (in-scope source repo):
 
 ```
 trufflehog git REPO_URL --no-update --results=unknown,unverified --json \
-  > "$ENGAGEMENT_DIR/trufflehog_git_{repo}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/trufflehog_git_{repo}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Filesystem** (data already looted to disk during the engagement):
 
 ```
 trufflehog filesystem PATH --no-update --results=unknown,unverified --json \
-  > "$ENGAGEMENT_DIR/trufflehog_fs_{label}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/trufflehog_fs_{label}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Only if verification is explicitly authorized for an in-scope provider**, swap to:
@@ -118,7 +118,7 @@ trufflehog filesystem PATH --no-update --results=unknown,unverified --json \
 The redirected `*.json` files above are the raw evidence — keep them. Then write a
 markdown summary with the Write tool using an absolute path:
 
-- `$ENGAGEMENT_DIR/secretsscan_{label}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/reports/secretsscan_{label}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: source type and target, engagement ID from `/engagements/scope.md`,
 whether verification was used (and its authorization), and the collection timestamp.

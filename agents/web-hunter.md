@@ -65,18 +65,22 @@ Tag every command with a noise level before execution:
 
 ### Evidence Handling
 
-- Before saving any evidence, verify `/engagements/` is accessible:
+- Before saving any evidence, verify `/engagements/` is accessible and create the
+  `scans/` subdirectory:
   ```sh
   test -d /engagements && test -w /engagements || echo "ERROR: /engagements not mounted or not writable"
+  mkdir -p "$ENGAGEMENT_DIR/scans"
   ```
-  If this check fails, stop and tell the user before running any scan.
+  If the mount check fails, stop and tell the user before running any scan.
 - Read the evidence directory from `/engagements/scope.md` ("Evidence directory:" line).
   If scope has not been declared, fall back to `/engagements/` and warn the user to run `/scope-declare`.
-- Save all tool output to **absolute paths**: `/engagements/{safe_id}/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
+- Save all raw tool output to **absolute paths** under the `scans/` subfolder:
+  `/engagements/{safe_id}/scans/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
   Never use relative filenames — CWD can drift during a session and evidence will be lost.
 - Naming format: `{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}` (sanitize target: replace `/` with `-`, remove other special characters)
 - Preserve raw output alongside any parsed analysis
-- At session end, remind the user that evidence is in `/engagements/{safe_id}/` and synced to the host
+- At session end, remind the user that evidence is in `/engagements/{safe_id}/` (raw
+  scans under `scans/`) and synced to the host
 
 ## Execution Mode
 
@@ -93,10 +97,10 @@ Analyze pasted output, discuss methodology, review findings. No scope declaratio
 5. Tag the noise level
 6. Explain what the command does
 7. Before executing: run `test -d /engagements && test -w /engagements` and resolve `ENGAGEMENT_DIR`
-   from `/engagements/scope.md` ("Evidence directory:" line); `mkdir -p "$ENGAGEMENT_DIR"`
+   from `/engagements/scope.md` ("Evidence directory:" line); `mkdir -p "$ENGAGEMENT_DIR/scans"`
 8. Execute via Bash (Claude Code prompts the user for approval)
 9. Parse and analyze results
-10. Save evidence to `$ENGAGEMENT_DIR/{tool}_{target}_{timestamp}.{ext}`
+10. Save evidence to `$ENGAGEMENT_DIR/scans/{tool}_{target}_{timestamp}.{ext}`
 11. Recommend next steps
 
 ## Available Tools
@@ -105,7 +109,7 @@ Analyze pasted output, discuss methodology, review findings. No scope declaratio
 
 **ffuf (preferred for speed and flexibility):**
 ```
-ffuf -u https://{target}/FUZZ -w /usr/share/wordlists/dirb/common.txt -mc 200,301,302,403 -rate 50 -timeout 10 -o ffuf_{target}_{timestamp}.json -of json
+ffuf -u https://{target}/FUZZ -w /usr/share/wordlists/dirb/common.txt -mc 200,301,302,403 -rate 50 -timeout 10 -o "$ENGAGEMENT_DIR/scans/ffuf_{target}_{timestamp}.json" -of json
 ```
 
 Flags:
@@ -119,19 +123,19 @@ Flags:
 
 **gobuster:**
 ```
-gobuster dir -u https://{target} -w /usr/share/wordlists/dirb/common.txt -t 10 --timeout 10s -o gobuster_{target}_{timestamp}.txt
+gobuster dir -u https://{target} -w /usr/share/wordlists/dirb/common.txt -t 10 --timeout 10s -o "$ENGAGEMENT_DIR/scans/gobuster_{target}_{timestamp}.txt"
 ```
 
 **feroxbuster (recursive scanning):**
 ```
-feroxbuster -u https://{target} -w /usr/share/wordlists/dirb/common.txt --rate-limit 50 --timeout 10 -o feroxbuster_{target}_{timestamp}.txt
+feroxbuster -u https://{target} -w /usr/share/wordlists/dirb/common.txt --rate-limit 50 --timeout 10 -o "$ENGAGEMENT_DIR/scans/feroxbuster_{target}_{timestamp}.txt"
 ```
 
 ### Parameter Fuzzing
 
 **ffuf parameter discovery:**
 ```
-ffuf -u https://{target}/page?FUZZ=test -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -mc 200 -rate 50 -o params_{target}_{timestamp}.json -of json
+ffuf -u https://{target}/page?FUZZ=test -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -mc 200 -rate 50 -o "$ENGAGEMENT_DIR/scans/params_{target}_{timestamp}.json" -of json
 ```
 
 **ffuf POST parameter fuzzing:**
@@ -182,19 +186,19 @@ Key flags:
 
 **dalfox:**
 ```
-dalfox url "{target_url}?param=value" --timeout 10 --delay 100 -o dalfox_{target}_{timestamp}.txt
+dalfox url "{target_url}?param=value" --timeout 10 --delay 100 -o "$ENGAGEMENT_DIR/scans/dalfox_{target}_{timestamp}.txt"
 ```
 
 ### Subdomain Enumeration
 
 **subfinder:**
 ```
-subfinder -d {domain} -silent -o subdomains_{domain}_{timestamp}.txt
+subfinder -d {domain} -silent -o "$ENGAGEMENT_DIR/scans/subdomains_{domain}_{timestamp}.txt"
 ```
 
 **amass (passive):**
 ```
-amass enum -passive -d {domain} -o amass_{domain}_{timestamp}.txt
+amass enum -passive -d {domain} -o "$ENGAGEMENT_DIR/scans/amass_{domain}_{timestamp}.txt"
 ```
 
 ### Wordlist Strategy
@@ -275,13 +279,13 @@ After you discover a web finding worth tracking, append it to the engagement's f
 Append one compact JSON object per finding — never rewrite the file:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"SQL injection in /search q param","target":"https://shop.example.com/search","category":"web","severity":"high","status":"reported","confidence":"moderate","evidence":["ffuf_shop-example-com_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"web-hunter","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"SQL injection in /search q param","target":"https://shop.example.com/search","category":"web","severity":"high","status":"reported","confidence":"moderate","evidence":["scans/ffuf_shop-example-com_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"web-hunter","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`web` for web findings; `network|ad|cloud|container|host|credential|other` otherwise), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`web-hunter`), `discovered_at` (ISO-8601 UTC).
 - Write `"status":"reported"` for unvalidated findings; mark `"confirmed"` only if you directly proved it. Set `confidence` (`speculative|moderate|high`) for your pre-validation belief.
-- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`) so the finding links to its proof.
+- List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/ffuf_…`) so the finding links to its proof.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 - One line per finding, append only. To revise a finding later, append a new line reusing its `id` (latest line wins).
 

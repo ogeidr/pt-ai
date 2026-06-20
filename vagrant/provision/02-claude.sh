@@ -79,9 +79,14 @@ Engagement workspace: `/engagements/` (host-synced — always use absolute paths
   from `/engagements/scope.md`, e.g.:
   ```sh
   ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
-  mkdir -p "$ENGAGEMENT_DIR"
+  mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports" "$ENGAGEMENT_DIR/exploit"
   ```
-- Save all tool output to `$ENGAGEMENT_DIR/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`.
+- Evidence is organized into category subfolders under `$ENGAGEMENT_DIR/`:
+  - `scans/`   — raw tool output: `scans/{tool}_{target}_{YYYYMMDD_HHMMSS}.{ext}`
+  - `reports/` — consolidated markdown summaries: `reports/{name}_{YYYYMMDD_HHMMSS}.md`
+  - `exploit/` — PoC scripts, attack-chain steps, exploitation artifacts
+  - (`re/` and `samples/` are used by the reverse-engineering skills.)
+  Control files (`scope.md`, `findings.jsonl`, `gates.jsonl`) stay at the engagement root.
 - Before the first scan, verify the mount: `test -d /engagements && test -w /engagements`.
 
 Cloud-audit toolset (pre-installed, on PATH):

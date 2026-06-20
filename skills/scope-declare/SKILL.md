@@ -94,5 +94,7 @@ shown — readers strip it with `sed 's/.*Evidence directory: //'`, which markdo
 bold would break.
 
 Finally, confirm to the user: "Scope is set. Evidence will be saved to
-`/engagements/{safe_id}/`. All agents will operate within the declared
-boundaries. You can update scope at any time by re-running `/scope-declare`."
+`/engagements/{safe_id}/`, organized into `scans/` (raw tool output), `reports/`
+(consolidated summaries), and `exploit/` (PoC/exploitation artifacts). All agents
+will operate within the declared boundaries. You can update scope at any time by
+re-running `/scope-declare`."

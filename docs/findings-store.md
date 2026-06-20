@@ -19,7 +19,7 @@ machine contract is [`schema/findings.schema.json`](../schema/findings.schema.js
 
 ## Location & format
 
-- Path: `/engagements/{safe_id}/findings.jsonl` (same dir as `scope.md` and evidence).
+- Path: `/engagements/{safe_id}/findings.jsonl` (same dir as `scope.md`; evidence lives in the `scans/`, `reports/`, and `exploit/` subfolders alongside).
 - One finding per line (JSONL) — append-friendly, no rewrite races, git-diffable.
 - **Append-only, latest-wins.** To update a finding (e.g. validation flips it from
   `reported` to `confirmed`), append a *new* line reusing the same `id` with a fresh
@@ -58,7 +58,7 @@ and report quality. Full types/enums in the JSON Schema; highlights:
 | `severity` | info/low/medium/high/critical |
 | `confidence` | analyst confidence *before* validation (status is the *outcome*) |
 | `status` | lifecycle / validation state — drives precision |
-| `evidence` | paths to raw files under the engagement dir — the propagation glue |
+| `evidence` | paths **relative to the engagement dir**, bucketed by category (`scans/…` raw output, `exploit/…` PoC artifacts) — the propagation glue |
 | `mitre` | ATT&CK IDs (`T1190`, `T1021.002`) |
 | `chain_id` / `chain_step` | links a finding into an `attack-planner` chain |
 
@@ -84,8 +84,8 @@ and report quality. Full types/enums in the JSON Schema; highlights:
 ## Example
 
 ```json
-{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"service":"https","category":"web","phase":"vuln-assessment","severity":"critical","cvss":9.8,"confidence":"high","status":"reported","cve":["CVE-2024-23897"],"mitre":["T1190"],"evidence":["nuclei_10-10-1-50_20260607_140000.txt"],"source_agent":"vuln-scanner","source_tool":"nuclei","engagement":"acme-2026","discovered_at":"2026-06-07T14:00:00Z"}
-{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","category":"web","severity":"critical","status":"confirmed","confidence":"high","chain_id":"C1","chain_step":1,"evidence":["nuclei_10-10-1-50_20260607_140000.txt","poc_10-10-1-50_20260607_150000.txt"],"source_agent":"poc-validator","discovered_at":"2026-06-07T14:00:00Z","updated_at":"2026-06-07T15:00:00Z"}
+{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"service":"https","category":"web","phase":"vuln-assessment","severity":"critical","cvss":9.8,"confidence":"high","status":"reported","cve":["CVE-2024-23897"],"mitre":["T1190"],"evidence":["scans/nuclei_10-10-1-50_20260607_140000.txt"],"source_agent":"vuln-scanner","source_tool":"nuclei","engagement":"acme-2026","discovered_at":"2026-06-07T14:00:00Z"}
+{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","category":"web","severity":"critical","status":"confirmed","confidence":"high","chain_id":"C1","chain_step":1,"evidence":["scans/nuclei_10-10-1-50_20260607_140000.txt","exploit/poc_10-10-1-50_20260607_150000.txt"],"source_agent":"poc-validator","discovered_at":"2026-06-07T14:00:00Z","updated_at":"2026-06-07T15:00:00Z"}
 ```
 
 Two lines, same `id`: the finding was reported by `vuln-scanner`, then confirmed by

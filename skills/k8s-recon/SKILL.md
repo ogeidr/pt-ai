@@ -67,24 +67,24 @@ First, verify the evidence directory and set `ENGAGEMENT_DIR`:
 test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted or not writable"; exit 1; }
 ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
 [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
-mkdir -p "$ENGAGEMENT_DIR"
+mkdir -p "$ENGAGEMENT_DIR/scans" "$ENGAGEMENT_DIR/reports"
 ```
 
-Always add `--report json` and `--log INFO` for clean, parseable evidence. All output
-files use `$ENGAGEMENT_DIR/` as the absolute prefix.
+Always add `--report json` and `--log INFO` for clean, parseable evidence. Raw scan
+files use `$ENGAGEMENT_DIR/scans/` as the absolute prefix.
 
 **Remote host(s)** — specific in-scope IPs/hostnames (preferred):
 
 ```
 kube-hunter --remote TARGET --report json --log INFO \
-  > "$ENGAGEMENT_DIR/kubehunter_{target}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/kubehunter_{target}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Network range** — ONLY when the entire CIDR is in scope:
 
 ```
 kube-hunter --cidr CIDR --report json --log INFO \
-  > "$ENGAGEMENT_DIR/kubehunter_{cidr}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/kubehunter_{cidr}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **From inside a pod** — internal attack-surface view (e.g., for a compromised-pod
@@ -92,14 +92,14 @@ scenario, where allowed):
 
 ```
 kube-hunter --pod --report json --log INFO \
-  > "$ENGAGEMENT_DIR/kubehunter_pod_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/kubehunter_pod_{YYYYMMDD_HHMMSS}.json"
 ```
 
 **Active (intrusive) — ONLY with explicit authorization from Step 2:**
 
 ```
 kube-hunter --remote TARGET --active --report json --log INFO \
-  > "$ENGAGEMENT_DIR/kubehunter_active_{target}_{YYYYMMDD_HHMMSS}.json"
+  > "$ENGAGEMENT_DIR/scans/kubehunter_active_{target}_{YYYYMMDD_HHMMSS}.json"
 ```
 
 ### Step 5 — Save evidence
@@ -107,7 +107,7 @@ kube-hunter --remote TARGET --active --report json --log INFO \
 The redirected `*.json` files are the raw evidence — keep them. Then write a markdown
 summary with the Write tool using an absolute path:
 
-- `$ENGAGEMENT_DIR/k8srecon_{label}_{YYYYMMDD_HHMMSS}.md`
+- `$ENGAGEMENT_DIR/reports/k8srecon_{label}_{YYYYMMDD_HHMMSS}.md`
 
 Header must note: scan vector and target, passive vs. active (and active authorization
 if used), engagement ID from `/engagements/scope.md`, and the collection timestamp.

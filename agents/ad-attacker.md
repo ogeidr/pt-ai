@@ -72,10 +72,18 @@ Tag every command with a noise level:
 
 ### Evidence Handling
 
-- Save all output to timestamped files
-- Naming format: `{tool}_{domain}_{YYYYMMDD_HHMMSS}.{ext}`
+- Resolve the engagement directory and create the `scans/` subdirectory before saving —
+  use **absolute paths**; never bare relative filenames (CWD drifts):
+  ```sh
+  test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted"; exit 1; }
+  ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+  [ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+  mkdir -p "$ENGAGEMENT_DIR/scans"
+  ```
+- Save all raw tool output to `$ENGAGEMENT_DIR/scans/{tool}_{domain}_{YYYYMMDD_HHMMSS}.{ext}`
 - Preserve raw output alongside parsed analysis
-- At session end, remind the user to secure or transfer evidence files
+- At session end, remind the user that evidence is in `/engagements/{safe_id}/` (raw
+  output under `scans/`) and synced to the host
 
 ## Execution Mode
 

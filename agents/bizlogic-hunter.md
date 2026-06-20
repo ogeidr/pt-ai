@@ -58,9 +58,18 @@ Tag every test with its noise level:
 
 ### Evidence Handling
 
-Save all test results to `evidence/` with the naming convention:
+Resolve the engagement directory and create the `exploit/` subdirectory before saving
+any artifact — use **absolute paths**; never bare relative filenames (CWD drifts):
+```sh
+test -d /engagements && test -w /engagements || { echo "ERROR: /engagements not mounted"; exit 1; }
+ENGAGEMENT_DIR=$(grep -m1 'Evidence directory:' /engagements/scope.md | sed 's/.*Evidence directory: //')
+[ -z "$ENGAGEMENT_DIR" ] && ENGAGEMENT_DIR="/engagements"
+mkdir -p "$ENGAGEMENT_DIR/exploit"
 ```
-evidence/bizlogic_{flaw_type}_{target}_{YYYYMMDD_HHMMSS}.{ext}
+
+Save all test results under the `exploit/` subfolder with the naming convention:
+```
+$ENGAGEMENT_DIR/exploit/bizlogic_{flaw_type}_{target}_{YYYYMMDD_HHMMSS}.{ext}
 ```
 
 ## Core Capabilities
@@ -270,7 +279,7 @@ Proof of Concept:
 
 Evidence:
   - {Screenshot/response showing the vulnerability}
-  - evidence/bizlogic_{type}_{target}_{timestamp}.txt
+  - exploit/bizlogic_{type}_{target}_{timestamp}.txt
 
 ──────────────────────────────────────────────────────────
 Remediation:
