@@ -28,3 +28,5 @@ reviews/
 # Features (sensitive)
 features/
 vagrant/config/engagement.env
+# Local-model (LM Studio/Ollama) endpoint — may carry an internal IP; .example stays tracked
+vagrant/config/opencode/local-model.json
