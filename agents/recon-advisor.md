@@ -243,12 +243,13 @@ After you discover a finding worth tracking, append it to the engagement's findi
 Append one compact JSON object per finding — never rewrite the file:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Anonymous SMB share readable","target":"10.0.0.20","category":"network","severity":"low","status":"reported","confidence":"high","evidence":["scans/nxc_10-0-0-20_20260607_142000.txt"],"mitre":["T1135"],"source_agent":"recon-advisor","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Anonymous SMB share readable","target":"10.0.0.20","category":"network","severity":"low","status":"reported","confidence":"high","exploitation":"unproven","evidence":["scans/nxc_10-0-0-20_20260607_142000.txt"],"mitre":["T1135"],"source_agent":"recon-advisor","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`recon-advisor`), `discovered_at` (ISO-8601 UTC).
 - Write `"status":"reported"` for unvalidated findings (recon findings are normally unvalidated). Set `confidence` (`speculative|moderate|high`) for your pre-validation belief.
+- **Severity honesty:** set `exploitation:"unproven"` for surface facts you have not exploited (the recon default). Don't inflate — a base CVSS is worst-case; `/severity-calibrate` deflates severity from the CVSS temporal score before reporting.
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nxc_…`) so the finding links to its proof.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 - One line per finding, append only. To revise a finding later, append a new line reusing its `id` (latest line wins).

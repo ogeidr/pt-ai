@@ -20,7 +20,7 @@ enumeration, credential or privesc discovery, CI/CD or business-logic flaws):
 append a `reported` record as you find each one —
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"<short title>","target":"<ip/host/url/arn>","category":"<network|web|ad|cloud|container|host|credential|other>","severity":"<info|low|medium|high|critical>","status":"reported","confidence":"<speculative|moderate|high>","evidence":["scans/<evidence_file>"],"mitre":["T1190"],"source_agent":"<your agent name>","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"<short title>","target":"<ip/host/url/arn>","category":"<network|web|ad|cloud|container|host|credential|other>","severity":"<info|low|medium|high|critical>","status":"reported","confidence":"<speculative|moderate|high>","exploitation":"<unproven|poc|functional|confirmed>","evidence":["scans/<evidence_file>"],"mitre":["T1190"],"source_agent":"<your agent name>","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Required fields: `schema_version` ("1.0"), `id` (`F-NNNN`, next unused — check the
@@ -29,9 +29,21 @@ file's existing ids first), `title`, `target`, `category`, `severity`, `status`,
 file(s) you saved in `evidence`; add `cve`/`mitre` when known; omit fields you
 don't have rather than guessing.
 
+**Severity honesty (MANDATORY — prevents over-rating).** A CVSS *base* score is the
+**worst case**; it is NOT what you observed. Set `severity` provisionally from the base,
+but **always** record the truth of what you saw:
+- Set `exploitation` honestly: `unproven` for a version/banner/scanner match you did not
+  exploit (this is the default for discovery), `poc`/`functional` if working exploit code
+  exists publicly, `confirmed` only if YOU proved it this engagement.
+- **Do NOT report a `critical`/`high` off a version match alone.** Leave `status:"reported"`
+  and an honest `confidence`; the provisional severity will be **recalibrated down** from the
+  CVSS *temporal* score by `/severity-calibrate` before the report. Inflated, unexploited
+  criticals are the #1 reporting defect — don't create them.
+
 **If you VALIDATE findings** (poc-validator): append a new line reusing the
 finding's `id` with `"status":"confirmed"` or `"status":"false_positive"`, your
-own `source_agent`, an `updated_at`, and the confirming `evidence`.
+own `source_agent`, an `updated_at`, the confirming `evidence`, and — on confirm —
+`"exploitation":"confirmed"` so calibration credits the proven exploit.
 
 **If you PLAN attacks** (attack-planner, exploit-chainer): append a new line
 reusing the `id` with `"chain_id"` and `"chain_step"` set, so the chain links back

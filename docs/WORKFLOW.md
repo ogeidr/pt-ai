@@ -93,7 +93,7 @@ flowchart LR
     end
 
     subgraph p9["9. Reporting"]
-        rep[report-generator]
+        cal[severity-calibrate] --> rep[report-generator]
     end
 
     pre --> p2 --> p3 --> p4
@@ -179,6 +179,8 @@ flowchart TD
     pocv -->|confirmed / false_positive| store
     store -->|confirmed| apl[attack-planner adds chain_id]
     apl --> store
+    store -->|collapsed, latest-wins| cal[severity-calibrate]
+    cal -->|deflated severity + temporal score| store
     store -->|collapsed, latest-wins| repgen[report-generator]
 
     agent -.->|tool output = untrusted data,<br/>cannot expand scope| orch
@@ -189,6 +191,13 @@ flowchart TD
 `confirmed / (confirmed + false_positive)`. Producers (recon-advisor, vuln-scanner,
 web-hunter, ad-attacker, cloud-security…, and the `/full-recon` skill) append
 `reported`; consumers (attack-planner, report-generator) read back.
+
+**Severity calibration (before reporting):** producers set a *provisional* severity from the
+CVSS base plus an honest `exploitation` marker (default `unproven`). The `/severity-calibrate`
+skill then recomputes each finding's `severity` from the CVSS v3.1 **temporal** score
+(base × Exploit-Maturity × Remediation × Report-Confidence), **deflate-only**, and labels every
+unproven finding **Theoretical** — so version-only criticals stop being reported as critical.
+`report-generator` renders the calibrated values.
 
 ---
 

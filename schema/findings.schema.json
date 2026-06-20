@@ -18,8 +18,8 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0",
-      "description": "Schema contract version. Bump when adding/removing fields."
+      "enum": ["1.0", "1.1"],
+      "description": "Schema contract version. 1.0 = original; 1.1 adds the calibration fields (exploitation, cvss_vector, cvss_temporal). Old 1.0 records remain valid; /severity-calibrate writes 1.1."
     },
     "id": {
       "type": "string",
@@ -43,7 +43,26 @@
       "description": "Engagement phase that produced the finding."
     },
     "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
-    "cvss": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+    "cvss": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 10,
+      "description": "CVSS v3.1 BASE score (worst-case). Calibration deflates this into cvss_temporal."
+    },
+    "cvss_vector": {
+      "type": "string",
+      "description": "Full CVSS v3.1 vector including temporal metrics, e.g. CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:U/RC:R. Written by severity-calibrate."
+    },
+    "cvss_temporal": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 10,
+      "description": "CVSS v3.1 temporal score = roundup(base x E x RL x RC). Deflate-only; severity is derived from this after calibration."
+    },
+    "exploitation": {
+      "enum": ["unproven", "poc", "functional", "confirmed"],
+      "description": "Observed exploitation state and CVSS Exploit Code Maturity (E) driver. confirmed = proven in THIS engagement (E:H); functional = working public exploit (E:F); poc = PoC only (E:P); unproven = theoretical/version-only (E:U). Anything other than 'confirmed' is reported as Theoretical."
+    },
     "confidence": {
       "enum": ["speculative", "moderate", "high"],
       "description": "Analyst confidence BEFORE validation. Validation outcome lives in status."

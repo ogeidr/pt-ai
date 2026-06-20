@@ -251,12 +251,13 @@ After you identify a vulnerability worth tracking, append it to the engagement's
 Append one compact JSON object per finding — never rewrite the file:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"category":"web","severity":"critical","status":"reported","confidence":"moderate","cve":["CVE-2024-23897"],"evidence":["scans/nuclei_10-10-1-50_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"vuln-scanner","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth RCE","target":"10.10.1.50","port":443,"category":"web","severity":"critical","status":"reported","confidence":"moderate","exploitation":"unproven","cve":["CVE-2024-23897"],"cvss":9.8,"evidence":["scans/nuclei_10-10-1-50_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"vuln-scanner","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`vuln-scanner`), `discovered_at` (ISO-8601 UTC).
-- Write `"status":"reported"` for scanner findings; mark `"confirmed"` only if you directly proved exploitability. Set `confidence` (`speculative|moderate|high`) to reflect version-based vs validated. Add `cve` when known.
+- Write `"status":"reported"` for scanner findings; mark `"confirmed"` only if you directly proved exploitability. Set `confidence` (`speculative|moderate|high`) to reflect version-based vs validated. Add `cve` and the CVSS *base* score in `cvss` when known.
+- **Severity honesty:** set `exploitation` to `unproven` for a version/banner match you did not exploit (the usual scanner case). A base CVSS is worst-case — **do not let a version-only match stand as `critical`/`high`**; `/severity-calibrate` recalibrates severity down from the CVSS temporal score before reporting. Mark `poc`/`functional` only when public exploit code exists, `confirmed` only when proven.
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nuclei_…`) so the finding links to its proof.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 - One line per finding, append only. Leave validation status changes to `poc-validator` (it appends a new line reusing your `id`; latest line wins).

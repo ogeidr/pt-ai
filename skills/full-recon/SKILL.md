@@ -185,7 +185,7 @@ interface or clearly outdated service is exposed). Never rewrite the file; one
 compact JSON object per line:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2.4.29) on web host","target":"10.0.1.15","category":"web","severity":"medium","status":"reported","confidence":"high","evidence":["scans/nmap_svc_10-0-1-15_20260620_140000.txt"],"mitre":["T1046"],"source_agent":"full-recon","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2.4.29) on web host","target":"10.0.1.15","category":"web","severity":"medium","status":"reported","confidence":"high","exploitation":"unproven","evidence":["scans/nmap_svc_10-0-1-15_20260620_140000.txt"],"mitre":["T1046"],"source_agent":"full-recon","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
@@ -195,6 +195,7 @@ Rules:
   (`info|low|medium|high|critical`), `status`, `source_agent` (`full-recon`),
   `discovered_at` (ISO-8601 UTC).
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nmap_svc_…`).
+- **Severity honesty:** surface facts are unexploited — set `exploitation:"unproven"` and keep severity modest (usually `info`/`low`). `/severity-calibrate` finalizes severity from the CVSS temporal score before reporting.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 
 ### Step 9 — Recommend next steps

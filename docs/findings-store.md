@@ -55,20 +55,32 @@ and report quality. Full types/enums in the JSON Schema; highlights:
 | `id` | `F-0001` style. **Reuse to update.** |
 | `category` | domain: network/web/ad/cloud/container/host/credential/other |
 | `phase` | recon/vuln-assessment/exploitation/post-exploitation/reporting |
-| `severity` | info/low/medium/high/critical |
+| `severity` | info/low/medium/high/critical. **After calibration this is the *temporal*-derived rating, not the base.** |
 | `confidence` | analyst confidence *before* validation (status is the *outcome*) |
 | `status` | lifecycle / validation state — drives precision |
+| `exploitation` | `unproven`/`poc`/`functional`/`confirmed` (schema 1.1). Explicit unexploited marker + CVSS Exploit Code Maturity (E) driver. Anything ≠ `confirmed` reports as **Theoretical**. |
+| `cvss` | CVSS v3.1 **base** score (worst-case) |
+| `cvss_temporal` / `cvss_vector` | temporal score = roundup(base × E × RL × RC) and the full v3.1 vector (incl. `/E:/RL:/RC:`), written by `severity-calibrate` (schema 1.1) |
 | `evidence` | paths **relative to the engagement dir**, bucketed by category (`scans/…` raw output, `exploit/…` PoC artifacts) — the propagation glue |
 | `mitre` | ATT&CK IDs (`T1190`, `T1021.002`) |
 | `chain_id` / `chain_step` | links a finding into an `attack-planner` chain |
+
+**Severity calibration (schema 1.1).** Producers set a *provisional* `severity` from the CVSS
+base and an honest `exploitation` (default `unproven`). Before reporting, the
+`/severity-calibrate` skill collapses the store and appends an updated record per finding with
+`exploitation`, `cvss_vector`, `cvss_temporal`, and a **deflate-only** `severity` derived from
+the temporal score — so version-only criticals stop being reported as critical. It is
+idempotent (always recomputes from the `cvss` base). `report-generator` renders the calibrated
+values and the Theoretical-vs-Confirmed labels.
 
 ## Which agent writes/reads what
 
 | Agent | Writes | Reads |
 |-------|--------|-------|
 | recon-advisor, vuln-scanner, web-hunter, ad-attacker, cloud-security …; `full-recon` (skill) | new `reported` findings + `evidence[]` | — |
-| poc-validator | appends `confirmed` / `false_positive` updates | `reported` findings |
+| poc-validator | appends `confirmed` / `false_positive` updates (+ `exploitation:"confirmed"` on confirm) | `reported` findings |
 | attack-planner | `chain_id`/`chain_step` updates | `confirmed` findings |
+| severity-calibrate (skill) | appends calibrated `exploitation` + `cvss_temporal`/`cvss_vector` + deflated `severity` | all (collapsed, latest-wins) |
 | report-generator | — | all (collapsed, latest-wins) |
 
 > **Wiring status (complete):** every agent carries a Findings Store section.

@@ -279,12 +279,13 @@ After you discover a web finding worth tracking, append it to the engagement's f
 Append one compact JSON object per finding — never rewrite the file:
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"SQL injection in /search q param","target":"https://shop.example.com/search","category":"web","severity":"high","status":"reported","confidence":"moderate","evidence":["scans/ffuf_shop-example-com_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"web-hunter","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"SQL injection in /search q param","target":"https://shop.example.com/search","category":"web","severity":"high","status":"reported","confidence":"moderate","exploitation":"unproven","evidence":["scans/ffuf_shop-example-com_20260607_140000.txt"],"mitre":["T1190"],"source_agent":"web-hunter","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`web` for web findings; `network|ad|cloud|container|host|credential|other` otherwise), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`web-hunter`), `discovered_at` (ISO-8601 UTC).
 - Write `"status":"reported"` for unvalidated findings; mark `"confirmed"` only if you directly proved it. Set `confidence` (`speculative|moderate|high`) for your pre-validation belief.
+- **Severity honesty:** set `exploitation:"unproven"` until you actually exploit it (`confirmed` when you do). Don't report an inflated `critical`/`high` off a probe alone — `/severity-calibrate` deflates severity from the CVSS temporal score before reporting.
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/ffuf_…`) so the finding links to its proof.
 - Add `mitre` ATT&CK IDs when known; omit fields you don't have rather than guessing.
 - One line per finding, append only. To revise a finding later, append a new line reusing its `id` (latest line wins).

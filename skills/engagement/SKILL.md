@@ -52,7 +52,7 @@ boundary; you add disciplined, state-backed sequencing on top.
    the agents appropriate to the engagement type and ask the operator to confirm or
    restrict them. Anything not on the confirmed list is refused for the rest of the
    session. Defaults by type (trim to what the RoE actually covers):
-   - external / internal / web → `recon-advisor, osint-collector, web-hunter, vuln-scanner, poc-validator, attack-planner, exploit-chainer, privesc-advisor, detection-engineer, report-generator`
+   - external / internal / web → `recon-advisor, osint-collector, web-hunter, vuln-scanner, poc-validator, attack-planner, exploit-chainer, privesc-advisor, detection-engineer, severity-calibrate, report-generator`
    - cloud → add `cloud-security`; AD-heavy → add `ad-attacker, credential-tester`
    - **High-authorization vectors are OFF by default** and require their own explicit
      written authorization before you add them: `social-engineer`, `wireless-pentester`,
@@ -84,7 +84,13 @@ boundary you STOP for operator approval.
 | 4–5. **Exploitation** (incl. attack planning) | attack-planner, exploit-chainer, (+ad/cloud/cred) | **HARD GATE — see below** |
 | 6. Post-exploitation & lateral movement | privesc-advisor, exploit-chainer | exploitation approved |
 | 7. Detection engineering | detection-engineer, threat-modeler | post-ex complete |
-| 8–9. Reporting & compliance | report-generator (+stig-analyst) | operator approves |
+| 8–9. Reporting & compliance | **severity-calibrate** → report-generator (+stig-analyst) | operator approves |
+
+**Before reporting, always run `/severity-calibrate` over the findings store.** It marks each
+finding's exploitation state and recomputes severity from the CVSS temporal score (deflate-only)
+so unexploited/version-only findings are not over-rated. `report-generator` then renders the
+calibrated `severity`/`cvss_temporal` and the Theoretical-vs-Confirmed labels. Do not skip it —
+an uncalibrated report re-rates findings off the worst-case CVE base.
 
 **On completing each phase**, append a completion line and report a summary to the
 operator before proposing the next phase:
