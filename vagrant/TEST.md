@@ -275,6 +275,7 @@ survives:
 
 ```sh
 ./pt-ai snapshot pre-engagement
+./pt-ai snapshot list                                # lists pre-engagement (read-only)
 
 ./pt-ai ssh
 touch /tmp/vm-local-artifact.txt

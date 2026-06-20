@@ -146,7 +146,8 @@ After authenticating, exit Claude Code (`/exit`) and take your baseline snapshot
 ./pt-ai snapshot pre-engagement
 ```
 
-This captures the fully-provisioned, authenticated state. Restore to it between engagements.
+This captures the fully-provisioned, authenticated state. Restore to it between
+engagements, and list what you have saved with `./pt-ai snapshot list`.
 
 ---
 
@@ -379,6 +380,7 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 ./pt-ai engagement list       List engagements and their on-disk sizes
 ./pt-ai engagement purge <id> Delete one engagement's data (-y to skip prompt)
 ./pt-ai engagement purge --all Delete all engagement data
+./pt-ai snapshot list         List saved VM snapshots
 ./pt-ai snapshot <name>       Save a VM snapshot
 ./pt-ai restore  <name>       Restore a VM snapshot
 ./pt-ai halt                  Shut down the VM

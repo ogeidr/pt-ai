@@ -9,6 +9,7 @@
 #   claude [-- <args>]  Start Claude Code inside the VM
 #   opencode [-- <args>] Start opencode inside the VM (Anthropic provider)
 #   key <store|clear|status>  Manage a persistent API key inside the VM
+#   snapshot list       List saved VM snapshots
 #   snapshot <name>     Save a VM snapshot
 #   restore  <name>     Restore a VM snapshot
 #   halt                Shut down the VM
@@ -123,6 +124,7 @@ Commands:
   engagement list        List engagements and their on-disk sizes
   engagement purge <id>  Delete one engagement's data (add -y to skip the prompt)
   engagement purge --all Delete all engagement data
+  snapshot list          List saved VM snapshots
   snapshot <name>        Save a VM snapshot
   restore  <name>        Restore a VM snapshot
   halt                   Shut down the VM
@@ -280,9 +282,15 @@ cmd_key() {
 }
 
 cmd_snapshot() {
-    if [ "$#" -lt 1 ]; then
-        echo "pt-ai snapshot: missing <name>" >&2; exit 1
-    fi
+    case "${1:-}" in
+        list|ls)
+            _vagrant snapshot list      # read-only — no daemon quiesce needed
+            return
+            ;;
+        "")
+            echo "pt-ai snapshot: missing <name> (or 'list')" >&2; exit 1
+            ;;
+    esac
     _ghidra_stop            # quiesce the ghidra-rpc daemon before capturing state
     _vagrant snapshot save "$1"
 }
