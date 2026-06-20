@@ -8,6 +8,7 @@
 #   ssh                 Interactive shell inside the VM
 #   claude [-- <args>]  Start Claude Code inside the VM
 #   opencode [-- <args>] Start opencode inside the VM (Anthropic provider)
+#   local-model <detect|use>  Point opencode at a host-served local model (durable)
 #   key <store|clear|status>  Manage a persistent API key inside the VM
 #   snapshot list       List saved VM snapshots
 #   snapshot <name>     Save a VM snapshot
@@ -49,6 +50,10 @@
 #                         both Claude Code and opencode
 #   PT_AI_OPENCODE_MODEL  Optional — overrides opencode's default model
 #                         (default in opencode.json: anthropic/claude-sonnet-4-6)
+#   PT_AI_OPENCODE_ALLOW_FALLBACK
+#                         Optional — set to 1 to skip the prompt and allow
+#                         opencode's hosted default model when no local/cloud
+#                         model is reachable (default: abort; never auto-fall-back)
 #   PTAI_BOX              Vagrant box name (default: kalilinux/rolling). Any
 #                         apt-family box works; Kali-only steps auto-skip.
 #                         KALI_BOX is still honored as a fallback.
@@ -118,6 +123,8 @@ Commands:
   ssh                    Interactive shell inside VM
   claude [--fresh] [-- <args>]    Start Claude Code inside VM (--fresh wipes prior session history)
   opencode [--fresh] [-- <args>]  Start opencode inside VM (--fresh wipes prior session history)
+  local-model detect     Find reachable local model endpoints (LM Studio/Ollama)
+  local-model use <id>   Point opencode at a local model (durable across re-provision)
   key store              Store ANTHROPIC_API_KEY from host env into VM
   key clear              Remove stored API key from VM
   key status             Show whether an API key is stored in VM
@@ -141,6 +148,9 @@ Environment:
   ANTHROPIC_API_KEY    Optional — forwarded per-session if set
                        (shared between claude and opencode)
   PT_AI_OPENCODE_MODEL Optional — overrides opencode's default model
+  PT_AI_OPENCODE_ALLOW_FALLBACK
+                       Optional — set to 1 to allow opencode's hosted default
+                       model without prompting (default: abort if no local model)
   PTAI_BOX             Box name (default: kalilinux/rolling). Any apt-family
                        box works; Kali-only steps auto-skip. KALI_BOX honored
                        as a fallback.
@@ -201,6 +211,184 @@ cmd_claude() {
     _vagrant ssh -- -t "bash -l -c $(_shquote "$script")"
 }
 
+# --- local-model: configure opencode to use a host-served local model ----------
+# Detects a reachable LM Studio (:1234) / Ollama (:11434) endpoint from inside the
+# VM and writes a DURABLE provider config (config/opencode/local-model.json) that
+# 05-opencode.sh merges on every provision — so the setup survives provision and
+# destroy/up. Provider key in opencode.json is `local`; model becomes `local/<id>`.
+
+# Probe the VM for reachable endpoints. $1 = space-separated ports (default both).
+# Echoes one line per working endpoint: "<url>\t<comma-separated model ids>".
+_lm_probe() {
+    _lm_pp=$(_shquote "${1:-1234 11434}"); _lm_pp=${_lm_pp# }
+    _lm_s=$(cat <<'EOF'
+gw=$(ip route 2>/dev/null | awk '/default/{print $3; exit}')
+for h in $gw 172.16.145.1 192.168.161.1 10.0.2.2; do
+  [ -n "$h" ] || continue
+  for p in $PORTS; do
+    out=$(curl -sf -m 3 "http://$h:$p/v1/models" 2>/dev/null) || continue
+    ids=$(printf '%s' "$out" | jq -r '.data[].id' 2>/dev/null | paste -sd, -)
+    [ -n "$ids" ] && printf 'http://%s:%s/v1\t%s\n' "$h" "$p" "$ids"
+  done
+done
+EOF
+)
+    _lm_sq=$(_shquote "$_lm_s"); _lm_sq=${_lm_sq# }
+    # dedup by URL host-side (gateway may equal a static candidate).
+    _vagrant ssh -- -T "PORTS=$_lm_pp bash -lc $_lm_sq" </dev/null 2>/dev/null \
+        | tr -d '\r' | awk -F'\t' 'NF && !seen[$1]++'
+}
+
+# Comma-separated model ids served at a specific URL (used when --url is given).
+_lm_ids_at() {
+    _lm_uq=$(_shquote "$1"); _lm_uq=${_lm_uq# }
+    _lm_s=$(cat <<'EOF'
+curl -sf -m 3 "$URL/models" 2>/dev/null | jq -r '.data[].id' 2>/dev/null | paste -sd, -
+EOF
+)
+    _lm_sq=$(_shquote "$_lm_s"); _lm_sq=${_lm_sq# }
+    _vagrant ssh -- -T "URL=$_lm_uq bash -lc $_lm_sq" </dev/null 2>/dev/null | tr -d '\r'
+}
+
+# Merge the `local` provider into the running VM's opencode.json (same shape as
+# the 05-opencode.sh provisioner merge, so live and provisioned configs match).
+_lm_apply_live() {
+    _lm_uq=$(_shquote "$1"); _lm_uq=${_lm_uq# }
+    _lm_mq=$(_shquote "$2"); _lm_mq=${_lm_mq# }
+    _lm_s=$(cat <<'EOF'
+cfg="$HOME/.config/opencode/opencode.json"
+tmp=$(mktemp)
+jq --arg u "$URL" --arg m "$MODEL" '.provider.local={npm:"@ai-sdk/openai-compatible",options:{baseURL:$u},models:{($m):{name:$m}}} | .model=("local/"+$m)' "$cfg" > "$tmp" && mv "$tmp" "$cfg"
+EOF
+)
+    _lm_sq=$(_shquote "$_lm_s"); _lm_sq=${_lm_sq# }
+    _vagrant ssh -- -T "URL=$_lm_uq MODEL=$_lm_mq bash -lc $_lm_sq" </dev/null >/dev/null 2>&1
+}
+
+_lm_detect() {
+    _lm_port=""
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --port) _lm_port="$2"; shift 2 ;;
+            *) echo "pt-ai local-model detect: unknown arg: $1" >&2; exit 1 ;;
+        esac
+    done
+    echo "Probing the VM for reachable local-model endpoints..."
+    _lm_out=$(_lm_probe "${_lm_port:-1234 11434}")
+    if [ -z "$_lm_out" ]; then
+        echo "No reachable endpoint (LM Studio :1234 / Ollama :11434)." >&2
+        echo "Check: model server running on the host AND bound to all interfaces" >&2
+        echo "(LM Studio: 'Serve on Local Network'); VM is up. Use --port for non-default." >&2
+        exit 1
+    fi
+    _lm_tab=$(printf '\t')
+    printf '%s\n' "$_lm_out" | while IFS="$_lm_tab" read -r _u _ids; do
+        echo ""
+        echo "  Endpoint: $_u"
+        echo "  Models:"
+        echo "$_ids" | tr ',' '\n' | sed 's/^/    /'
+    done
+    echo ""
+    echo "Next: ./pt-ai local-model use <model-id>   (copy an exact id above)"
+}
+
+_lm_use() {
+    _lm_url=""; _lm_port=""; _lm_model=""
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --url)  _lm_url="$2"; shift 2 ;;
+            --port) _lm_port="$2"; shift 2 ;;
+            -*)     echo "pt-ai local-model use: unknown flag: $1" >&2; exit 1 ;;
+            *)      [ -z "$_lm_model" ] && _lm_model="$1"; shift ;;
+        esac
+    done
+    [ -n "$_lm_model" ] || { echo "Usage: pt-ai local-model use <model-id> [--url URL] [--port N]" >&2; exit 1; }
+
+    _lm_tab=$(printf '\t')
+    if [ -n "$_lm_url" ]; then
+        _u="$_lm_url"; _ids=$(_lm_ids_at "$_u")
+    else
+        _line=$(_lm_probe "${_lm_port:-1234 11434}" | head -n1)
+        _u=${_line%%"$_lm_tab"*}; _ids=${_line#*"$_lm_tab"}
+    fi
+    [ -n "$_u" ] || { echo "No reachable endpoint; run './pt-ai local-model detect' or pass --url." >&2; exit 1; }
+
+    # Verify the id is actually served (catches prefix/casing mistakes early).
+    if [ -n "$_ids" ]; then
+        case ",$_ids," in
+            *",$_lm_model,"*) ;;
+            *) echo "Model '$_lm_model' is not served at $_u. Available:" >&2
+               echo "$_ids" | tr ',' '\n' | sed 's/^/  /' >&2
+               exit 1 ;;
+        esac
+    fi
+
+    # A) durable host config — survives provision and destroy/up.
+    mkdir -p "$VAGRANT_DIR/config/opencode"
+    printf '{ "url": "%s", "model": "%s" }\n' "$_u" "$_lm_model" \
+        > "$VAGRANT_DIR/config/opencode/local-model.json"
+    echo "Wrote config/opencode/local-model.json  ($_lm_model @ $_u)"
+
+    # Apply now if the VM is up; otherwise it lands on the next up/provision.
+    if _vagrant ssh -- -T "true" </dev/null >/dev/null 2>&1; then
+        if _lm_apply_live "$_u" "$_lm_model"; then
+            echo "Applied to the running VM. Launch with: ./pt-ai opencode"
+        else
+            echo "WARN: live apply failed; takes effect on next ./pt-ai provision." >&2
+        fi
+    else
+        echo "VM not running — applies on next ./pt-ai up / provision."
+    fi
+}
+
+cmd_local_model() {
+    _lm_action="${1:-}"
+    if [ "$#" -gt 0 ]; then shift; fi
+    case "$_lm_action" in
+        detect) _lm_detect "$@" ;;
+        use)    _lm_use "$@" ;;
+        *)
+            echo "Usage: pt-ai local-model <detect|use>" >&2
+            echo "  detect [--port N]                       Find reachable local model endpoints + ids" >&2
+            echo "  use <model-id> [--url URL] [--port N]   Point opencode at it (durable)" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# Model preflight: decide whether opencode will run a usable LOCAL or cloud model,
+# or silently fall back to opencode's hosted default ("Big Pickle"/Zen) — which
+# sends prompts and engagement data off-machine. Echoes one of:
+#   local-ok | local-down | cloud-ok | fallback   (empty if the VM check failed).
+# The check runs INSIDE the VM, in the same network context the launch uses, so a
+# tunnelled localhost endpoint is judged correctly. Detection is provider-agnostic:
+# any provider with an options.baseURL is treated as a local/custom endpoint and
+# health-checked; we never hardcode the (changing) Zen model name.
+_opencode_preflight() {
+    _pf_want="${PT_AI_OPENCODE_MODEL:-}"
+    _pf_key=0
+    [ -n "${ANTHROPIC_API_KEY:-}" ] && _pf_key=1
+    _pf_check=$(cat <<'EOF'
+cfg="$HOME/.config/opencode/opencode.json"
+m="$WANT"; [ -n "$m" ] || m=$(jq -r '.model // empty' "$cfg" 2>/dev/null)
+[ -n "$m" ] || { echo fallback; exit 0; }
+p=${m%%/*}
+url=$(jq -r --arg p "$p" '.provider[$p].options.baseURL // empty' "$cfg" 2>/dev/null)
+if [ -n "$url" ]; then
+  curl -sf -m 3 "$url/models" >/dev/null 2>&1 && echo local-ok || echo local-down
+elif [ "$p" = anthropic ] && [ "$HAVEKEY" = 1 ]; then
+  echo cloud-ok
+else
+  echo fallback
+fi
+EOF
+)
+    _pf_wq=$(_shquote "$_pf_want"); _pf_wq=${_pf_wq# }
+    _pf_cq=$(_shquote "$_pf_check"); _pf_cq=${_pf_cq# }
+    _vagrant ssh -- -T "WANT=$_pf_wq HAVEKEY=$_pf_key bash -lc $_pf_cq" </dev/null 2>/dev/null \
+        | tr -d '\r' | grep -E '^(local-ok|local-down|cloud-ok|fallback)$' | tail -n1
+}
+
 cmd_opencode() {
     # --fresh (PENDING #20): wipe opencode session storage + logs before launch,
     # preserving auth. Must precede any `--`.
@@ -208,6 +396,32 @@ cmd_opencode() {
     case "${1:-}" in --fresh) fresh=1; shift ;; esac
     if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
     qargs=$(_shquote "$@")          # see cmd_claude — quote `-- <args>` as data
+
+    # Refuse to silently use opencode's hosted default ("Big Pickle"/Zen): if no
+    # usable local/cloud model is configured, warn loudly and require confirmation.
+    case "$(_opencode_preflight)" in
+        local-ok|cloud-ok) : ;;     # usable model — proceed
+        local-down|fallback)
+            printf '\033[1;31m\n'
+            printf '  ⚠  NO LOCAL MODEL REACHABLE\n'
+            printf '  opencode will use its hosted DEFAULT model (currently "Big Pickle" /\n'
+            printf '  opencode Zen). Prompts and engagement data WILL leave this machine to a\n'
+            printf '  third party and may be retained or used for training.\n'
+            printf '\033[0m'
+            printf '  -> Run `./pt-ai local-model detect` to point opencode at a local model.\n'
+            if [ "${PT_AI_OPENCODE_ALLOW_FALLBACK:-0}" = 1 ]; then
+                echo "[pt-ai] PT_AI_OPENCODE_ALLOW_FALLBACK=1 set — continuing without prompt." >&2
+            elif [ -t 0 ]; then
+                printf 'Continue with the hosted default model? [y/N] '
+                read -r _pf_ans || _pf_ans=""
+                case "$_pf_ans" in y|Y|yes|YES) ;; *) echo "Aborted."; return 1 ;; esac
+            else
+                echo "[pt-ai] Aborting: no TTY to confirm. Set PT_AI_OPENCODE_ALLOW_FALLBACK=1 to override." >&2
+                return 1
+            fi
+            ;;
+        *) echo "[pt-ai] model preflight inconclusive (VM unreachable?); proceeding." >&2 ;;
+    esac
 
     wipe=''
     [ "$fresh" -eq 1 ] && wipe='echo "[pt-ai] --fresh: clearing opencode session storage (auth preserved)"; rm -rf ~/.local/share/opencode/storage ~/.local/share/opencode/log ~/.local/share/opencode/project; '
@@ -388,6 +602,7 @@ case "$sub" in
     ssh)            cmd_ssh "$@" ;;
     claude)         cmd_claude "$@" ;;
     opencode)       cmd_opencode "$@" ;;
+    local-model)    cmd_local_model "$@" ;;
     key)            cmd_key "$@" ;;
     engagement)     cmd_engagement "$@" ;;
     snapshot)       cmd_snapshot "$@" ;;

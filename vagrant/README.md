@@ -159,20 +159,24 @@ opencode is installed alongside Claude Code. Use it when you want a provider-agn
 ./pt-ai opencode
 ```
 
-**Auth — read this before first use.** opencode does **not** consume Claude Code's `~/.claude/` OAuth tokens. It requires an Anthropic API key, supplied in one of three ways:
+**Auth — read this before first use.** opencode does **not** consume Claude Code's `~/.claude/` OAuth tokens. Give it **either** a host-served local model **or** an Anthropic API key:
 
 | Method | How |
 |---|---|
-| Session-only | `export ANTHROPIC_API_KEY=sk-ant-... && ./pt-ai opencode` |
-| Persistent (shared with Claude Code) | `./pt-ai key store` |
-| opencode's own OAuth | Inside the VM: `opencode auth login anthropic` |
+| **Local model** (no API key) | `./pt-ai local-model detect` → `./pt-ai local-model use <id>` (see [docs/LOCAL-SETUP.md](../docs/LOCAL-SETUP.md)) |
+| Anthropic key, session-only | `export ANTHROPIC_API_KEY=sk-ant-... && ./pt-ai opencode` |
+| Anthropic key, persistent | `./pt-ai key store` (shared with Claude Code) |
 
-**Billing:** opencode bills against your API key. A Pro/Max subscription covers Claude Code only — opencode usage is pay-as-you-go.
+(`opencode auth login` inside the VM also works if you already manage an opencode credential.)
 
-**Model:** defaults to `anthropic/claude-sonnet-4-6`. Override per session:
+> A Pro/Max subscription covers **Claude Code only** — opencode can't use it. OAuth-only users should take the **local-model** route; opencode with an API key is pay-as-you-go.
+
+**If no usable model is configured,** `./pt-ai opencode` refuses to silently fall back to opencode's hosted default ("Big Pickle"/Zen, which sends data off-machine) — it warns and aborts (override: `PT_AI_OPENCODE_ALLOW_FALLBACK=1`).
+
+**Model:** defaults to `anthropic/claude-sonnet-4-6` (or `local/<id>` after `local-model use`). Override per session:
 
 ```sh
-export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
+export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-8
 ./pt-ai opencode
 ```
 
@@ -373,6 +377,8 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 ./pt-ai up                    Boot VM (provision on first run)
 ./pt-ai claude [--fresh] [-- <args>]    Start Claude Code session inside VM (--fresh wipes prior session history; creds preserved)
 ./pt-ai opencode [--fresh] [-- <args>]  Start opencode session inside VM (--fresh wipes prior session history; auth preserved)
+./pt-ai local-model detect    Find reachable local model endpoints (LM Studio/Ollama)
+./pt-ai local-model use <id>  Point opencode at a local model (durable across re-provision)
 ./pt-ai ssh                   Interactive shell inside VM
 ./pt-ai key store             Store ANTHROPIC_API_KEY from host env into VM
 ./pt-ai key clear             Remove stored API key from VM

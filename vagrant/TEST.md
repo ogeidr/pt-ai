@@ -375,22 +375,27 @@ rm -rf ../engagements/scope.md ../engagements/<safe_id>/
 
 ## Phase 10 — opencode
 
-Requires an Anthropic API key (Pro/Max OAuth does not work for opencode).
+opencode needs **either** an Anthropic API key **or** a host-served local model
+(Pro/Max OAuth does **not** work for opencode). Note: in opencode, pt-ai **skills are
+model-invoked** (there are no `/scope-declare` slash commands — the `commands/`
+derivation was retired); **agents are `@mention` subagents**.
+
+### 10a — with an Anthropic API key
 
 ```sh
 export ANTHROPIC_API_KEY=sk-ant-YOUR-KEY
 ./pt-ai opencode
 ```
 
-1. opencode starts in `/engagements/` with no prompt about missing auth.
-2. At the prompt, type `/` — the slash-command list shows pt-ai commands
-   (e.g. `/recon-advisor`, `/vuln-scanner`, `/scope-declare`).
-3. Run `/recon-advisor` — model responds (confirms provider + key are wired).
+1. opencode starts in `/engagements/` with no fallback warning.
+2. Ask naturally, e.g. `declare my engagement scope` — the model invokes the
+   `scope-declare` skill (model-invoked, not a `/slash` command).
+3. Mention a subagent: `@recon-advisor analyze this nmap output: ...` — it responds.
 4. Exit with `Ctrl-C` or opencode's quit binding.
 
 **Model override:**
 ```sh
-export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-7
+export PT_AI_OPENCODE_MODEL=anthropic/claude-opus-4-8
 ./pt-ai opencode    # prompt header should show the opus model
 ```
 
@@ -402,6 +407,36 @@ unset ANTHROPIC_API_KEY
 ./pt-ai opencode    # starts without prompting; uses stored key
 ```
 
+### 10b — with a local model (LM Studio / Ollama)
+
+Requires a model server on the host (LM Studio with **"Serve on Local Network"**, or
+`OLLAMA_HOST=0.0.0.0 ollama serve`).
+
+```sh
+unset ANTHROPIC_API_KEY                          # exercise the local path, not cloud
+./pt-ai local-model detect                       # lists reachable endpoint(s) + model ids
+./pt-ai local-model use <model-id>               # copy an exact id from detect
+./pt-ai ssh -- "jq -r .model ~/.config/opencode/opencode.json"   # -> local/<id>
+./pt-ai opencode                                 # launches on the local model, no warning
+```
+
+Durability (the reason for the host config) — survives re-provision:
+```sh
+./pt-ai provision                                # regenerates opencode.json, then re-merges
+./pt-ai ssh -- "jq -r .model ~/.config/opencode/opencode.json"   # still local/<id>
+```
+
+### 10c — preflight gate (no usable model)
+
+```sh
+unset ANTHROPIC_API_KEY
+rm -f config/opencode/local-model.json           # drop the durable local config
+./pt-ai provision                                # opencode.json back to anthropic default
+./pt-ai opencode                                 # expect RED "NO LOCAL MODEL REACHABLE" + [y/N]; N -> abort
+echo | ./pt-ai opencode                          # no TTY -> aborts without prompting
+PT_AI_OPENCODE_ALLOW_FALLBACK=1 ./pt-ai opencode # proceeds to the hosted default (Ctrl-C if you don't intend it)
+```
+
 **Agent edit re-sync:**
 ```sh
 # On host: edit agents/recon-advisor.md (add a marker line)
@@ -409,7 +444,10 @@ unset ANTHROPIC_API_KEY
 ./pt-ai ssh -- "grep -c MARKER ~/.config/opencode/agents/recon-advisor.md"
 ```
 
-**Pass:** opencode starts, skills discoverable + subagents (`@recon-advisor`) available, model responds, model override visible in UI, stored key honored after unset, agent edits propagate after `./pt-ai provision`.
+**Pass:** opencode starts on a key OR a local model; skills are model-invoked and
+subagents (`@recon-advisor`) respond; model override visible; stored key honored
+after unset; `local-model use` config survives `./pt-ai provision`; the preflight
+warns and aborts when no model is usable; agent edits propagate after provision.
 
 ---
 

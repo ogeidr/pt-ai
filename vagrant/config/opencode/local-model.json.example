@@ -1,0 +1,5 @@
+{
+  "_comment": "Template only. Prefer `./pt-ai local-model use <model-id>`, which detects the endpoint and writes the real (git-ignored) local-model.json for you. url = an OpenAI-compatible endpoint reachable FROM THE VM (LM Studio :1234, Ollama :11434). model = the exact id the server lists.",
+  "url": "http://<HOST>:<PORT>/v1",
+  "model": "<PROVIDER>/<MODEL-ID>"
+}

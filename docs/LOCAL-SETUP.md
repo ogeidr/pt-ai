@@ -14,13 +14,15 @@ This guide covers running pt-ai fully offline with local models.
 ## How the VM is wired
 
 `./pt-ai provision` writes `~/.config/opencode/opencode.json` inside the VM with the
-native Anthropic provider as the default (`anthropic/claude-sonnet-4-6`). To go local
-you add a second provider block (below) and switch the active model. The
-`./pt-ai opencode` wrapper forwards `PT_AI_OPENCODE_MODEL`, so once a provider is
-defined you can flip models per session without editing the file again:
+native Anthropic provider as the default (`anthropic/claude-sonnet-4-6`). **To use a
+local model, run `./pt-ai local-model detect` then `./pt-ai local-model use <id>`** —
+it finds the reachable endpoint, writes a durable provider config (survives
+re-provision and `destroy`/`up`), and switches the active model for you (Option 1
+below). The `./pt-ai opencode` wrapper also forwards `PT_AI_OPENCODE_MODEL`, so you
+can flip models per session:
 
 ```sh
-PT_AI_OPENCODE_MODEL=lmstudio/gpt-oss-20b ./pt-ai opencode
+PT_AI_OPENCODE_MODEL=local/qwen/qwen3.6-35b-a3b ./pt-ai opencode
 ```
 
 **Host address from the VM** depends on your Vagrant provider:
@@ -35,14 +37,36 @@ PT_AI_OPENCODE_MODEL=lmstudio/gpt-oss-20b ./pt-ai opencode
 
 [LM Studio](https://lmstudio.ai/) provides a GUI for downloading and running local
 models with an OpenAI-compatible API. opencode inside the VM speaks OpenAI
-natively — no translation proxy needed. This is the path verified with pt-ai:
-**`gpt-oss-20b`** is a reliable tool-caller for the agent workflow.
+natively — no translation proxy needed. Strong tool-callers for the agent workflow
+include **`qwen/qwen3.6-35b-a3b`** and **`openai/gpt-oss-20b`**.
 
 **Assumptions:** LM Studio is installed on the host, a model is loaded, and the local
 server is started with **"Serve on Local Network" enabled** (otherwise it binds to
-localhost only and the VM can't reach it). Note the model identifier in the server tab.
+localhost only and the VM can't reach it).
 
-Edit `~/.config/opencode/opencode.json` inside the VM (`./pt-ai ssh`):
+### Easiest: `./pt-ai local-model` (recommended)
+
+The wrapper finds the reachable endpoint and writes a **durable** config that
+survives `./pt-ai provision` and `destroy`/`up` (stored in
+`config/opencode/local-model.json`, see `local-model.json.example`):
+
+```sh
+cd vagrant
+./pt-ai local-model detect                       # probes the VM → host for LM Studio/Ollama, lists model ids
+./pt-ai local-model use qwen/qwen3.6-35b-a3b      # copy an exact id from detect; writes durable config + applies live
+./pt-ai opencode                                  # launches on the local model (no fallback warning)
+```
+
+`detect` tries the VMware/Parallels host-only gateways and the VirtualBox NAT host
+automatically on ports `1234` (LM Studio) and `11434` (Ollama); pass `--port N` or
+`--url http://HOST:PORT/v1` to override. `use` verifies the id is actually served
+(catching prefix/casing typos) before writing anything.
+
+### Manual fallback
+
+If you prefer to edit the config by hand, write `~/.config/opencode/opencode.json`
+inside the VM (`./pt-ai ssh`) — but note this is **not** durable; `./pt-ai provision`
+regenerates the file, so prefer `local-model use` above:
 
 ```json
 {
@@ -77,8 +101,18 @@ ollama pull qwen2.5-coder:32b   # or whichever model fits your VRAM
 OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
-Then point opencode at it. Edit `~/.config/opencode/opencode.json` inside the VM
-(`./pt-ai ssh`) to add the local provider:
+Then point opencode at it the same way as LM Studio — `./pt-ai local-model detect`
+probes port `11434` too, so:
+
+```sh
+cd vagrant
+./pt-ai local-model detect
+./pt-ai local-model use qwen2.5-coder:32b
+./pt-ai opencode
+```
+
+Or configure it by hand (not durable; `./pt-ai provision` regenerates the file) —
+write `~/.config/opencode/opencode.json` inside the VM (`./pt-ai ssh`):
 
 ```json
 {

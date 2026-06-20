@@ -5,8 +5,9 @@
 # opencode runs inside the VM, so it shells out to Kali tools directly — no MCP
 # bridge needed (same architectural advantage Claude Code already enjoys here).
 # Auth reuses the existing ANTHROPIC_API_KEY plumbing (./pt-ai key store / session
-# forwarding).  OAuth-only users (Pro/Max) must add an API key — opencode does
-# not consume Claude Code's ~/.claude/ OAuth tokens.
+# forwarding).  OAuth-only users (Pro/Max) either add an API key or use a local
+# model (./pt-ai local-model — durable config merged below) — opencode does not
+# consume Claude Code's ~/.claude/ OAuth tokens.
 set -euo pipefail
 
 VAGRANT_HOME="/home/vagrant"
@@ -141,6 +142,28 @@ cat > "$OPENCODE_DIR/opencode.json" <<'EOF'
 }
 EOF
 chown vagrant:vagrant "$OPENCODE_DIR/opencode.json"
+
+# --- optional: durable local-model provider (LM Studio / Ollama) -----------
+# Default-off: only fires when the operator created config/opencode/local-model.json
+# (see local-model.json.example), e.g. via `./pt-ai local-model use <id>`. Merges a
+# `local` provider + sets it as the default model. Idempotent: opencode.json is
+# regenerated fresh above, so this overwrite-set converges to the same result every
+# provision — which is what lets a local-model setup survive provision and destroy/up.
+LOCAL_MODEL_CFG="/vagrant/config/opencode/local-model.json"
+if [ -f "$LOCAL_MODEL_CFG" ]; then
+    lm_url=$(jq -r '.url // empty' "$LOCAL_MODEL_CFG")
+    lm_model=$(jq -r '.model // empty' "$LOCAL_MODEL_CFG")
+    if [ -n "$lm_url" ] && [ -n "$lm_model" ]; then
+        lm_tmp=$(mktemp)
+        jq --arg u "$lm_url" --arg m "$lm_model" \
+           '.provider.local={npm:"@ai-sdk/openai-compatible",options:{baseURL:$u},models:{($m):{name:$m}}} | .model=("local/"+$m)' \
+           "$OPENCODE_DIR/opencode.json" > "$lm_tmp" && mv "$lm_tmp" "$OPENCODE_DIR/opencode.json"
+        chown vagrant:vagrant "$OPENCODE_DIR/opencode.json"
+        echo "opencode: merged local-model provider ($lm_model @ $lm_url)"
+    else
+        echo "WARN: $LOCAL_MODEL_CFG present but missing .url/.model — skipping local-model merge" >&2
+    fi
+fi
 
 # --- runtime safety guard (parity with the Claude PreToolUse hook) ---------
 # opencode does not read ~/.claude/, so the credential-exfil / catastrophic-rm
