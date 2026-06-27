@@ -282,10 +282,13 @@ ghidrasql --binary ./samples/target --project /tmp/gsql --project-name demo \
 `--url` attach mode (which conflicts with that var), prefix the call with
 `env -u GHIDRA_INSTALL_DIR`.
 
-`provision/07-ghidrasql.sh` carries local patches for two upstream bugs
-([#1](https://github.com/0xeb/ghidrasql/issues/1),
-[#2](https://github.com/0xeb/ghidrasql/issues/2)) and for GCC 15 / libxsql
-build compatibility. Drop the relevant patch once a fix lands upstream.
+`provision/07-ghidrasql.sh` carries one local patch: a GCC 15 `<algorithm>`
+include fix for ghidrasql's sources. The earlier workarounds for ghidrasql
+[#1](https://github.com/0xeb/ghidrasql/issues/1) /
+[#2](https://github.com/0xeb/ghidrasql/issues/2) and the libxsql pin are gone —
+fixed upstream (ghidrasql #7/#9, libghidra #16; libxsql re-pinned to tag `v1.0.5`
+in #5) and pulled in automatically. The provisioner does a `git reset --hard`
+before pulling so those fixes land on re-provision.
 
 Override pinned versions at provision time via VM env (`GHIDRA_VERSION`,
 `GHIDRA_RELEASE_TAG`, `GHIDRA_ZIP`, `GRADLE_VERSION`). The Ghidra and Gradle zips are

@@ -31,12 +31,13 @@ if ! $IS_APT; then
 fi
 
 # --- Pinned, overridable versions ----------------------------------------
-# Pinned to 12.0.4 — the version libghidra documents as supported. On Ghidra 12.1
-# the libghidra host opens the program but its Program-derived fields come back
-# empty (db_info shows program_name=active-program, language_id/md5 blank, and
-# funcs returns 0 rows) — a program open/activation behavior change in 12.1.
-# Override via the VM environment if needed: GHIDRA_VERSION / GHIDRA_RELEASE_TAG /
-# GHIDRA_ZIP must agree with each other.
+# Pinned to 12.0.4 — a known-good version libghidra documents as supported.
+# (No longer a hard requirement: the empty db_info / funcs=0 we once saw on 12.1
+# was the range-sentinel bug — UINT64_MAX decoding to -1 on the JVM host — now
+# fixed upstream in ghidrasql#7 + libghidra#16 and verified on 12.1.2. We keep
+# 12.0.4 only because bumping requires a matching GHIDRA_SHA256 + retest, not
+# because newer breaks.) Override via the VM environment if needed: GHIDRA_VERSION
+# / GHIDRA_RELEASE_TAG / GHIDRA_ZIP must agree with each other.
 GHIDRA_VERSION="${GHIDRA_VERSION:-12.0.4}"
 GHIDRA_RELEASE_TAG="${GHIDRA_RELEASE_TAG:-Ghidra_12.0.4_build}"
 GHIDRA_ZIP="${GHIDRA_ZIP:-ghidra_12.0.4_PUBLIC_20260303.zip}"
@@ -176,6 +177,12 @@ chown "$VAGRANT_USER:$VAGRANT_USER" "$SRC_DIR"
 clone_or_pull() {  # $1 repo url, $2 dest dir
     # Pass args to git directly (no shell-string interpolation).
     if [ -d "$2/.git" ]; then
+        # We patch the ghidrasql tree in place (step 5b), which leaves it dirty. A
+        # dirty tree makes --ff-only fail and the `|| true` swallows it, pinning us
+        # to the old commit forever. Reset to HEAD first so upstream fixes actually
+        # land, then re-patch below. Untracked build/ artifacts are kept (no clean)
+        # so incremental builds stay fast.
+        sudo -u "$VAGRANT_USER" git -C "$2" reset --hard -q HEAD
         sudo -u "$VAGRANT_USER" git -C "$2" pull --ff-only || true
     else
         retry 3 10 -- sudo -u "$VAGRANT_USER" git clone --depth 1 -- "$1" "$2"
@@ -184,21 +191,10 @@ clone_or_pull() {  # $1 repo url, $2 dest dir
 clone_or_pull "$LIBGHIDRA_REPO" "$SRC_DIR/libghidra"
 clone_or_pull "$GHIDRASQL_REPO" "$SRC_DIR/ghidrasql"
 
-# ghidrasql's CMakeLists pins libxsql at a bare commit with GIT_SHALLOW TRUE,
-# which CMake FetchContent cannot check out (a shallow fetch only retrieves the
-# branch tip, not an arbitrary commit -> "fatal: invalid reference"). Pre-clone
-# libxsql FULL at exactly that commit and feed it to FetchContent via
-# FETCHCONTENT_SOURCE_DIR_LIBXSQL (step 7), which bypasses the download/checkout.
-# Read the pinned commit straight from ghidrasql's CMakeLists so we track upstream.
-LIBXSQL_DIR="$SRC_DIR/libxsql"
-LIBXSQL_COMMIT="$(awk '/FetchContent_Declare\(libxsql/{f=1} f&&/GIT_TAG/{print $2; exit}' \
-    "$SRC_DIR/ghidrasql/CMakeLists.txt" 2>/dev/null)"
-[ -n "$LIBXSQL_COMMIT" ] || LIBXSQL_COMMIT="ea11622"
-log "Pre-fetching libxsql @ $LIBXSQL_COMMIT (full clone — shallow can't pin a bare commit)"
-if [ ! -d "$LIBXSQL_DIR/.git" ]; then
-    retry 3 10 -- sudo -u "$VAGRANT_USER" bash -c "git clone https://github.com/0xeb/libxsql.git '$LIBXSQL_DIR'"
-fi
-retry 3 10 -- sudo -u "$VAGRANT_USER" bash -c "cd '$LIBXSQL_DIR' && git fetch -q --all && git checkout -q '$LIBXSQL_COMMIT'"
+# libxsql is fetched by ghidrasql's own CMake FetchContent (step 7). Upstream now
+# pins it to a release *tag* (ghidrasql#5), which a GIT_SHALLOW fetch resolves
+# fine — so the full pre-clone workaround we used to carry (for an un-shallow-able
+# bare commit) is no longer needed.
 
 # --- 5b. Patch ghidrasql for GCC 15 --------------------------------------
 # Kali's GCC 15 / libstdc++ 15 no longer transitively pulls in <algorithm>, so
@@ -212,60 +208,14 @@ while IFS= read -r f; do
 done < <(grep -rlE 'std::(find_if|find|sort|stable_sort|transform|count|count_if|min_element|max_element|remove|remove_if|unique|any_of|all_of|none_of|for_each|lower_bound|upper_bound)' \
     "$SRC_DIR/ghidrasql/src" 2>/dev/null || true)
 
-# --- 5c. Patch ghidrasql headless mode to open the active program --------
-# Upstream bug: in headless one-shot/server mode the CLI hardcodes
-# `source_opts.auto_open_program = false` and never sets program_path, so the
-# client never issues OpenProgram against the host it just launched. The host
-# DOES bind the loaded program (HostState.currentProgram), but the client's
-# query layer returns empty rows (funcs=0, db_info shows program_name
-# "active-program", language_id/md5 blank). The --url connect path sets
-# program_path + auto_open_program and works — we mirror that here, defaulting
-# the active program to the imported binary's project path so the documented
-# `--binary ... -q` form works (and an explicit --program/--initial-program
-# still wins via selected_program_arg). Idempotent: the old line is gone after
-# patching. See https://github.com/0xeb/ghidrasql (run_headless_live_*).
-log "Patching ghidrasql headless mode to open the active program"
-python3 - "$SRC_DIR/ghidrasql/src/cli/main.cpp" <<'PYEOF'
-import sys
-p = sys.argv[1]
-s = open(p).read()
-old = "    source_opts.auto_open_program = false;\n"
-new = (
-    "    std::string selected_program = selected_program_arg(args);\n"
-    "    if (selected_program.empty() && !args.binary_paths.empty()) {\n"
-    "        std::string base = args.binary_paths.front();\n"
-    "        auto slash = base.find_last_of('/');\n"
-    "        if (slash != std::string::npos) base = base.substr(slash + 1);\n"
-    "        selected_program = \"/\" + base;\n"
-    "    }\n"
-    "    source_opts.auto_open_program = !selected_program.empty();\n"
-    "    source_opts.program_path = selected_program;\n"
-    "    source_opts.project_path = args.project;\n"
-    "    source_opts.project_name = args.project_name;\n"
-)
-if old in s:
-    s = s.replace(old, new)
-    open(p, "w").write(s)
-    print("  patched %d site(s)" % s.count("source_opts.auto_open_program = !selected_program.empty();"))
-else:
-    print("  already patched (or upstream changed) — skipping")
-PYEOF
-
-# --- 5d. Patch ghidrasql "all addresses" sentinel ------------------------
-# The client passes kAllAddressesMax = UINT64_MAX as the range upper bound for
-# every range-filtered table (funcs, names, instructions, strings, xrefs, ...).
-# Over protobuf uint64 -> Java long that value is -1, so the host's
-# `if (endOffset <= 0) endOffset = getMaxAddress().getOffset()` kicks in. For
-# binaries with unresolved externals Ghidra puts an EXTERNAL block in a space
-# that sorts AFTER ram with a tiny offset, so getMaxAddress().getOffset() is a
-# few bytes and EVERY real function is filtered out (rows=0) while non-range
-# tables like `segments` work. Using INT64_MAX keeps it a large *positive* long
-# on the host, so the upper bound stays unbounded and nothing is filtered.
-# One-line, client-side; fixes all range tables without rebuilding the extension.
-log "Patching ghidrasql address-range sentinel (UINT64_MAX -> INT64_MAX)"
-sed -i \
-  's#kAllAddressesMax = std::numeric_limits<std::uint64_t>::max();#kAllAddressesMax = static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());#' \
-  "$SRC_DIR/ghidrasql/src/lib/src/source_libghidra.cpp"
+# NOTE: two patches we used to carry here are now upstream and have been removed:
+#   - headless OpenProgram (issue #1): db_info is fixed differently upstream (#9
+#     resolves the active program from the revision server-side; the headless path
+#     deliberately keeps auto_open_program=false), so our client-side OpenProgram
+#     would diverge from — and risk conflicting with — that design.
+#   - range-sentinel UINT64_MAX->INT64_MAX (issue #2): merged verbatim in #7
+#     (client) + libghidra#16 (host); our sed is now a no-op.
+# Both land automatically via the git pull above; do not re-add them.
 
 # --- 6. Build the libghidra Ghidra extension -----------------------------
 # Prefer a bundled gradle wrapper if the repo ships one; else system gradle.
@@ -286,20 +236,19 @@ test -d "$GHIDRA_INSTALL_DIR/Ghidra/Extensions/LibGhidraHost" || {
     echo "FATAL: LibGhidraHost extension did not install" >&2; exit 1; }
 
 # --- 7. Build ghidrasql (C++/CMake) --------------------------------------
-# FETCHCONTENT_SOURCE_DIR_LIBXSQL points CMake at our pre-cloned libxsql (its
-# pinned commit can't be shallow-checked-out). Always (re)build — incremental, so
-# it recompiles only what the patches above changed (protobuf/abseil stay cached)
-# and is near-instant when nothing changed. This guarantees source patches apply.
+# Always (re)build — incremental, so it recompiles only what the GCC-15 patch
+# above changed (protobuf/abseil stay cached) and is near-instant when nothing
+# changed. This guarantees the source patch applies. libxsql is pulled by
+# ghidrasql's own FetchContent (pinned to a release tag upstream).
 BUILT_BIN="$SRC_DIR/ghidrasql/build/bin/ghidrasql"
 log "Building ghidrasql"
-# Retried: CMake FetchContent pulls protobuf/abseil from the network; build is
-# incremental so retries are cheap and only re-fetch what failed.
+# Retried: CMake FetchContent pulls libxsql/protobuf/abseil from the network;
+# build is incremental so retries are cheap and only re-fetch what failed.
 retry 3 20 -- sudo -u "$VAGRANT_USER" bash -c "
     set -e
     export JAVA_HOME='$JAVA_HOME'
     cd '$SRC_DIR/ghidrasql'
     cmake -B build -DGHIDRASQL_LIBGHIDRA_DIR=../libghidra/cpp \
-          -DFETCHCONTENT_SOURCE_DIR_LIBXSQL='$LIBXSQL_DIR' \
           -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j\$(nproc)
 "
