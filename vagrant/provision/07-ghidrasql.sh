@@ -236,11 +236,28 @@ test -d "$GHIDRA_INSTALL_DIR/Ghidra/Extensions/LibGhidraHost" || {
     echo "FATAL: LibGhidraHost extension did not install" >&2; exit 1; }
 
 # --- 7. Build ghidrasql (C++/CMake) --------------------------------------
-# Always (re)build — incremental, so it recompiles only what the GCC-15 patch
-# above changed (protobuf/abseil stay cached) and is near-instant when nothing
-# changed. This guarantees the source patch applies. libxsql is pulled by
-# ghidrasql's own FetchContent (pinned to a release tag upstream).
+# Incremental by default — recompiles only what the GCC-15 patch above changed
+# (protobuf/abseil stay cached) and is near-instant when nothing changed. libxsql,
+# cpp-httplib and protobuf are pinned *inside* ghidrasql's own CMakeLists via
+# FetchContent and fetched into build/_deps.
 BUILT_BIN="$SRC_DIR/ghidrasql/build/bin/ghidrasql"
+
+# Dep-skew guard. The build/ tree is reused across provisions for speed, but the
+# FetchContent pins live in the ghidrasql *source*. When `git pull` advances
+# ghidrasql (e.g. #16: libxsql v1.0.8 -> v1.0.10), a reused build/_deps keeps the
+# OLD libxsql while the updated headers expect the new one — e.g.
+# "'xsql::ScriptStatementResult' is not a member of 'xsql'" (the symbol's
+# transitive include only exists in libxsql v1.0.7+). A fresh FetchContent of the
+# current pin compiles cleanly, so force a clean configure whenever the source rev
+# changed — or on first build, when the stamp is absent — and keep the fast
+# incremental path otherwise.
+SRC_REV="$(sudo -u "$VAGRANT_USER" git -C "$SRC_DIR/ghidrasql" rev-parse HEAD 2>/dev/null || echo unknown)"
+STAMP="$SRC_DIR/ghidrasql/build/.ptai-built-rev"
+if [ ! -f "$STAMP" ] || [ "$(cat "$STAMP" 2>/dev/null)" != "$SRC_REV" ]; then
+    log "ghidrasql source changed (or first build) — clearing build/ to re-pin FetchContent deps"
+    rm -rf "$SRC_DIR/ghidrasql/build"
+fi
+
 log "Building ghidrasql"
 # Retried: CMake FetchContent pulls libxsql/protobuf/abseil from the network;
 # build is incremental so retries are cheap and only re-fetch what failed.
@@ -254,6 +271,9 @@ retry 3 20 -- sudo -u "$VAGRANT_USER" bash -c "
 "
 test -x "$BUILT_BIN" || { echo "FATAL: ghidrasql binary not built" >&2; exit 1; }
 ln -sf "$BUILT_BIN" "$BIN_DST"
+# Record the source rev this build/ tree was produced from, so the next provision
+# only does a clean rebuild when ghidrasql actually advanced (see the guard above).
+printf '%s\n' "$SRC_REV" | sudo -u "$VAGRANT_USER" tee "$STAMP" >/dev/null
 
 # --- 8. Environment glue --------------------------------------------------
 # Export GHIDRA_INSTALL_DIR so the common headless-launch path needs no --ghidra.

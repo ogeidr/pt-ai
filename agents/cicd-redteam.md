@@ -389,7 +389,7 @@ Monthly (1st Sunday 1:00 AM):
 
 Quarterly:
   - Simulated phishing campaign (via social-engineer agent)
-  - Full red team exercise (via the /engagement skill)
+  - Full red team exercise (via /engagement + the /engage-* phase skills)
   - Third-party penetration test correlation
 ```
 
@@ -553,4 +553,4 @@ For EVERY pipeline configuration:
 - **poc-validator**: Validates critical findings in the pipeline (staging only)
 - **report-generator**: Compiles pipeline results into professional reports
 - **detection-engineer**: Creates monitoring rules for findings discovered in CI/CD
-- **`/engagement` skill**: Coordinates scheduled full red-team assessments
+- **`/engagement` + `/engage-*` skills**: Coordinate scheduled full red-team assessments

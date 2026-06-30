@@ -115,7 +115,7 @@ primary format, Sigma secondary.
 ## Workflow Chaining
 
 The agents are designed to work together across the phases of a complete engagement.
-For the visual version of everything below — the orchestrator state machine, the
+For the visual version of everything below — the engagement state machine, the
 delegation protocol, and the safety layers — see [`WORKFLOW.md`](WORKFLOW.md).
 
 At a glance — each phase, its primary agents, and where its output flows next:
@@ -133,7 +133,7 @@ At a glance — each phase, its primary agents, and where its output flows next:
 | 8. Compliance mapping (if required) | `stig-analyst` | report-generator |
 | 9. Reporting | `report-generator` | client delivery |
 
-Each phase is detailed below. Crossing a phase boundary requires operator approval; the reconnaissance → exploitation transition is a **hard gate** (see *Execution Mode* and the `/engagement` skill, which enforces it with state in `gates.jsonl`).
+Each phase is detailed below. Crossing a phase boundary requires operator approval; the reconnaissance → exploitation transition is a **hard gate** (see *Execution Mode* and the `/engage-exploit` skill, which enforces it with state in `gates.jsonl` and is operator-invocation only).
 
 The flow is **forward-only**: it does not auto-trigger a fresh recon phase when exploitation reaches new hosts. In-scope discoveries are enumerated by the pivot specialists; out-of-scope ones are refused; and incorporating new attack surface is a manual `/scope-declare` re-run. See *§8 "What the orchestrator does NOT do"* in [`WORKFLOW.md`](WORKFLOW.md) for the exact limits, including the existence-based gate caveat.
 
@@ -258,19 +258,24 @@ severity with remediation recommendations. [paste findings]
 ### Full-Engagement Automation
 
 For engagements where you want real, automated agent handoffs, use the
-**`/engagement` skill**. The skill runs in the main thread, so it can use the `Task`
-tool to delegate to each specialist agent in turn; a subagent cannot spawn other
-subagents, which is why this lifecycle has to be driven from a skill (or by hand),
-not from a single coordinating agent.
+**`/engagement` init skill plus the `/engage-*` phase skills**. `/engagement` records
+init; each phase skill runs in the main thread, so it can use the `Task` tool to
+delegate to each specialist agent in turn; a subagent cannot spawn other subagents,
+which is why this lifecycle has to be driven from skills (or by hand), not from a
+single coordinating agent.
 
-`/engagement` is **operator-gated**: it emits a per-delegation scope envelope,
-records phase state in `gates.jsonl`, and stops for your explicit approval at every
-phase transition (and a hard gate before exploitation). Every command a delegated
+The lifecycle is **operator-gated**: each phase skill emits a per-delegation scope
+envelope (single-sourced in `_engagement-protocol.md`), records phase state in
+`gates.jsonl`, and you advance by explicitly invoking the next phase skill. The
+recon → exploitation transition is a hard gate read fresh from disk by
+`/engage-exploit` (which is operator-invocation only). Every command a delegated
 agent composes still goes through Claude Code's per-command permission prompt.
 
 ```
 /scope-declare      # set engagement id, scope, authorization = yes
-/engagement         # confirm the authorized agent set, then approve each phase
+/engagement         # confirm the authorized agent set; prints the phase sequence
+/engage-recon       # phase 2 ; then /engage-vuln, /engage-exploit (gated),
+                    #          /engage-detect, /engage-report — one per phase
 ```
 
 > **opencode note:** opencode discovers `engagement` as a native skill

@@ -20,9 +20,12 @@ contracts see [`findings-store.md`](findings-store.md).
 
 ## 1. Top-level flow
 
-`/scope-declare` is always first. `/engagement` is the optional automated driver
-(Claude Code only — it needs the `Task` tool to fan out). Without it, the same
-agents and skills are run by hand as a playbook.
+`/scope-declare` is always first. `/engagement` then **initializes** the engagement
+(confirms scope, authorization, and the authorized agent set) and the operator runs
+the per-phase skills `/engage-recon → /engage-vuln → /engage-exploit →
+/engage-detect → /engage-report` in order — each does its own `Task` fan-out (Claude
+Code only — they need the `Task` tool). Without that, the same agents and skills are
+run by hand as a playbook.
 
 ```mermaid
 flowchart TD
@@ -31,7 +34,7 @@ flowchart TD
     scope -->|"authorization = yes"| write["Writes:<br/>/engagements/{safe_id}/scope.md (canonical)<br/>/engagements/scope.md (pointer)"]
 
     write --> fork{How to run?}
-    fork -->|Automated, Claude Code| eng["/engagement<br/>(orchestrator skill)"]
+    fork -->|Automated, Claude Code| eng["/engagement init →<br/>/engage-* phase skills"]
     fork -->|Manual playbook / opencode| manual["Invoke agents + skills<br/>one phase at a time"]
 
     eng --> phases[[Gated phase sequence 2-9]]
@@ -45,9 +48,10 @@ flowchart TD
 ## 2. The 0–9 lifecycle and the agents in each phase
 
 Phases 0–1 are **pre-engagement** (handled by `/scope-declare` + the planning
-agents). The `/engagement` orchestrator drives **phases 2–9**. Every phase boundary
-is an operator gate; the **recon → exploitation** transition is a *hard* gate backed
-by `gates.jsonl`.
+agents). `/engagement` initializes; the `/engage-*` phase skills drive **phases
+2–9**, one operator-invoked skill per phase. Every phase boundary is an operator
+gate; the **recon → exploitation** transition is a *hard* gate backed by
+`gates.jsonl` and an operator-invocation-only `/engage-exploit` skill.
 
 ```mermaid
 flowchart LR
@@ -102,7 +106,7 @@ flowchart LR
 ```
 
 **High-authorization agents are OFF by default** and require their own written
-authorization before the orchestrator will add them: `social-engineer`,
+authorization before `/engagement` will add them: `social-engineer`,
 `wireless-pentester`, `mobile-pentester`, `exploit-guide`. Standalone-use agents not
 on the default chain: `bug-bounty`, `ctf-solver`, `forensics-analyst`,
 `malware-analyst`.
@@ -116,12 +120,15 @@ on the default chain: `bug-bounty`, `ctf-solver`, `forensics-analyst`,
 
 ---
 
-## 3. The `/engagement` orchestrator state machine
+## 3. The engagement phase-skill state machine
 
-The orchestrator runs in the main thread, so it can call `Task` to delegate to
-specialists (a subagent cannot spawn subagents — this is why the lifecycle lives in
-a skill, not a coordinating agent). It is **operator-gated, not autonomous**: it
-stops at every phase boundary and never auto-advances.
+`/engagement` records init; each `/engage-*` phase skill runs in the main thread, so
+it can call `Task` to delegate to specialists (a subagent cannot spawn subagents —
+this is why the lifecycle lives in skills, not a coordinating agent). The lifecycle
+is **operator-gated, not autonomous**: each phase is a separate operator-invoked
+skill that reconstructs state from disk and never auto-advances. Making the phase
+boundary an explicit human action (invoking the next skill) is what hardens the
+recon → exploitation gate.
 
 ```mermaid
 stateDiagram-v2
@@ -153,7 +160,7 @@ stateDiagram-v2
 `gates.jsonl` line shapes (append-only, latest line per `(phase,status)` wins):
 
 - `init` → `{engagement, phase:"init", status:"declared", authorized_agents:[…], scope, ts, by:"engagement"}`
-- `phase done` → `{engagement, phase:"<name>", status:"complete", ts, by:"engagement"}`
+- `phase done` → `{engagement, phase:"<name>", status:"complete", ts, by:"<phase-skill>"}`
 - `operator gate` → `{engagement, phase:"<name>", status:"approved", ts, by:"operator"}`
 
 ---
@@ -166,7 +173,7 @@ findings move through `findings.jsonl` rather than copy-paste.
 
 ```mermaid
 flowchart TD
-    orch["/engagement orchestrator"]
+    orch["/engage-* phase skill"]
 
     orch -->|1. validate target in scope<br/>+ agent on authorized list| check{In scope &<br/>authorized?}
     check -->|no| refuse[Emit envelope + REFUSE — no Task call]
@@ -240,7 +247,7 @@ are **auto-injected** into every routable agent at `./pt-ai provision` by
 
 | Surface | Orchestration | Per-command gate | Notes |
 |---|---|---|---|
-| **Claude Code** (in VM) | `/engagement` via `Task` fan-out | Built-in approval prompt + `pt-ai-guard.sh` hook | Full automated lifecycle |
+| **Claude Code** (in VM) | `/engagement` init → `/engage-*` phase skills via `Task` fan-out | Built-in approval prompt + `pt-ai-guard.sh` hook | Full automated lifecycle |
 | **opencode** (in VM → host model) | Skills read natively; agents become opencode subagents | opencode permission gate + `pt-ai-guard` plugin | Lifecycle runs, but quality is model-bound — use a strong model |
 | **Manual / advisory** | Run agents one at a time as a playbook | Same Layer-2 gate | The fallback when no `Task` tool (e.g. opencode lacks `Task`) |
 

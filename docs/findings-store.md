@@ -117,8 +117,9 @@ append idiom inline) rather than pointing at the schema.
 # Engagement Phase Gates (`gates.jsonl`)
 
 A sibling append-only state file in the same engagement dir
-(`/engagements/{safe_id}/gates.jsonl`), written by the **`/engagement` orchestrator
-skill**. Where `findings.jsonl` carries *what was found*, `gates.jsonl` carries
+(`/engagements/{safe_id}/gates.jsonl`), written by the **`/engagement` init skill
+and the `/engage-*` phase skills**. Where `findings.jsonl` carries *what was found*,
+`gates.jsonl` carries
 *how far the engagement has progressed and what the operator approved* — so phase
 discipline survives session breaks instead of living only in per-session prose.
 
@@ -144,7 +145,8 @@ and IMPROVEMENTS #4 (phase gates as state).
 | operator approval | `{engagement, phase:"<name>", status:"approved", ts, by:"operator"}` |
 
 - `authorized_agents` (recorded once at init) is the set the operator confirmed for
-  THIS engagement. The orchestrator refuses to delegate to anything outside it.
+  THIS engagement (the phase skills re-read it from the init line). The phase skills
+  refuse to delegate to anything outside it.
 - The **recon → exploitation hard gate**: the skill prints `GO` only when both a
   `recon`/`complete` line and an `exploitation`/`approved` line exist; otherwise
   `NO-GO` and it stops for operator approval. The `approved` line is written only on
@@ -159,5 +161,6 @@ and IMPROVEMENTS #4 (phase gates as state).
 ```
 
 No JSON Schema ships for `gates.jsonl` in v1 — the three line shapes above are the
-whole contract, owned by the `/engagement` skill. Add a `schema/gates.schema.json`
+whole contract, shared across the `/engagement` init skill and the `/engage-*` phase
+skills (single-sourced in `_engagement-protocol.md`). Add a `schema/gates.schema.json`
 only if another tool starts consuming the file.
