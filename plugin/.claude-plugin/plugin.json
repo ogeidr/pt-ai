@@ -1,0 +1,10 @@
+{
+  "name": "pt-ai",
+  "version": "0.1.0",
+  "description": "Operator-gated penetration-testing skills, agents, and runtime safety hooks for Claude Code.",
+  "author": { "name": "ogeid" },
+  "homepage": "https://github.com/ogeid/pt-ai",
+  "repository": "https://github.com/ogeid/pt-ai",
+  "license": "MIT",
+  "keywords": ["security", "pentest", "red-team", "offensive-security", "authorization-bound"]
+}
