@@ -43,15 +43,27 @@ assert_deny  "rm -rf / "                          bash '{"tool_input":{"command"
 assert_deny  "rm -rf /engagements/*"              bash '{"tool_input":{"command":"rm -rf /engagements/*"}}'
 assert_allow "rm -rf a specific deep path"        bash '{"tool_input":{"command":"rm -rf /engagements/acme/old"}}'
 
-# Stage 3: OPSEC ceiling (default MODERATE — a LOUD tool must be blocked)
-assert_deny  "nikto under default MODERATE"       bash '{"tool_input":{"command":"nikto -h http://t"}}'
-assert_allow "whois under default MODERATE"       bash '{"tool_input":{"command":"whois example.com"}}'
-
-# Raising the ceiling via PT_AI_OPSEC_LIMIT must let the LOUD tool through:
-if printf '%s' '{"tool_input":{"command":"nikto -h http://t"}}' | PT_AI_OPSEC_LIMIT=LOUD sh "$GUARD" bash | grep -q deny; then
-    echo "  FAIL want-allow — nikto with PT_AI_OPSEC_LIMIT=LOUD"; fail=1
+# Stage 3: OPSEC ceiling. The guard resolves the ceiling from ambient state it
+# reads directly: /engagements/.opsec_ceiling (a FILE, higher priority) then the
+# PT_AI_OPSEC_LIMIT env var, else MODERATE. On a clean host/CI both are absent so
+# the default-MODERATE cases hold; but INSIDE THE VM, /engagements is a real mount
+# that may carry an operator-set ceiling file which overrides the default. Detect
+# it and skip (we must not mutate real engagement state to force a value); force
+# the env input to MODERATE otherwise so the case doesn't depend on the caller.
+if [ -r /engagements/.opsec_ceiling ]; then
+    echo "  SKIP OPSEC MODERATE cases — ambient /engagements/.opsec_ceiling present ($(tr -d '[:space:]' < /engagements/.opsec_ceiling 2>/dev/null)) overrides the default ceiling"
 else
-    echo "  ok   ALLOW — nikto with PT_AI_OPSEC_LIMIT=LOUD"
+    PT_AI_OPSEC_LIMIT=MODERATE; export PT_AI_OPSEC_LIMIT
+    assert_deny  "nikto under MODERATE ceiling"   bash '{"tool_input":{"command":"nikto -h http://t"}}'
+    assert_allow "whois under MODERATE ceiling"   bash '{"tool_input":{"command":"whois example.com"}}'
+    unset PT_AI_OPSEC_LIMIT
+    # Raising the ceiling to LOUD must let the LOUD tool through (env-only path,
+    # meaningful only when no ambient file forces a ceiling):
+    if printf '%s' '{"tool_input":{"command":"nikto -h http://t"}}' | PT_AI_OPSEC_LIMIT=LOUD sh "$GUARD" bash | grep -q deny; then
+        echo "  FAIL want-allow — nikto with PT_AI_OPSEC_LIMIT=LOUD"; fail=1
+    else
+        echo "  ok   ALLOW — nikto with PT_AI_OPSEC_LIMIT=LOUD"
+    fi
 fi
 
 echo

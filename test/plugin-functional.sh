@@ -61,8 +61,10 @@ else no "plugin install failed — check 'claude plugin install --help'"; fi
 
 # --- assert enabled + components registered --------------------------------
 listjson="$(claude plugin list --json 2>/dev/null || echo '[]')"
-if printf '%s' "$listjson" | jq -e '.[]?|select(.name=="pt-ai")' >/dev/null 2>&1; then ok "pt-ai present in 'plugin list --json'"
-else no "pt-ai absent from 'plugin list --json' (output: $(printf '%s' "$listjson" | head -c200))"; fi
+# 'plugin list --json' keys each entry by .id ("pt-ai@pt-ai") with .enabled; older
+# shapes may use .name. Match either, and require it not be explicitly disabled.
+if printf '%s' "$listjson" | jq -e 'any(.[]; (.id=="pt-ai@pt-ai" or .name=="pt-ai") and (.enabled != false))' >/dev/null 2>&1; then ok "pt-ai present + enabled in 'plugin list --json'"
+else no "pt-ai absent/disabled in 'plugin list --json' (output: $(printf '%s' "$listjson" | head -c200))"; fi
 
 # Settings-file cross-check (enabledPlugins key), independent of list --json shape.
 if grep -rq 'pt-ai' "$CLAUDE_CONFIG_DIR"/settings*.json 2>/dev/null; then ok "pt-ai referenced in settings.json (enabledPlugins)"
