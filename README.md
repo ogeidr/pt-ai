@@ -30,7 +30,7 @@ See [vagrant/README.md](vagrant/README.md) for setup and daily workflow.
 Drops the same skills/agents/hooks into your existing Claude Code. **Claude Code only, and you bring your own tools** — pt-ai ships intelligence and guardrails, not scanners or a sandbox. Requires `jq` or `python3` on `PATH` (the safety hook fails closed without a JSON parser). Engagement state lives under `./engagements/` in the directory you launch Claude Code from.
 
 ```
-/plugin marketplace add ogeid/pt-ai
+/plugin marketplace add ogeidr/pt-ai
 /plugin install pt-ai@pt-ai
 ```
 
