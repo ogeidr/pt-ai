@@ -33,7 +33,7 @@ jobs:
   mechanical:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Tool versions (sed portability context)
         run: |
           sed --version | head -1
