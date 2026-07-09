@@ -17,6 +17,11 @@ Work through phases in order. Stop and fix before continuing if anything fails.
 > [test/README.md](test/README.md). The box is selected with `PTAI_BOX` (`KALI_BOX`
 > is still honored as a fallback); skip the heavy Ghidra-backed builds with
 > `PTAI_SKIP_GHIDRASQL=1` and/or `PTAI_SKIP_GHIDRA_RPC=1`.
+>
+> **Two test harnesses:** this VM/provisioning harness (`vagrant/test/`) and the
+> **plugin** harness ([`../test/`](../test/README.md)) — the latter covers install
+> Option B. Its mechanical tier runs VM-free in CI; its functional tier
+> (`plugin-functional.sh`) runs **inside this VM**.
 
 ---
 

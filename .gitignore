@@ -23,6 +23,8 @@ node_modules/
 .claude/
 # Engagement evidence (sensitive)
 engagements/
+# Plugin test-suite runtime artifacts (logs/summary — not source)
+test/results/
 # Security review outputs (sensitive)
 reviews/
 # Features (sensitive)

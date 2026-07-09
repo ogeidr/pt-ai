@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "pt-ai",
+  "description": "pt-ai — operator-gated penetration-testing harness for Claude Code.",
+  "owner": {
+    "name": "ogeid",
+    "url": "https://github.com/ogeidr/pt-ai"
+  },
+  "plugins": [
+    {
+      "name": "pt-ai",
+      "source": "./plugin",
+      "description": "Operator-gated penetration-testing skills, agents, and runtime safety hooks. Bring your own tools; Claude Code only.",
+      "category": "security",
+      "author": { "name": "ogeid" },
+      "homepage": "https://github.com/ogeidr/pt-ai"
+    }
+  ]
+}

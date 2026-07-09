@@ -1,0 +1,42 @@
+# Tier-1 plugin tests (mechanical): build parity, runtime-hook behavior, and
+# structural validation of the generated plugin/ tree. VM-free — runs on a plain
+# Linux runner with only jq (preinstalled on ubuntu-latest). The functional tier
+# (install + drive Claude Code) is NOT here; it needs an authed Claude Code and
+# runs in the Vagrant VM (test/plugin-functional.sh).
+#
+# This job is also the definitive GNU-sed portability check: plugin/ is committed
+# after a BSD-sed build on macOS, and `parity` here rebuilds under GNU sed and
+# diffs — a divergence fails loudly with the exact diff.
+name: plugin-suite
+
+on:
+  push:
+    paths:
+      - 'agents/**'
+      - 'skills/**'
+      - 'tools/**'
+      - 'plugin/**'
+      - 'test/**'
+      - 'vagrant/config/claude/hooks/**'
+      - '.github/workflows/plugin-suite.yml'
+  pull_request:
+    paths:
+      - 'agents/**'
+      - 'skills/**'
+      - 'tools/**'
+      - 'plugin/**'
+      - 'test/**'
+      - 'vagrant/config/claude/hooks/**'
+      - '.github/workflows/plugin-suite.yml'
+
+jobs:
+  mechanical:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tool versions (sed portability context)
+        run: |
+          sed --version | head -1
+          jq --version
+      - name: Run Tier-1 plugin suite (parity + hooks + validate)
+        run: bash test/plugin-suite.sh
