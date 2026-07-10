@@ -53,9 +53,37 @@ the end — it needs a TTY and is not faked.
 > The `claude plugin …` / `claude -p` flags are sourced from the Claude Code docs;
 > verify against the installed version on first run (`claude plugin --help`).
 
+## Security review before merge (manual)
+
+`/security-review` is **not** wired into CI — the upstream
+`anthropics/claude-code-security-review` action authenticates only with an
+Anthropic **API key** (it rejects OAuth tokens and Pro/Max subscriptions), and
+this repo's auth is OAuth-only. A diff-based review is also blind to pt-ai's
+dominant risks (supply-chain / adversarial runtime input) — see
+[`../reviews/beyond-slash-security-review.md`](../reviews/beyond-slash-security-review.md).
+So it stays a deliberate pre-merge habit, not a gate.
+
+Run it before merging any change to **code** — the shell wrapper, build/tool
+scripts, or the runtime guard hooks (prose-only edits to `agents/`/`skills/`
+don't need it):
+
+```sh
+# in Claude Code, on the branch you're about to merge:
+/security-review
+# high-signal paths (where a real code vuln can recur — cf. PENDING #5,
+# command injection in vagrant/pt-ai):
+#   vagrant/pt-ai
+#   tools/**
+#   vagrant/config/claude/hooks/**
+```
+
+Triage anything it finds into [`../reviews/PENDING.md`](../reviews/PENDING.md)
+(the single source of truth for open findings) rather than leaving it in chat.
+
 ## What runs where
 
 | | Host (macOS) | GitHub CI | Vagrant VM |
 |---|---|---|---|
 | Tier 1 (mechanical) | — (off-limits) | ✅ every push/PR | ✅ possible |
 | Tier 2 (functional) | ✋ refuses | — (no authed Claude) | ✅ on demand |
+| Security review | ✅ manual, pre-merge | — (no API key) | ✅ manual, pre-merge |
