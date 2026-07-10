@@ -168,7 +168,20 @@ cmd_up() {
     _vagrant up --provider "$VAGRANT_PROVIDER" "$@"
 }
 
+# Ensure the VM is booted and SSH-ready before an interactive session.
+# claude/opencode/ssh call `vagrant ssh` directly; against a halted, saved,
+# or not-yet-created machine that prints an opaque "not yet ready for SSH"
+# error. Probe first (same idiom as _lm_use, below); boot on demand if it
+# fails — `vagrant up` blocks until the machine is booted and SSH-ready, so a
+# real session follows cleanly.
+_ensure_up() {
+    _vagrant ssh -- -T true </dev/null >/dev/null 2>&1 && return 0
+    echo "[pt-ai] VM not ready — booting it first (./pt-ai up)…" >&2
+    cmd_up
+}
+
 cmd_ssh() {
+    _ensure_up
     _vagrant ssh "$@"
 }
 
@@ -176,6 +189,7 @@ cmd_claude() {
     # --fresh (PENDING #20): wipe cross-engagement Claude state before launch —
     # ~/.claude/projects + history.jsonl — preserving credentials and settings.
     # Must precede any `--`. Explicit opt-in (safer than auto-wipe-on-exit).
+    _ensure_up
     fresh=0
     case "${1:-}" in --fresh) fresh=1; shift ;; esac
     if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
@@ -392,6 +406,7 @@ EOF
 cmd_opencode() {
     # --fresh (PENDING #20): wipe opencode session storage + logs before launch,
     # preserving auth. Must precede any `--`.
+    _ensure_up
     fresh=0
     case "${1:-}" in --fresh) fresh=1; shift ;; esac
     if [ "$#" -gt 0 ] && [ "$1" = "--" ]; then shift; else set --; fi
