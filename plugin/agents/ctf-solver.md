@@ -198,7 +198,7 @@ enumeration, credential or privesc discovery, CI/CD or business-logic flaws):
 append a `reported` record as you find each one —
 
 ```sh
-printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"<short title>","target":"<ip/host/url/arn>","category":"<network|web|ad|cloud|container|host|credential|other>","severity":"<info|low|medium|high|critical>","status":"reported","confidence":"<speculative|moderate|high>","exploitation":"<unproven|poc|functional|confirmed>","evidence":["scans/<evidence_file>"],"mitre":["T1190"],"source_agent":"<your agent name>","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
+printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"<short title>","target":"<ip/host/url/arn>","category":"<network|web|ad|cloud|container|host|credential|cicd|mobile|other>","severity":"<info|low|medium|high|critical>","status":"reported","confidence":"<speculative|moderate|high>","exploitation":"<unproven|poc|functional|confirmed>","evidence":["scans/<evidence_file>"],"mitre":["T1190"],"source_agent":"<your agent name>","discovered_at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' >> "$ENGAGEMENT_DIR/findings.jsonl"
 ```
 
 Required fields: `schema_version` ("1.0"), `id` (`F-NNNN`, next unused — check the

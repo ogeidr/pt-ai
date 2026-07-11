@@ -18,8 +18,8 @@
   ],
   "properties": {
     "schema_version": {
-      "enum": ["1.0", "1.1"],
-      "description": "Schema contract version. 1.0 = original; 1.1 adds the calibration fields (exploitation, cvss_vector, cvss_temporal). Old 1.0 records remain valid; /severity-calibrate writes 1.1."
+      "enum": ["1.0", "1.1", "1.2"],
+      "description": "Schema contract version. 1.0 = original; 1.1 adds the calibration fields (exploitation, cvss_vector, cvss_temporal); 1.2 adds the cicd and mobile finding categories. Old records remain valid; /severity-calibrate writes 1.1."
     },
     "id": {
       "type": "string",
@@ -35,8 +35,8 @@
     "port": { "type": ["integer", "null"], "minimum": 0, "maximum": 65535 },
     "service": { "type": "string" },
     "category": {
-      "enum": ["network", "web", "ad", "cloud", "container", "host", "credential", "other"],
-      "description": "Finding domain. Distinct from the bench scenario checkpoint categories."
+      "enum": ["network", "web", "ad", "cloud", "container", "host", "credential", "cicd", "mobile", "other"],
+      "description": "Finding domain. cicd/mobile added in schema_version 1.2; other is the catch-all."
     },
     "phase": {
       "enum": ["recon", "vuln-assessment", "exploitation", "post-exploitation", "reporting"],

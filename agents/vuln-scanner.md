@@ -255,7 +255,7 @@ printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Jenkins pre-auth R
 ```
 
 Rules:
-- **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`vuln-scanner`), `discovered_at` (ISO-8601 UTC).
+- **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check the file's existing ids first), `title`, `target`, `category` (`network|web|ad|cloud|container|host|credential|cicd|mobile|other`), `severity` (`info|low|medium|high|critical`), `status`, `source_agent` (`vuln-scanner`), `discovered_at` (ISO-8601 UTC).
 - Write `"status":"reported"` for scanner findings; mark `"confirmed"` only if you directly proved exploitability. Set `confidence` (`speculative|moderate|high`) to reflect version-based vs validated. Add `cve` and the CVSS *base* score in `cvss` when known.
 - **Severity honesty:** set `exploitation` to `unproven` for a version/banner match you did not exploit (the usual scanner case). A base CVSS is worst-case — **do not let a version-only match stand as `critical`/`high`**; `/severity-calibrate` recalibrates severity down from the CVSS temporal score before reporting. Mark `poc`/`functional` only when public exploit code exists, `confirmed` only when proven.
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nuclei_…`) so the finding links to its proof.

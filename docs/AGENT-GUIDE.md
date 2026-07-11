@@ -272,7 +272,11 @@ single coordinating agent.
 
 The lifecycle is **operator-gated**: each phase skill emits a per-delegation scope
 envelope (single-sourced in `_engagement-protocol.md`), records phase state in
-`gates.jsonl`, and you advance by explicitly invoking the next phase skill. The
+`gates.jsonl`, and you advance by explicitly invoking the next phase skill. From the
+vuln phase on, each skill also runs a **coverage check** — if the findings show a domain
+(cloud, AD, container, web, credential, cicd, mobile) with no matching specialist on the
+authorized list, it surfaces the gap and offers to add one; the agent is added only on
+your explicit approval (a fresh `init` line), never inferred from finding text. The
 recon → exploitation transition is a hard gate read fresh from disk by
 `/engage-exploit` (which is operator-invocation only). Every command a delegated
 agent composes still goes through Claude Code's per-command permission prompt.

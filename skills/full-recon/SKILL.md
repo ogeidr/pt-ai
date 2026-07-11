@@ -191,7 +191,7 @@ printf '%s\n' '{"schema_version":"1.0","id":"F-0001","title":"Outdated Apache (2
 Rules:
 - **Required fields:** `schema_version` ("1.0"), `id` (`F-NNNN` — next unused; check
   the file's existing ids first), `title`, `target`, `category`
-  (`network|web|ad|cloud|container|host|credential|other`), `severity`
+  (`network|web|ad|cloud|container|host|credential|cicd|mobile|other`), `severity`
   (`info|low|medium|high|critical`), `status`, `source_agent` (`full-recon`),
   `discovered_at` (ISO-8601 UTC).
 - List the evidence file(s) you saved in `evidence` (relative to `$ENGAGEMENT_DIR`, e.g. `scans/nmap_svc_…`).
