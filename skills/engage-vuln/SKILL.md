@@ -31,10 +31,13 @@ grep -q '"phase":"recon","status":"complete"' "<ENGAGEMENT_DIR>/gates.jsonl" && 
 ```
 NO-GO → STOP and tell the operator to complete recon with `/engage-recon` first.
 
-**Agents (if on the authorized list):** `vuln-scanner` → `poc-validator`. Delegate
-`vuln-scanner` to assess in-scope surface, then `poc-validator` to confirm or
-demote candidate findings. Apply the conflict-resolution rules (PoC wins) from the
-shared protocol. This phase is assessment, not exploitation — no exploit delivery.
+**Agents (if on the authorized list):** `vuln-scanner` → `poc-validator`, plus
+`sast-sca` when the engagement covers source code, dependencies, or images. Delegate
+`vuln-scanner` to assess in-scope surface (and `sast-sca` to review pasted or
+readable source/dependency inventories — advisory, no scanning of targets), then
+`poc-validator` to confirm or demote candidate findings. Apply the conflict-resolution
+rules (PoC wins) from the shared protocol. This phase is assessment, not exploitation
+— no exploit delivery.
 
 Read `ENGAGEMENT_DIR/findings.jsonl` to build the summary.
 

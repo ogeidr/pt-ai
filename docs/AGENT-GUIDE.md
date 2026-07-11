@@ -25,7 +25,9 @@ Each agent is a Markdown file in `.claude/agents/` with a YAML frontmatter block
 | **exploit-guide** | Exploitation technique methodology | — | Include target OS version and patch level |
 | **exploit-chainer** | Multi-vulnerability chains, exploit automation | ✓ | Provide specific vuln details, not just types |
 | **poc-validator** | Confirm findings, eliminate false positives | ✓ | Include scanner output and response snippets |
+| **sast-sca** | Source-code review (SAST) + dependency/CVE analysis (SCA) | — | Paste scanner output or point at source in the evidence dir; box has `trivy`, not `semgrep` |
 | **privesc-advisor** | Linux/Windows/container privilege escalation | — | Paste `id`, `sudo -l`, `uname` output |
+| **container-escaper** | Container/Kubernetes escape & breakout paths | — | Paste `capsh --print`, `mount`, socket, and K8s `can-i` output |
 | **cloud-security** | AWS/Azure/GCP IAM analysis, cloud attack paths | — | Paste IAM policies for concrete escalation paths |
 | **cicd-redteam** | CI/CD pipeline security testing | ✓ | Specify CI platform and authorized environments |
 | **mobile-pentester** | Android/iOS app testing, Frida, cert pinning | — | Specify platform and available testing environment |
@@ -36,11 +38,13 @@ Each agent is a Markdown file in `.claude/agents/` with a YAML frontmatter block
 | **forensics-analyst** | DFIR, evidence acquisition, timeline analysis | — | Paste Volatility/Plaso output directly |
 | **malware-analyst** | Static/dynamic analysis, IOC extraction | — | Always work from an isolated environment |
 | **ctf-solver** | CTF / HackTheBox / TryHackMe challenge methodology (web, pwn, crypto, rev, forensics) | — | Standalone use — not part of the client-engagement chain |
+| **cleanup-deconfliction** | Post-engagement artifact removal checklist + deconfliction log | — | Advisory only; run after exploitation, before you leave the targets |
+| **retest-validator** | Remediation validation (retest) of prior findings | — | Runs behind `/engage-retest`; delegates re-validation to `poc-validator` |
 | **report-generator** | Professional pentest reports, executive summaries | — | Specify audience: technical team vs. executives |
 
 **Tier 2 (✓)** agents have the `Bash` tool enabled and compose and execute commands directly after you approve each one. **Advisory (—)** agents analyze pasted data and produce guidance but do not run commands.
 
-**Why some agents stay advisory:** `exploit-guide` and `wireless-pentester` carry high unintended-impact risk or require hardware; `credential-tester` risks account lockouts; `threat-modeler`, `attack-planner`, and `report-generator` produce documents, not commands.
+**Why some agents stay advisory:** `exploit-guide` and `wireless-pentester` carry high unintended-impact risk or require hardware; `credential-tester` risks account lockouts; `threat-modeler`, `attack-planner`, and `report-generator` produce documents, not commands. `sast-sca` and `container-escaper` analyze pasted/readable evidence and recommend commands a Tier 2 agent executes; `cleanup-deconfliction` never deletes (removal is an operator action); `retest-validator` delegates re-execution to `poc-validator`.
 
 ---
 
@@ -125,13 +129,15 @@ At a glance — each phase, its primary agents, and where its output flows next:
 | 0. Threat modeling (optional) | `threat-modeler` | engagement-planner |
 | 1. Planning & scoping | `engagement-planner` | reconnaissance agents |
 | 2. Reconnaissance | `osint-collector`, `recon-advisor`, `web-hunter` (broad sweep via the `/full-recon` skill) | vuln-scanner, attack-planner |
-| 3. Vulnerability assessment | `vuln-scanner` → `poc-validator` | attack-planner, exploit-chainer |
+| 3. Vulnerability assessment | `vuln-scanner` → `poc-validator` (+`sast-sca` for source/deps) | attack-planner, exploit-chainer |
 | 4. Attack planning | `attack-planner`, `exploit-chainer` | exploitation specialists |
 | 5. **Exploitation** (gated) | `exploit-chainer`, `ad-attacker`, `web-hunter`, `cloud-security`, `api-security`, `bizlogic-hunter`, `privesc-advisor` | credential & lateral movement |
-| 6. Credential & lateral movement | `credential-tester`, `ad-attacker` | detection, reporting |
+| 6. Credential & lateral movement | `credential-tester`, `ad-attacker`, `container-escaper` | detection, reporting |
+| 6b. Cleanup & deconfliction | `cleanup-deconfliction` (advisory) | detection, reporting |
 | 7. Detection engineering | `detection-engineer`, `threat-modeler` | report-generator |
 | 8. Compliance mapping (if required) | `stig-analyst` | report-generator |
 | 9. Reporting | `report-generator` | client delivery |
+| Retest (detached round) | `retest-validator` → `poc-validator` | updated report |
 
 Each phase is detailed below. Crossing a phase boundary requires operator approval; the reconnaissance → exploitation transition is a **hard gate** (see *Execution Mode* and the `/engage-exploit` skill, which enforces it with state in `gates.jsonl` and is operator-invocation only).
 
@@ -275,7 +281,8 @@ agent composes still goes through Claude Code's per-command permission prompt.
 /scope-declare      # set engagement id, scope, authorization = yes
 /engagement         # confirm the authorized agent set; prints the phase sequence
 /engage-recon       # phase 2 ; then /engage-vuln, /engage-exploit (gated),
-                    #          /engage-detect, /engage-report — one per phase
+                    #          /engage-cleanup, /engage-detect, /engage-report — one per phase
+                    # /engage-retest — detached, operator-only, gated: remediation validation
 ```
 
 > **opencode note:** opencode discovers `engagement` as a native skill

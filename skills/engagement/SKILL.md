@@ -48,8 +48,11 @@ its preamble. Do not duplicate them here.
    restrict them. Anything not on the confirmed list is refused for the rest of the
    session — the phase skills re-read this list from the init line below. Defaults by
    type (trim to what the RoE actually covers):
-   - external / internal / web → `recon-advisor, osint-collector, web-hunter, vuln-scanner, poc-validator, attack-planner, exploit-chainer, privesc-advisor, detection-engineer, severity-calibrate, report-generator`
-   - cloud → add `cloud-security`; AD-heavy → add `ad-attacker, credential-tester`
+   - external / internal / web → `recon-advisor, osint-collector, web-hunter, vuln-scanner, poc-validator, sast-sca, attack-planner, exploit-chainer, privesc-advisor, cleanup-deconfliction, detection-engineer, severity-calibrate, report-generator`
+   - cloud → add `cloud-security`; container / Kubernetes → add `container-escaper`;
+     AD-heavy → add `ad-attacker, credential-tester`
+   - retest / remediation-validation → add `retest-validator` (drives `poc-validator`
+     under the `/engage-retest` gate)
    - **High-authorization vectors are OFF by default** and require their own explicit
      written authorization before you add them: `social-engineer`, `wireless-pentester`,
      `mobile-pentester`, `exploit-guide`.
@@ -76,15 +79,18 @@ from `gates.jsonl`, fans out, appends its completion line, and names the next sk
 |---|---|---|---|
 | `/engagement` *(here)* | Step 1 init | — | scope declared + authorization = yes |
 | `/engage-recon` | 2. Reconnaissance | recon-advisor, osint-collector, web-hunter (may invoke `/full-recon`) | init recorded |
-| `/engage-vuln` | 3. Vulnerability assessment | vuln-scanner → poc-validator | recon complete |
-| `/engage-exploit` | 4–6. Exploitation + post-ex | attack-planner, exploit-chainer, privesc-advisor (+ad/cloud/cred) | **HARD GATE** (recon complete + exploitation approved, read from disk) |
+| `/engage-vuln` | 3. Vulnerability assessment | vuln-scanner → poc-validator (+sast-sca) | recon complete |
+| `/engage-exploit` | 4–6. Exploitation + post-ex | attack-planner, exploit-chainer, privesc-advisor (+ad/cloud/cred/container-escaper) | **HARD GATE** (recon complete + exploitation approved, read from disk) |
+| `/engage-cleanup` | 6b. Cleanup & deconfliction | cleanup-deconfliction *(advisory)* | exploitation complete (does not block detection) |
 | `/engage-detect` | 7. Detection engineering | detection-engineer, threat-modeler | post-ex complete |
 | `/engage-report` | 8–9. Reporting & compliance | **/severity-calibrate** → report-generator (+stig-analyst) | detection complete + operator approves |
+| `/engage-retest` | Remediation validation *(detached round)* | retest-validator → poc-validator | **HARD GATE** (reporting complete + retest approved, read from disk) |
 
-`/engage-exploit` is **operator-invocation only** (`disable-model-invocation: true`)
-and reads the gate fresh from `gates.jsonl`, so the recon → exploitation transition
-cannot be reached without an operator-recorded approval line — even from a cold
-session.
+`/engage-exploit` and `/engage-retest` are **operator-invocation only**
+(`disable-model-invocation: true`) and read their gate fresh from `gates.jsonl`, so
+neither the recon → exploitation transition nor a remediation-validation re-run can be
+reached without an operator-recorded approval line — even from a cold session. A
+retest is a new authorization round; it never inherits the exploitation approval.
 
 ---
 

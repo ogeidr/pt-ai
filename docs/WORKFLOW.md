@@ -23,9 +23,11 @@ contracts see [`findings-store.md`](findings-store.md).
 `/scope-declare` is always first. `/engagement` then **initializes** the engagement
 (confirms scope, authorization, and the authorized agent set) and the operator runs
 the per-phase skills `/engage-recon → /engage-vuln → /engage-exploit →
-/engage-detect → /engage-report` in order — each does its own `Task` fan-out (Claude
-Code only — they need the `Task` tool). Without that, the same agents and skills are
-run by hand as a playbook.
+/engage-cleanup → /engage-detect → /engage-report` in order — each does its own `Task`
+fan-out (Claude Code only — they need the `Task` tool). A detached `/engage-retest`
+round (operator-invocation only, like `/engage-exploit`) re-validates remediated
+findings after report delivery. Without that, the same agents and skills are run by
+hand as a playbook.
 
 ```mermaid
 flowchart TD

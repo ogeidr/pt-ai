@@ -1,10 +1,11 @@
 ---
-name: engage-vuln
+name: engage-cleanup
 description: >
-  Run the Vulnerability-assessment phase (Phase 3) of an operator-gated
-  penetration-test engagement by delegating to vuln-scanner then poc-validator with
-  a per-delegation scope envelope. Invoke after /engage-recon completes. Claude Code
-  only — the automated fan-out needs the Task tool, which opencode does not provide.
+  Run the post-engagement Cleanup & deconfliction step of an operator-gated
+  penetration-test engagement by delegating to cleanup-deconfliction with a
+  per-delegation scope envelope. Invoke after /engage-exploit completes, to inventory
+  and remove tester-introduced artifacts before reporting. Claude Code only — the
+  automated fan-out needs the Task tool, which opencode lacks.
 disable-model-invocation: false
 allowed-tools: Bash, Read, Write, Task
 ---
@@ -153,35 +154,34 @@ Never rewrite the file; only append. The latest line per `(phase,status)` wins.
 
 ## This phase
 
-You are the **Vulnerability assessment** phase (Phase 3 of the 0–9 lifecycle in
-`docs/AGENT-GUIDE.md`). Follow the shared protocol above for state re-resolution,
-the authorized-agent check, the delegation envelope, conflict resolution, and
-findings propagation.
+You are the **Cleanup & deconfliction** step (post-exploitation, before reporting, in
+the 0–9 lifecycle in `docs/AGENT-GUIDE.md`). Follow the shared protocol above for
+state re-resolution, the authorized-agent check, the delegation envelope, conflict
+resolution, and findings propagation.
 
-**Entry gate:** a `"phase":"recon","status":"complete"` line exists in
+**Entry gate:** an `"phase":"exploitation","status":"complete"` line exists in
 `ENGAGEMENT_DIR/gates.jsonl`:
 ```sh
-grep -q '"phase":"recon","status":"complete"' "<ENGAGEMENT_DIR>/gates.jsonl" && echo GO || echo "NO-GO"
+grep -q '"phase":"exploitation","status":"complete"' "<ENGAGEMENT_DIR>/gates.jsonl" && echo GO || echo "NO-GO"
 ```
-NO-GO → STOP and tell the operator to complete recon with `/engage-recon` first.
+NO-GO → STOP and tell the operator to complete exploitation with `/engage-exploit`
+first. This step runs after post-exploitation and does not block `/engage-detect`;
+detection engineering may proceed in parallel.
 
-**Agents (if on the authorized list):** `vuln-scanner` → `poc-validator`, plus
-`sast-sca` when the engagement covers source code, dependencies, or images. Delegate
-`vuln-scanner` to assess in-scope surface (and `sast-sca` to review pasted or
-readable source/dependency inventories — advisory, no scanning of targets), then
-`poc-validator` to confirm or demote candidate findings. Apply the conflict-resolution
-rules (PoC wins) from the shared protocol. This phase is assessment, not exploitation
-— no exploit delivery.
-
-Read `ENGAGEMENT_DIR/findings.jsonl` to build the summary.
+**Agent (if on the authorized list):** `cleanup-deconfliction`. It is **advisory** —
+it reads `ENGAGEMENT_DIR/findings.jsonl` and the evidence directory and produces two
+outputs: an operator removal checklist and a client-facing deconfliction log. It
+never deletes or reverts anything itself; each removal is an operator action taken
+under Claude Code's approval prompt. Do not delegate any agent that composes
+destructive commands here.
 
 **On completion:**
 
-1. Present a vuln summary (confirmed vs theoretical findings) to the operator.
+1. Present the removal checklist and the deconfliction log to the operator, and
+   confirm which items the operator actually removed.
 2. Append the completion line (operator approves the Bash call):
    ```sh
-   printf '%s\n' '{"engagement":"<id>","phase":"vuln","status":"complete","ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","by":"engage-vuln"}' >> "<ENGAGEMENT_DIR>/gates.jsonl"
+   printf '%s\n' '{"engagement":"<id>","phase":"cleanup","status":"complete","ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","by":"engage-cleanup"}' >> "<ENGAGEMENT_DIR>/gates.jsonl"
    ```
-3. Tell the operator the next phase is **Exploitation**, which is behind a **hard
-   gate** — run `/engage-exploit`. Do not auto-advance and do not record any
-   exploitation approval here; only the operator may approve exploitation.
+3. Tell the operator the next phase is **Detection engineering** (`/engage-detect`)
+   if not already done, then **Reporting** (`/engage-report`). Do not auto-advance.
