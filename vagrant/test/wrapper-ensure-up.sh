@@ -43,15 +43,41 @@ body="$(func_body _ensure_up)"
 if printf '%s' "$body" | grep -q '_vagrant ssh'; then pass "_ensure_up probes over SSH"; else bad "_ensure_up has no SSH probe"; fi
 if printf '%s' "$body" | grep -q 'cmd_up';       then pass "_ensure_up boots on demand (cmd_up)"; else bad "_ensure_up never boots (no cmd_up)"; fi
 
-# 3) Every interactive entry point invokes the guard — this is the actual
+# 3) Every VM-requiring entry point invokes the guard — this is the actual
 #    regression surface (the original bug was these calling `vagrant ssh` raw).
-for fn in cmd_ssh cmd_claude cmd_opencode; do
+#    Multi-line functions: slice the body and grep it.
+for fn in cmd_ssh cmd_claude cmd_opencode cmd_key _lm_detect; do
     if func_body "$fn" | grep -q '_ensure_up'; then
         pass "$fn calls _ensure_up"
     else
         bad "$fn does NOT call _ensure_up (raw 'vagrant ssh' will show the not-ready error)"
     fi
 done
+
+# cmd_provision is a one-liner ('}' not in column 0, so func_body can't slice it) —
+# grep its definition line directly.
+if grep -qE '^cmd_provision\(\).*_ensure_up' "$WRAPPER"; then
+    pass "cmd_provision calls _ensure_up"
+else
+    bad "cmd_provision does NOT call _ensure_up ('vagrant provision' needs the VM running)"
+fi
+
+# 4) Exclusions are load-bearing: lifecycle commands must NOT auto-boot (booting
+#    before a shutdown/destroy, or to report status, is wrong), and the host-only
+#    engagement data commands must work with the VM down. Pin them so a future
+#    "wrap everything" change can't silently break these.
+for fn in cmd_halt cmd_destroy cmd_status; do          # one-liners — grep the line
+    if grep -qE "^$fn\\(\\).*_ensure_up" "$WRAPPER"; then
+        bad "$fn must NOT auto-boot the VM (it is a lifecycle/status command)"
+    else
+        pass "$fn correctly does not auto-boot"
+    fi
+done
+if func_body cmd_engagement | grep -q '_ensure_up'; then
+    bad "cmd_engagement must NOT auto-boot (host-only synced_folder ops; must work VM-down)"
+else
+    pass "cmd_engagement correctly does not auto-boot (host-only)"
+fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "wrapper-ensure-up: OK"; exit 0; fi

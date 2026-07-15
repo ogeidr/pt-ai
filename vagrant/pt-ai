@@ -280,6 +280,7 @@ EOF
 }
 
 _lm_detect() {
+    _ensure_up            # probing local-model endpoints runs inside the VM — boot it first
     _lm_port=""
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -477,6 +478,7 @@ _ghidra_stop() {
 }
 
 cmd_key() {
+    _ensure_up            # store/clear/status all SSH into the VM — boot it first
     action="${1:-}"
     case "$action" in
         store)
@@ -534,7 +536,7 @@ cmd_restore() {
 
 cmd_halt()      { _vagrant halt; }
 cmd_destroy()   { _vagrant destroy -f; }
-cmd_provision() { _vagrant provision; }
+cmd_provision() { _ensure_up; _vagrant provision; }   # `vagrant provision` needs the VM running
 cmd_status()    { _vagrant status; }
 
 # Host-side engagement data management. The engagements/ dir is a Vagrant
