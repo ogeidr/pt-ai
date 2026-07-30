@@ -85,42 +85,13 @@ For each open finding choose one value for each metric:
 When unsure, pick the **least** deflating value (`E:U` is already the floor; for RL/RC prefer
 the higher multiplier) — under-deflating is safer than over-deflating.
 
-### Step 3 — Compute the temporal score (exact arithmetic, not mental math)
-
-`TemporalScore = roundup( Base × E × RL × RC )`, where roundup = round **up** to 1 decimal.
-Run this per finding with the multipliers you chose — do NOT eyeball it:
-
-```sh
-# BASE = the finding's cvss base; E/RL/RC = the multipliers from Step 2
-calc_temporal() {  # args: base e rl rc
-  awk -v b="$1" -v e="$2" -v rl="$3" -v rc="$4" 'BEGIN{
-    t=b*e*rl*rc; c=int(t*10); if (c < t*10 - 1e-9) c++; printf "%.1f\n", c/10
-  }'
-}
-# example: base 9.8, E:U(0.91), RL:U(1.00), RC:U(0.92)
-calc_temporal 9.8 0.91 1.00 0.92      # -> 8.3
-```
-
-Map the temporal score to the severity band:
-
-| temporal score | severity |
-|---|---|
-| 0.0 | info |
-| 0.1–3.9 | low |
-| 4.0–6.9 | medium |
-| 7.0–8.9 | high |
-| 9.0–10.0 | critical |
-
-Because every multiplier is ≤ 1, the temporal band can only be **equal to or lower** than the
-base band — deflate-only holds automatically. Never hand-raise a rating.
-
-### Step 4 — Build the CVSS vector
+### Step 3 — Build the CVSS vector (base + temporal)
 
 Produce the full v3.1 vector = **base metrics + temporal metrics**:
 `CVSS:3.1/AV:_/AC:_/PR:_/UI:_/S:_/C:_/I:_/A:_/E:_/RL:_/RC:_`
 
 - If the finding has a `cve`, use that CVE's **published NVD v3.1 base vector** for the base
-  half; append the `E`/`RL`/`RC` letters you chose.
+  half; append the `E`/`RL`/`RC` letters you chose in Step 2.
 - If there is no CVE, derive the base metrics from the finding's characteristics (network vs
   local, auth required, impact), then append the temporal letters.
 - **Never invent a base score.** If you cannot establish a base (no CVE, no `cvss`, not enough
@@ -131,6 +102,35 @@ Findings with **no CVSS at all** (qualitative issues like an open share or weak 
 the analyst-assigned `severity`, but still set an honest `exploitation` and note that severity
 rests on analyst judgment, not a temporal score.
 
+### Step 4 — Compute base, temporal, and severity with cvss.sh (never mental math)
+
+Run `cvss.sh` on the vector from Step 3. It applies the CVSS v3.1 spec formula and returns the
+**base score, temporal score, and severity band** in one shot — so you never do CVSS arithmetic
+by hand. This also computes the *base* score for the no-CVE case above, so a derived base is
+exact rather than eyeballed.
+
+```sh
+# VEC = the full vector from Step 3
+${CLAUDE_PLUGIN_ROOT}/skills/severity-calibrate/scripts/cvss.sh "$VEC"
+# example — base 9.8 with E:U RL:U RC:U:
+${CLAUDE_PLUGIN_ROOT}/skills/severity-calibrate/scripts/cvss.sh "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:U/RL:U/RC:U"
+# -> 9.8	8.3	high        (base <tab> temporal <tab> severity)
+```
+
+The script maps the temporal score to these bands (shown for reference; it applies them for you):
+
+| temporal score | severity |
+|---|---|
+| 0.0 | info |
+| 0.1–3.9 | low |
+| 4.0–6.9 | medium |
+| 7.0–8.9 | high |
+| 9.0–10.0 | critical |
+
+Because every temporal multiplier is ≤ 1, the temporal score can only be **equal to or lower**
+than the base — deflate-only holds automatically. Never hand-raise a rating. (`cvss.sh` is
+verified against FIRST's published reference scores by `scripts/cvss.test.sh`.)
+
 ### Step 5 — Append the calibrated record (append-only, reuse the id)
 
 For each finding, append ONE new line = the latest record merged with the calibrated fields.
@@ -138,7 +138,7 @@ This preserves every original field and overwrites only the calibrated ones:
 
 ```sh
 # REC = the collapsed latest JSON object for this id (from /tmp/findings_collapsed.json)
-# TEMP/VEC/SEV/EXPL = your computed temporal score (number), vector, severity band, exploitation
+# VEC = the Step 3 vector; TEMP/SEV = columns 2 and 3 of cvss.sh; EXPL = exploitation
 printf '%s' "$REC" | jq -c \
   --argjson temp "$TEMP" --arg vec "$VEC" --arg sev "$SEV" --arg expl "$EXPL" \
   '. + {schema_version:"1.1", exploitation:$expl, cvss_vector:$vec, cvss_temporal:$temp, severity:$sev, source_agent:"severity-calibrate", updated_at:(now|todate)}' \

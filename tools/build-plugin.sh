@@ -15,6 +15,11 @@
 #       expand $PWD/~, so a literal relative path is the only portable form.
 #   T4  pt-ai-guard.sh is copied verbatim; hooks.json adds a PreToolUse(Read)
 #       matcher (authored in the static file, not here).
+#   T5  Rewrite bundled-script paths in skill sh-blocks from the VM absolute
+#       /opt/pt-ai/skills/... to ${CLAUDE_PLUGIN_ROOT}/skills/... (the plugin's
+#       own file-location convention, same as hooks.json). Applied AFTER T2 has
+#       removed the protocol bang-preambles, so it only touches sh-block script
+#       calls (e.g. severity-calibrate's cvss.sh), never a bang-preamble.
 #
 # Usage: tools/build-plugin.sh [OUT_DIR]   (default: <repo>/plugin)
 # test/plugin-parity.sh builds to a temp dir and diffs the committed plugin/.
@@ -69,9 +74,20 @@ for src in "$SRC_AGENTS"/*.md; do
 done
 
 # --- T2 + T3: skills -------------------------------------------------------
-# Copy each skill dir; for every .md, inline the shared protocol where the
-# engage-* preamble cat's it, then apply the relative-path rewrite. Non-md
-# supporting files (scripts, samples) are copied verbatim.
+# Copy each skill dir; for every .md, inline each shared _*.md sibling where a
+# bang-preamble cat's it (protocol, disasm-common, …), then apply the
+# relative-path rewrite. Non-md supporting files (scripts, samples) are copied
+# verbatim. Build the inline/relativize sed programs once from the _*.md set:
+INLINE_SED=()
+RELPATH_SED=()
+for sf in "$SRC_SKILLS"/_*.md; do
+    bn=$(basename "$sf")
+    INLINE_SED+=( -e '\#cat /opt/pt-ai/skills/'"$bn"'#{
+        r '"$sf"'
+        d
+    }' )
+    RELPATH_SED+=( -e 's#/opt/pt-ai/skills/'"$bn"'#'"$bn"'#g' )
+done
 for dir in "$SRC_SKILLS"/*/; do
     name=$(basename "$dir")
     dst="$SKILLS_OUT/$name"
@@ -81,15 +97,14 @@ for dir in "$SRC_SKILLS"/*/; do
         mkdir -p "$dst/$(dirname "$rel")"
         case "$rel" in
             *.md)
-                # T2: replace the whole `!`cat /opt/pt-ai/.../_engagement-protocol.md ...``
-                # preamble line with the protocol's literal text. Then strip the VM
-                # absolute path from any remaining prose mention of the protocol file
-                # (e.g. the /engagement orchestrator describes it), then T3.
-                sed -e '\#cat /opt/pt-ai/skills/_engagement-protocol.md# {
-                    r '"$PROTOCOL"'
-                    d
-                }' "$dir/$rel" \
-                    | sed 's#/opt/pt-ai/skills/_engagement-protocol.md#_engagement-protocol.md#g' \
+                # T2: replace each `!`cat /opt/pt-ai/.../_<shared>.md ...`` preamble line
+                # with that file's literal text. Then strip the VM absolute path from any
+                # remaining prose mention of a shared file (e.g. the /engagement
+                # orchestrator describes the protocol). Then T5 (sh-block script paths ->
+                # ${CLAUDE_PLUGIN_ROOT}) and T3.
+                sed "${INLINE_SED[@]}" "$dir/$rel" \
+                    | sed "${RELPATH_SED[@]}" \
+                    | sed 's#/opt/pt-ai/skills#${CLAUDE_PLUGIN_ROOT}/skills#g' \
                     | ptrewrite > "$dst/$rel"
                 ;;
             *)
