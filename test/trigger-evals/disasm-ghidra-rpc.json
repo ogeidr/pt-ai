@@ -1,0 +1,20 @@
+[
+  {"query": "ok i've got this crackme in my engagement samples dir, /engagements/acme-2026/samples/crackme3 — can you decompile main, follow the xrefs to the password check, and then NOP out the jump once we find it so it always accepts?", "should_trigger": true},
+  {"query": "walk me through this stripped ELF one function at a time — start at entry, decompile, rename the interesting funcs as we go, and set comments on the ones that touch the socket", "should_trigger": true},
+  {"query": "i have two builds of the same firmware (before and after the vendor patch) and i want to diff the parse_packet function between them to see what they actually changed", "should_trigger": true},
+  {"query": "reverse this malware sample interactively — decompile the C2 routine, trace where the config string is used, reconstruct the config struct, and patch out the anti-debug check so I can keep going", "should_trigger": true},
+  {"query": "can you rename FUN_00401abc to parse_config, retype that local from int to char*, and give it a proper signature, then re-decompile so it reads cleaner?", "should_trigger": true},
+  {"query": "assemble a couple of NOPs over the license check at 0x401234 in this binary and write the patched bytes back to the project", "should_trigger": true},
+
+  {"query": "load this firmware blob and give me the top 25 functions by size, then join the strings table to whatever functions reference anything with 'http' or '/tmp' or 'aes' in it", "should_trigger": false},
+  {"query": "map the whole call graph of this binary — every caller/callee pair — and rank functions by how many callers they have", "should_trigger": false},
+  {"query": "run a query over all the imports to find every function that calls recv, socket, crypt, or exec and dump them as one table", "should_trigger": false},
+  {"query": "bulk job: for every function whose name still starts with FUN_ but references the 'admin' string, set a comment flagging it for review — as a set-based update, not one at a time", "should_trigger": false},
+  {"query": "nmap says port 8081 is open on 10.0.5.12 and it looks like some kind of query API — can you fingerprint the service and see what's behind it?", "should_trigger": false},
+  {"query": "here's the C source for the auth module (auth.c, ~400 lines) — review it for buffer overflows and injection bugs", "should_trigger": false},
+  {"query": "run this ELF in a sandbox and watch the syscalls and network traffic it makes at runtime", "should_trigger": false},
+  {"query": "i've got a memory dump from the compromised host — carve out any executables and credentials you can find", "should_trigger": false},
+  {"query": "decompile this obfuscated JavaScript bundle from the target's web app and tell me what the token-signing logic does", "should_trigger": false},
+  {"query": "generate the findings report for the acme engagement and calibrate the severities before you do", "should_trigger": false},
+  {"query": "what CVEs affect the openssl 1.0.2k this binary is statically linked against?", "should_trigger": false}
+]
