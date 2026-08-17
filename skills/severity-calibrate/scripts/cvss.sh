@@ -9,8 +9,12 @@
 # Usage:
 #   cvss.sh "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H[/E:U/RL:O/RC:C]"
 # Output (tab-separated): BASE  TEMPORAL  SEVERITY
+#
+# $AWK pins the interpreter (default: whatever `awk` resolves to). The formula is
+# plain POSIX awk, but implementations differ in float handling — CI uses this to
+# assert the same scores under mawk and gawk.
 [ -z "$1" ] && { echo "usage: cvss.sh <CVSS:3.1 vector>" >&2; exit 2; }
-echo "$1" | awk -F/ '
+echo "$1" | ${AWK:-awk} -F/ '
 function v(k){return M[k]}
 function min(a,b){return a<b?a:b}
 # CVSS v3.1 spec roundup: integer math on x*100000 avoids float drift.

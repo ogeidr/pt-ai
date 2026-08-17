@@ -14,14 +14,15 @@ signal and runs in GitHub Actions (`.github/workflows/plugin-suite.yml`) on ever
 push/PR that touches the plugin sources.
 
 ```sh
-bash test/plugin-suite.sh      # runs all three; writes test/results/summary.txt
+bash test/plugin-suite.sh      # runs all four; writes test/results/summary.txt
 ```
 
 | Check | Script | Asserts |
 |---|---|---|
-| parity | `plugin-parity.sh` | committed `plugin/` == a fresh `tools/build-plugin.sh` (also exercises the build, and is the definitive **GNU-sed portability** check in CI) |
+| parity | `plugin-parity.sh` | committed `plugin/` == a fresh `tools/build-plugin.sh` (also exercises the build, and is the definitive **GNU-sed portability** check in CI). Note it uses `diff -ru`, which is **mode-blind** — exec bits are covered by `validate`, not here |
 | hooks | `plugin-hooks.sh` | `pt-ai-guard.sh` denies/allows correctly (credential exfil, catastrophic `rm`, OPSEC ceiling, Read-tool file_path) |
-| validate | `plugin-validate.sh` | manifests are valid JSON; agent/skill frontmatter; hooks executable; guard byte-identical to source; component counts derived from source |
+| validate | `plugin-validate.sh` | manifests are valid JSON; agent/skill frontmatter; hooks executable; guard byte-identical to source; component counts derived from source; **bundled skill scripts present + executable**; **every `engage-*`/`disasm-*` skill carries its inlined shared block** |
+| cvss | `skills/severity-calibrate/scripts/cvss.test.sh` | severity-calibrate's CVSS v3.1 base/temporal math against 7 FIRST reference vectors. Tests the source copy — parity proves `plugin/` identical. `AWK=mawk`/`gawk` pins the interpreter; CI runs both |
 
 `plugin-suite.sh` preflights for `jq`/`python3` (without a JSON parser the guard
 fails closed and the hook allow-cases would fail for the wrong reason) and exits

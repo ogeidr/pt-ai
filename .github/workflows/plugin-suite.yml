@@ -34,9 +34,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Tool versions (sed portability context)
+      - name: Tool versions (sed/awk portability context)
         run: |
           sed --version | head -1
           jq --version
-      - name: Run Tier-1 plugin suite (parity + hooks + validate)
+          awk -W version 2>&1 | head -1 || awk --version 2>&1 | head -1 || true
+      - name: Run Tier-1 plugin suite (parity + hooks + validate + cvss)
         run: bash test/plugin-suite.sh
+      # The VM runs gawk (Kali) but bento/debian-13 runs mawk, and nothing in
+      # vagrant/config/tools.txt installs gawk — so pin each implementation here
+      # rather than discovering a divergence 30-60 min into a Debian provision.
+      - name: CVSS math under each awk implementation
+        run: |
+          sudo apt-get install -y -qq mawk gawk
+          for a in mawk gawk; do
+            printf '=== %s: ' "$a"; "$a" -W version 2>&1 | head -1 || "$a" --version 2>&1 | head -1
+            AWK="$a" sh skills/severity-calibrate/scripts/cvss.test.sh
+          done

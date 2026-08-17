@@ -61,6 +61,13 @@ if [ "${1:-}" = "--assert" ]; then
     check(){ local d="$1"; shift; if "$@" >/dev/null 2>&1; then ok "$d"; else no "$d"; fi; }
     # checkn "desc" cmd... -> PASS when cmd FAILS (for "must be absent" cases)
     checkn(){ local d="$1"; shift; if "$@" >/dev/null 2>&1; then no "$d"; else ok "$d"; fi; }
+    # checkq "desc" cmd... -> PASS only when cmd succeeds AND prints nothing; its
+    # output names what failed. For loops over N files, where `check` would discard
+    # the one name you need. The rc test needs `pipefail` (set above): without it
+    # $? is tr's status and a body that dies silently would report success.
+    checkq(){ local d="$1" out rc; shift
+              out=$("$@" 2>/dev/null | tr '\n' ' '); rc=$?; out=${out% }
+              if [ -z "$out" ] && [ "$rc" -eq 0 ]; then ok "$d"; else no "$d: ${out:-rc=$rc}"; fi; }
 
     pkg_installed(){ dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'install ok installed'; }
     has_kali_source(){ grep -rq kali-rolling /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; }
@@ -103,6 +110,26 @@ if [ "${1:-}" = "--assert" ]; then
     check  "kubeaudit present (GitHub-release binary)" command -v kubeaudit
     check  "gcloud present (vendor apt repo)"        command -v gcloud
     check  "_lib.sh present and apt-detected"        bash -c '. /vagrant/provision/_lib.sh; [ "$IS_APT" = true ]'
+
+    echo
+    echo "[skill payload — shared blocks + bundled scripts]"
+    # Every /opt/pt-ai/skills path a skill NAMES must work at skill-run time: shared
+    # blocks are cat'd by a bang-preamble (-r -s; an empty one resolves the cat but
+    # injects nothing), and scripts are invoked directly rather than via `sh`, so they
+    # need -x too. Derived from the references, so a typo'd path in a new SKILL.md is
+    # caught as well. The ref-count floor is load-bearing: an unmounted tree yields an
+    # empty scan, which would otherwise report PASS.
+    checkq "every referenced skill payload path is usable" bash -c '
+        r=$(grep -rhoE "/opt/pt-ai/skills/[A-Za-z0-9_./-]+\.(md|sh)" /opt/pt-ai/skills/ | sort -u)
+        [ "$(printf "%s\n" "$r" | grep -c .)" -ge 3 ] \
+            || { echo "(only $(printf "%s\n" "$r" | grep -c .) payload refs — mount missing?)"; exit 0; }
+        for f in $r; do
+            { [ -r "$f" ] && [ -s "$f" ]; } || { echo "${f##*/}:missing"; continue; }
+            case $f in *.sh) [ -x "$f" ] || echo "${f##*/}:not-exec";; esac
+        done'
+    # Functional, not just present: proves the CVSS math on THIS guest's awk.
+    check  "cvss.sh matches FIRST reference vectors" \
+           sh /opt/pt-ai/skills/severity-calibrate/scripts/cvss.test.sh
 
     echo
     if $IS_KALI; then

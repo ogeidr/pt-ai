@@ -113,6 +113,12 @@ for dir in "$SRC_SKILLS"/*/; do
         esac
     done
 done
+# Bundled skill scripts are invoked directly by their SKILL.md (not via `sh`), so the
+# exec bit is load-bearing. `cp` above preserves it, but a checkout with
+# core.fileMode=false does not — and plugin-parity's `diff -ru` is mode-blind, so
+# nothing else would notice. `find -exec` rather than a glob: under `set -e` an
+# unmatched glob would abort the build the day no skill ships a script.
+find "$SKILLS_OUT" -type f -name '*.sh' -exec chmod 0755 {} +
 
 # --- hooks -----------------------------------------------------------------
 # pt-ai-guard.sh: single-source security gate, copied VERBATIM (its absolute

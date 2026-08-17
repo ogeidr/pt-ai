@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # test/plugin-suite.sh — Tier-1 (mechanical) plugin test aggregator. VM-free:
-# needs only bash + jq (or python3). Runs the three mechanical checks and writes
+# needs only bash + jq (or python3). Runs the four mechanical checks and writes
 # a one-line-per-check summary, mirroring vagrant/test/provision-test.sh.
 #
 #   parity   — committed plugin/ == a fresh tools/build-plugin.sh (also exercises the build)
 #   hooks    — pt-ai-guard.sh denies/allows correctly (credential/rm/OPSEC/Read)
-#   validate — manifests/frontmatter/exec-bits/guard-verbatim/counts
+#   validate — manifests/frontmatter/exec-bits/guard-verbatim/counts/shared-blocks
+#   cvss     — severity-calibrate's CVSS v3.1 math vs FIRST's published reference
+#              scores. Bundled-script logic, so it belongs in the per-push tier
+#              rather than behind a 30-60 min VM provision; also the cheapest
+#              signal on awk portability (set AWK=mawk/gawk to pin one).
 #
 # This is what CI runs (.github/workflows/plugin-suite.yml). It does NOT install
 # the plugin or touch ~/.claude — that is Tier 2 (test/plugin-functional.sh, in-VM).
@@ -48,6 +52,9 @@ run(){ # run <name> <script...>
 run parity   "$here/plugin-parity.sh"
 run hooks    "$here/plugin-hooks.sh"
 run validate "$here/plugin-validate.sh"
+# skills/ is the single source; plugin/skills is its build output, and parity
+# above proves the two identical — so testing the source copy covers both.
+run cvss     "$here/../skills/severity-calibrate/scripts/cvss.test.sh"
 
 echo
 echo "== summary ($pass passed, $fail failed) — $SUMMARY =="

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # test/plugin-validate.sh — structural validation of the committed plugin/ tree.
 # Catches what build + parity do not: malformed manifests, broken frontmatter, a
-# non-executable hook, a drifted guard, or a wrong component count. Runs against
-# the COMMITTED plugin/ (no rebuild), so it is meaningful even on a bare checkout.
+# non-executable hook or bundled skill script, a drifted guard, a wrong component
+# count, or a shared _*.md block that failed to inline. Parity cannot see the last
+# two — `diff -ru` is mode-blind, and an empty source block rebuilds identically.
+# Runs against the COMMITTED plugin/ (no rebuild), so it is meaningful on a bare checkout.
 #
 # Exit 0 = all checks pass. Exit 1 = at least one failed.
 set -uo pipefail
@@ -51,6 +53,42 @@ for s in pt-ai-guard.sh roe-session-start.sh roe-prompt-check.sh; do
     [ -x "$PLUGIN/hooks/$s" ] || { no "hook not executable/missing: hooks/$s"; hk_bad=1; }
 done
 [ "$hk_bad" -eq 0 ] && ok "all 3 hook scripts present + executable"
+
+# --- bundled skill scripts: all copied, all executable ---------------------
+# SKILL.md invokes these directly (not via `sh`), so the exec bit is load-bearing,
+# and plugin-parity's `diff -ru` is mode-blind — nothing else would catch it.
+# Count is derived from source, matching the agent/skill counts above.
+exp_scripts=$(find "$SRC_SKILLS" -type f -path '*/scripts/*.sh' | wc -l | tr -d ' ')
+got_scripts=$(find "$PLUGIN/skills" -type f -path '*/scripts/*.sh' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$got_scripts" = "$exp_scripts" ]; then
+    sc_bad=0
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        [ -x "$s" ] || { no "bundled script not executable: ${s#$PLUGIN/}"; sc_bad=1; }
+    done <<< "$(find "$PLUGIN/skills" -type f -path '*/scripts/*.sh' 2>/dev/null)"
+    [ "$sc_bad" -eq 0 ] && ok "all $got_scripts bundled skill scripts present + executable"
+else
+    no "bundled script count $got_scripts != source $exp_scripts"
+fi
+
+# --- shared _*.md blocks actually inlined into every consumer ---------------
+# T2 deletes the `cat` preamble and inserts the block's text. If the source block
+# were empty/unreadable the preamble would still vanish and the skill would ship
+# with the section heading but no protocol — silently, and parity would stay green
+# because it rebuilds from the same source. Assert the text landed.
+sb_bad=0; sb_n=0
+for d in "$PLUGIN"/skills/engage-*/SKILL.md; do
+    [ -r "$d" ] || continue; sb_n=$((sb_n+1))
+    grep -q "Engagement delegation protocol (shared single source)" "$d" \
+        || { no "shared block not inlined: ${d#$PLUGIN/}"; sb_bad=1; }
+done
+for d in "$PLUGIN"/skills/disasm-*/SKILL.md; do
+    [ -r "$d" ] || continue; sb_n=$((sb_n+1))
+    grep -q "Shared disassembly workflow" "$d" \
+        || { no "shared block not inlined: ${d#$PLUGIN/}"; sb_bad=1; }
+done
+if [ "$sb_n" -eq 0 ]; then no "no engage-*/disasm-* skills found in plugin/ (build broken?)"
+elif [ "$sb_bad" -eq 0 ]; then ok "all $sb_n engage-*/disasm-* skills carry their shared block"; fi
 
 # --- guard shipped byte-identical to its single source ---------------------
 if diff -q "$SRC_GUARD" "$PLUGIN/hooks/pt-ai-guard.sh" >/dev/null 2>&1; then

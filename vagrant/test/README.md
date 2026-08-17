@@ -102,6 +102,15 @@ VAGRANT_DOTFILE_PATH=test/.vagrant-test PTAI_BOX=bento/debian-13 \
 - `unattended-upgrades` installed; cloud tooling present: `aws` (v2, GPG-verified install), `trufflehog`, `prowler`, plus the new `06-cloud` installers `gitleaks`, `kubeaudit`, `gcloud`
 - `/vagrant/provision/_lib.sh` present and detects `IS_APT`
 
+**Skill payload — shared blocks + bundled scripts (both boxes)**
+
+- every `/opt/pt-ai/skills` path a `SKILL.md` *names* is usable: shared `_*.md` blocks
+  readable and non-empty (an empty one still satisfies the preamble's `cat` but injects
+  nothing), and bundled `scripts/*.sh` also **executable** — `SKILL.md` invokes them
+  directly, not via `sh`. Derived from the references, so a typo'd path is caught too;
+  a ref-count floor stops an unmounted tree from scanning clean and reporting PASS
+- `cvss.sh` reproduces all 7 FIRST CVSS v3.1 reference scores under the guest's `awk`
+
 **Kali case — Kali-only steps PRESENT**
 
 - kali-rolling apt source present; `kali-linux-default` installed
