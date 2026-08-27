@@ -13,6 +13,16 @@ VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
 GHIDRASQL_ENABLED  = ENV.fetch("PTAI_SKIP_GHIDRASQL",  "").strip.empty?
 GHIDRA_RPC_ENABLED = ENV.fetch("PTAI_SKIP_GHIDRA_RPC", "").strip.empty?
 
+# Shared options for the one-way rsync trees below. A METHOD, not a constant:
+# config.vm.synced_folder mutates the options hash IN PLACE (vm.rb:300-302 stamps
+# :guestpath/:hostpath/:disabled, and only dups afterwards at :303-304). A frozen
+# constant therefore raises FrozenError, and an unfrozen one would be worse — the
+# first call would stamp its guestpath into the shared hash and poison every later
+# use. Returning a fresh hash each call is the only safe form.
+def rsync_ro(extra = {})
+  { type: "rsync", rsync__owner: "root", rsync__group: "root" }.merge(extra)
+end
+
 Vagrant.configure("2") do |config|
   config.vm.box      = BOX
   # hostname is set by the inline provisioner below; not set here because
@@ -45,12 +55,73 @@ Vagrant.configure("2") do |config|
   end
 
   # --- Synced folders -------------------------------------------------------
-  # engagements/ is the shared workspace; agents/ and skills/ are read-only
-  # references synced from the repo into the VM. opencode commands are
-  # derived from both at provision time (see provision/05-opencode.sh).
+  # engagements/ is the shared workspace and MUST stay a real bidirectional mount:
+  # evidence written in the guest has to reach the host live. It is the ONLY
+  # remaining guest->host write path, and it is gitignored, so guest writes there
+  # cannot be silently committed.
+  #
+  # Everything else the guest sees is a one-way host->guest rsync push over SSH:
+  # there is no write-back path to the host repo at all. That closes the
+  # "guest writes a file -> host executes it" chain. See
+  # features/reference-trees-rsync.md and reviews/PENDING.md #21.
+  #
+  # rsync__owner/group root additionally makes the trees non-writable in-guest by
+  # the unprivileged `vagrant` user the agents run as. Defence in depth only —
+  # that user has passwordless sudo; the load-bearing property is the absent
+  # write-back path, which does hold against root.
+  #
+  # NOTE: nothing re-pushes an rsync folder on `vagrant provision`, nor on `up`
+  # against an already-running VM, nor on `snapshot restore` — the ./pt-ai wrapper
+  # syncs on all three paths. Bare `vagrant` commands do not.
   config.vm.synced_folder "../engagements", "/engagements", create: true
-  config.vm.synced_folder "../agents",      "/opt/pt-ai/agents"
-  config.vm.synced_folder "../skills",      "/opt/pt-ai/skills"
+  config.vm.synced_folder "../agents", "/opt/pt-ai/agents", rsync_ro
+  config.vm.synced_folder "../skills", "/opt/pt-ai/skills", rsync_ro
+
+  # --- /vagrant: allowlisted, not the default share (PENDING.md #21 fix 4) ----
+  # Vagrant's implicit default share maps this whole directory into the guest
+  # READ-WRITE. Measured, not inferred: `test -w /vagrant/pt-ai` returned WRITABLE
+  # for the unprivileged `vagrant` user despite mount options user_id=0,group_id=0,
+  # default_permissions. `pt-ai` is the wrapper the operator runs ON THE HOST, so a
+  # guest write was one-step host code execution as the operator; provision/*.sh was
+  # persistence surviving `./pt-ai destroy`. The `disabled: true` line suppresses the
+  # implicit default (it trips both guards in kernel_v2/config/vm.rb:670-685).
+  #
+  # An ALLOWLIST, not a denylist. Every in-guest use of /vagrant is a READ, audited
+  # exhaustively in features/reference-trees-rsync.md 7.1, and every reader falls
+  # inside these three directories. The rest of vagrant/ — pt-ai, Vagrantfile,
+  # README.md, TEST.md, box/, .vagrant/ — is never read in the guest and now never
+  # enters it. That matters because this directory is ~47 GB on disk against 252 KB
+  # of tracked source (.vagrant/ 29 G, test/.vagrant-debian 13 G, box/*.box 5.5 G):
+  # a denylist would have to be maintained against every future bulky or sensitive
+  # addition, and this directory has already accumulated three of them. Payload here
+  # is 26 files / ~109 KB.
+  #
+  # Exclude patterns MUST stay unanchored. `vagrant rsync-auto` reuses this same list
+  # as Listen ignore regexps via RsyncHelper.exclude_to_regexp (rsync/helper.rb:28-45,
+  # wired at rsync_auto.rb:125-127), which prepends ^ for a leading / and then matches
+  # RELATIVE paths — so "/results/" would compile to ^\/results\/ and silently ignore
+  # nothing, leaving the watcher walking the excluded bulk. (Note these are rsync
+  # END-matches, not transfer-root anchors: "results/" would also exclude "x/results/".)
+  #
+  # config/.env and config/engagement.env are host-only (sourced in the operator's own
+  # shell, never read in-guest) and .env's own template invites an ANTHROPIC_API_KEY.
+  # They stay on the host. config/opencode/local-model.json is gitignored but IS read
+  # in-guest (05-opencode.sh:152), which is why "sync only tracked files" is not an option.
+  #
+  # Availability note: an rsync failure raises RSyncError (helper.rb:224) and aborts
+  # `vagrant up`, and --copy-links is in the default args — so a dangling symlink
+  # dropped into one of these three trees is a boot-blocking failure that the old
+  # hgfs mount would have shrugged off.
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.synced_folder "provision", "/vagrant/provision", rsync_ro
+  config.vm.synced_folder "config",    "/vagrant/config",
+                          rsync_ro(rsync__exclude: [".env", "engagement.env"])
+  # ".vagrant-*" tracks the VAGRANT_DOTFILE_PATH naming in test/provision-test.sh:176.
+  # Vagrant's own default exclude is the literal ".vagrant/" (helper.rb:134), NOT derived
+  # from that env var — rename the dotfile path off the .vagrant- prefix and a 13 GB box
+  # tree gets pushed into the guest.
+  config.vm.synced_folder "test",      "/vagrant/test",
+                          rsync_ro(rsync__exclude: [".vagrant-*", "results/"])
 
   # Single NAT adapter only (added implicitly by Vagrant) — provides outbound
   # internet + SSH. The host-only `private_network` was removed; the VM reaches

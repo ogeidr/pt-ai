@@ -21,6 +21,11 @@
 #       removed the protocol bang-preambles, so it only touches sh-block script
 #       calls (e.g. severity-calibrate's cvss.sh), never a bang-preamble.
 #
+# Precondition: vagrant/config/claude/hooks/ must be clean in git. Those files are
+# executed by the HOST after the build, so an uncommitted change there halts the
+# build (reviews/PENDING.md #21). Override with PTAI_ALLOW_DIRTY_HOOKS=1 for your
+# own in-progress edits.
+#
 # Usage: tools/build-plugin.sh [OUT_DIR]   (default: <repo>/plugin)
 # test/plugin-parity.sh builds to a temp dir and diffs the committed plugin/.
 set -euo pipefail
@@ -45,6 +50,43 @@ UNTRUSTED_OUTPUT="$SRC_AGENTS/_untrusted-output.md"
 for f in "$PROTOCOL" "$SCOPE_GUARD" "$FINDINGS_STORE" "$UNTRUSTED_OUTPUT"; do
     [ -r "$f" ] || { echo "build-plugin: missing source $f" >&2; exit 1; }
 done
+
+# --- tamper tripwire on the hook sources (reviews/PENDING.md #21) -----------
+# All three files in vagrant/config/claude/hooks/ are copied into plugin/hooks/
+# below, where the HOST's Claude Code executes them on every Bash and Read tool
+# call. Until #21 fix 4, that directory sat inside the guest's READ-WRITE /vagrant
+# share, making "guest writes a file -> host executes it" a two-step chain with no
+# human in the middle. The guest can no longer write it — vagrant/config is now a
+# one-way root-owned rsync push — so this is DEFENCE IN DEPTH, not the boundary.
+# It still earns its keep: it catches host-side accidents and any future
+# re-widening of the share, and it makes shipping a hook change an explicit,
+# reviewable act.
+#
+# Why git is a sound check against a guest-side threat: the guest reaches neither
+# this script (tools/) nor .git/ — both are siblings of vagrant/ and were never in
+# the share — so it could never disable the tripwire or forge a clean status.
+#
+# It is a tripwire, not a boundary: it detects an unreviewed change, it does not
+# prevent one. Commit the change (which makes it reviewable), or set
+# PTAI_ALLOW_DIRTY_HOOKS=1 to build anyway.
+if [ "${PTAI_ALLOW_DIRTY_HOOKS:-0}" = "1" ]; then
+    echo "build-plugin: WARNING — hook tamper check SKIPPED (PTAI_ALLOW_DIRTY_HOOKS=1)" >&2
+elif ! command -v git >/dev/null 2>&1 || ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    # No git, or not a checkout (e.g. a tarball build). The threat model needs a
+    # guest attached to a repo, so this is not fatal — but say so rather than
+    # letting the caller assume they were protected.
+    echo "build-plugin: WARNING — no git checkout; hook tamper check NOT performed" >&2
+else
+    hook_dirty=$(git -C "$REPO_ROOT" status --porcelain -- vagrant/config/claude/hooks/ 2>/dev/null || true)
+    if [ -n "$hook_dirty" ]; then
+        echo "build-plugin: FAIL — hook sources differ from the committed tree:" >&2
+        printf '%s\n' "$hook_dirty" >&2
+        echo "  These are copied into plugin/hooks/ and executed by the HOST on every" >&2
+        echo "  tool call. Review the diff, then either commit it or re-run with" >&2
+        echo "  PTAI_ALLOW_DIRTY_HOOKS=1 if the change is yours and intentional." >&2
+        exit 1
+    fi
+fi
 
 # T3: absolute VM evidence root -> CWD-relative. Applied to emitted markdown and
 # the ROE hooks; NOT to pt-ai-guard.sh (its /engagements rm-protection stays

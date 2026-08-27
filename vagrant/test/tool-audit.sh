@@ -2,7 +2,8 @@
 # tool-audit.sh — report which tools the pt-ai agents/skills reference that are
 # MISSING on the current box. Read-only; installs nothing. Run inside a guest:
 #   bash /vagrant/test/tool-audit.sh
-# (vagrant syncs vagrant/ -> /vagrant, so this file is present in every guest.)
+# (vagrant/test/ is rsync-pushed to /vagrant/test on every ./pt-ai entry, so this
+# file is present in every guest. One-way: guest edits never reach the host repo.)
 #
 # Goal: a per-box "missing tools" list, so the same harness can be compared
 # across Kali (kali-linux-default present) and Debian (framework layer only).

@@ -174,9 +174,9 @@ fi
 #      gets the precise, fail-closed gate (not just coarse globs).
 # The guard script is the single source of truth (lives in config/claude/hooks/);
 # we install a copy into opencode's dir so this path is self-contained.
-# Sources come from the default synced folder mounted at /vagrant (the repo's
-# vagrant/ dir) — the same mount 02-claude.sh reads its config from, NOT the
-# narrower /opt/pt-ai/{agents,skills} folders.
+# Sources come from /vagrant/config, a one-way rsync push of the repo's vagrant/config
+# dir — the same tree 02-claude.sh reads its config from, NOT the narrower
+# /opt/pt-ai/{agents,skills} folders.
 GUARD_SRC="/vagrant/config/claude/hooks/pt-ai-guard.sh"
 PLUGIN_SRC="/vagrant/config/opencode/plugins/pt-ai-guard.js"
 if [ -f "$GUARD_SRC" ] && [ -f "$PLUGIN_SRC" ]; then

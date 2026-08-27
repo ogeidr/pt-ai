@@ -6,8 +6,9 @@
 #   * HOST mode  (default): drives `vagrant` via the ./pt-ai wrapper, then
 #     re-invokes itself INSIDE the guest over ssh to verify the deployment.
 #   * GUEST mode (--assert): runs the in-guest assertions. The host calls this
-#     as `/vagrant/test/provision-test.sh --assert` (vagrant syncs vagrant/ to
-#     /vagrant, so the same file is present in the guest).
+#     as `/vagrant/test/provision-test.sh --assert`. vagrant/test/ is pushed to
+#     /vagrant/test by a one-way rsync on every ./pt-ai entry, so the same file is
+#     present in the guest (it is NOT a mount — see reviews/PENDING.md #21 fix 4).
 #
 # WHAT IT VERIFIES
 #   1. kali    — default toolset path; the Kali-only steps must RUN.
@@ -98,6 +99,19 @@ if [ "${1:-}" = "--assert" ]; then
     check  "opencode discovers skills (claude-compat symlink)" test -e "$HOME/.claude/skills/full-recon/SKILL.md"
     checkn "legacy opencode commands dir absent"     test -d "$HOME/.config/opencode/commands"
     check  "/engagements exists and is writable"     bash -c 't=/engagements/.ptai-write-test.$$; test -d /engagements && touch "$t" && rm -f "$t"'
+    # --- the guest->host boundary, asserted (reviews/PENDING.md #21 fix 4) ------
+    # These pin that the boundary FIRES, not merely that something is configured.
+    # /vagrant used to be Vagrant's default read-write share of the repo's vagrant/
+    # directory: `test -w /vagrant/pt-ai` returned WRITABLE for this unprivileged
+    # user, and pt-ai is the wrapper the operator runs ON THE HOST. It is now three
+    # one-way root-owned rsync trees (provision/, config/, test/) with no write-back
+    # path, so the wrapper is not merely unwritable — it is not in the guest at all.
+    # NOTE: the writability check is only meaningful as a non-root user, which is how
+    # host mode invokes this file (./pt-ai ssh -c ..., i.e. the `vagrant` user).
+    checkn "/vagrant is not a mount (one-way rsync)"  grep -q " /vagrant" /proc/mounts
+    checkn "host wrapper pt-ai absent from guest"     test -e /vagrant/pt-ai
+    check  "/vagrant not writable by agent user"     bash -c '[ "$(id -u)" -eq 0 ] || { ! test -w /vagrant && ! test -w /vagrant/provision; }'
+    checkn "host secrets + bulk never pushed"        bash -c 'test -e /vagrant/config/.env || test -e /vagrant/config/engagement.env || test -e /vagrant/box || test -e /vagrant/test/results'
     check  "ip_forward enabled"                      bash -c '[ "$(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null)" = 1 ]'
     check  "SSH password auth disabled"              grep -qE '^PasswordAuthentication no' /etc/ssh/sshd_config
     check  "SSH root login disabled"                 grep -qE '^PermitRootLogin no' /etc/ssh/sshd_config
@@ -173,6 +187,11 @@ here=$(cd "$(dirname "$0")" && pwd)
 VAGRANT_DIR=$(cd "$here/.." && pwd)
 RESULTS="$here/results"
 SELF_IN_GUEST="/vagrant/test/$(basename "$0")"
+# NOTE: the ".vagrant-test" name is load-bearing. Vagrantfile excludes ".vagrant-*"
+# from the /vagrant/test rsync push; Vagrant's own default exclude is the literal
+# ".vagrant/" (rsync/helper.rb:134) and is NOT derived from this variable. Rename
+# this off the ".vagrant-" prefix and the next `up` pushes a multi-GB box tree into
+# the guest.
 export VAGRANT_DOTFILE_PATH="$here/.vagrant-test"
 
 PROVIDER="${TEST_PROVIDER:-vmware_desktop}"

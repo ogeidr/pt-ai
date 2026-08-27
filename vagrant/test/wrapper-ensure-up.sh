@@ -43,6 +43,21 @@ body="$(func_body _ensure_up)"
 if printf '%s' "$body" | grep -q '_vagrant ssh'; then pass "_ensure_up probes over SSH"; else bad "_ensure_up has no SSH probe"; fi
 if printf '%s' "$body" | grep -q 'cmd_up';       then pass "_ensure_up boots on demand (cmd_up)"; else bad "_ensure_up never boots (no cmd_up)"; fi
 
+# 3b) The rsync push must be wired at all three sites that can otherwise leave the
+#     guest running stale trees. agents/, skills/ and /vagrant are one-way rsync
+#     folders (reviews/PENDING.md #21), and Vagrant re-pushes them ONLY on the boot
+#     path: `vagrant provision` and `vagrant up` against a running machine both
+#     short-circuit to action_provision, which has no SyncedFolders step, and
+#     `snapshot restore` rolls the guest filesystem backwards. Without these the VM
+#     silently provisions against old files.
+for fn in _ensure_up cmd_up cmd_restore; do
+    if func_body "$fn" | grep -q '_vagrant rsync'; then
+        pass "$fn pushes the rsync trees"
+    else
+        bad "$fn does NOT run '_vagrant rsync' (guest can run STALE agents/skills//vagrant)"
+    fi
+done
+
 # 3) Every VM-requiring entry point invokes the guard — this is the actual
 #    regression surface (the original bug was these calling `vagrant ssh` raw).
 #    Multi-line functions: slice the body and grep it.

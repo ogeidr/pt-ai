@@ -105,7 +105,8 @@ chown vagrant:vagrant "$CLAUDE_DIR/CLAUDE.md"
 # the runtime backstop for PENDING.md findings #1 (ambient credential read) and
 # #2 (prompt-injection-driven exfil). Claude Code front-end only; opencode reads
 # its own config, so the host egress allowlist covers that path.
-# Source lives in the repo at vagrant/config/claude/ (mounted at /vagrant).
+# Source lives in the repo at vagrant/config/claude/, rsync-pushed to /vagrant/config.
+# One-way host->guest: writing here does NOT reach the host repo (PENDING.md #21).
 CLAUDE_SRC="/vagrant/config/claude"
 if [ -d "$CLAUDE_SRC" ]; then
     cp "$CLAUDE_SRC/settings.json" "$CLAUDE_DIR/settings.json"

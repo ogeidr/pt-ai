@@ -481,7 +481,9 @@ prowler aws --list-checks | head -3         # at least one check listed
 # scoutsuite — list supported providers
 scout --help    | grep -A1 "{aws,azure,gcp" # provider choices visible
 
-# trufflehog — scan a tiny local repo (this one) for secrets
+# trufflehog — smoke test only: /vagrant is now ~109K of provisioning source
+# (config/.env and config/engagement.env are host-only and never pushed), so a
+# clean result proves the BINARY RUNS, not that the tree was ever secret-bearing.
 trufflehog filesystem /vagrant --no-update --fail 2>&1 | tail -5
                                             # exits 0 if no verified secrets
 
@@ -493,7 +495,7 @@ kube-hunter --list 2>&1 | head -5           # known hunters listed
 
 # gitleaks — version + a local scan (no network)
 gitleaks version                            # prints version
-gitleaks detect --source /vagrant --no-banner 2>&1 | tail -3   # runs; non-zero if it finds leaks
+gitleaks detect --source /vagrant --no-banner 2>&1 | tail -3   # smoke test; same reduced surface as trufflehog above
 
 # kubeaudit — version (no cluster needed)
 kubeaudit version                           # prints version

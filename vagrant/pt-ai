@@ -137,6 +137,8 @@ Commands:
   halt                   Shut down the VM
   destroy                Destroy the VM and all its state
   provision              Re-run all provisioners
+  rsync                  Push the host reference trees + /vagrant into the VM now
+  rsync-auto             Watch those host trees and re-push on change
   status                 Show VM status
 
 Auth:
@@ -164,7 +166,17 @@ ARM64 hosts:
 EOF
 }
 
+# `vagrant up` against an ALREADY-RUNNING machine short-circuits to
+# action_provision, which has no SyncedFolders step — so `./pt-ai up --provision`
+# would re-provision the VM against stale rsync trees. Push first in that case.
+# It has to be BEFORE the up, not after: a post-up sync lands after the
+# provisioners have already read the old files. The fresh-boot path needs nothing
+# — SyncedFolders runs there on the way back up the middleware stack.
+# This cannot call _ensure_up: _ensure_up calls cmd_up, so that would recurse.
 cmd_up() {
+    if _vagrant ssh -- -T true </dev/null >/dev/null 2>&1; then
+        _vagrant rsync || echo "[pt-ai] WARNING: rsync push failed — provisioning may run against STALE trees" >&2
+    fi
     _vagrant up --provider "$VAGRANT_PROVIDER" "$@"
 }
 
@@ -175,9 +187,18 @@ cmd_up() {
 # fails — `vagrant up` blocks until the machine is booted and SSH-ready, so a
 # real session follows cleanly.
 _ensure_up() {
-    _vagrant ssh -- -T true </dev/null >/dev/null 2>&1 && return 0
-    echo "[pt-ai] VM not ready — booting it first (./pt-ai up)…" >&2
-    cmd_up
+    if ! _vagrant ssh -- -T true </dev/null >/dev/null 2>&1; then
+        echo "[pt-ai] VM not ready — booting it first (./pt-ai up)…" >&2
+        cmd_up
+    fi
+    # agents/, skills/ and /vagrant are one-way rsync trees, not mounts. Nothing re-pushes
+    # them on `vagrant provision`, nor on `up` against an already-running VM
+    # (action_provision has no SyncedFolders), and `restore` rolls them back to
+    # whenever the snapshot was taken. Sync here so every entry into the VM runs
+    # the host's current trees. ~765K total, incremental — sub-second in practice.
+    # Non-fatal but loud: a failed push must not lock the operator out, but it
+    # must not be silent either, or provisioning "succeeds" against a stale tree.
+    _vagrant rsync || echo "[pt-ai] WARNING: rsync push failed — VM may be running STALE reference trees or /vagrant" >&2
 }
 
 cmd_ssh() {
@@ -531,6 +552,10 @@ cmd_restore() {
         echo "pt-ai restore: missing <name>" >&2; exit 1
     fi
     _vagrant snapshot restore "$1"
+    # A restore rolls the guest filesystem back to whenever the snapshot was taken,
+    # including the one-way rsync trees — so the VM would be running stale agents/,
+    # skills/ and /vagrant until the next ./pt-ai entry. Re-push now.
+    _vagrant rsync || echo "[pt-ai] WARNING: rsync push failed — VM is running SNAPSHOT-ERA trees" >&2
     _ghidra_stop            # clear any stale daemon record from the restored image
 }
 
@@ -627,6 +652,8 @@ case "$sub" in
     halt)           cmd_halt ;;
     destroy)        cmd_destroy ;;
     provision)      cmd_provision ;;
+    rsync)          _ensure_up ;;                       # one-shot push (_ensure_up syncs)
+    rsync-auto)     _ensure_up; _vagrant rsync-auto ;;  # watch + re-push until Ctrl-C
     status)         cmd_status ;;
     -h|--help|help) usage ;;
     *)
