@@ -41,6 +41,21 @@ assert_allow "Read tool normal evidence file"    read '{"tool_input":{"file_path
 # Stage 2: catastrophic recursive delete of a protected path
 assert_deny  "rm -rf / "                          bash '{"tool_input":{"command":"rm -rf /"}}'
 assert_deny  "rm -rf /engagements/*"              bash '{"tool_input":{"command":"rm -rf /engagements/*"}}'
+# /opt is protected as a whole subtree (PENDING #21 fix 3). agents/ and skills/ are
+# rsync-restored on the next ./pt-ai entry, but ~/.claude/skills is a SYMLINK to the
+# skills tree, so a delete breaks every skill for both front-ends until then; src/,
+# the Ghidra install and the Gradle dist are not synced at all and cost a full
+# re-provision (on aarch64, a from-source decompiler build).
+assert_deny  "rm -rf the skills reference tree"   bash '{"tool_input":{"command":"rm -rf /opt/pt-ai/skills"}}'
+assert_deny  "rm -rf the agents reference tree"   bash '{"tool_input":{"command":"rm -rf /opt/pt-ai/agents"}}'
+assert_deny  "rm -rf the build workspace"         bash '{"tool_input":{"command":"rm -rf /opt/pt-ai/src"}}'
+assert_deny  "rm -rf the Ghidra install"          bash '{"tool_input":{"command":"rm -rf /opt/ghidra_12.0.4_PUBLIC"}}'
+# The guard must not permit deleting its own second copy: ~/.config/opencode holds
+# pt-ai-guard.sh + pt-ai-guard.js (05-opencode.sh:184,186). The Claude copy under
+# ~/.claude is covered by the stage-1 credential rule instead.
+assert_deny  "rm -rf the opencode guard copy"     bash '{"tool_input":{"command":"rm -rf ~/.config/opencode"}}'
+# Negative control: that rule is scoped to opencode, not a blanket ~/.config block.
+assert_allow "rm -rf a neighbouring config dir"   bash '{"tool_input":{"command":"rm -rf /home/vagrant/.config/nvim"}}'
 assert_allow "rm -rf a specific deep path"        bash '{"tool_input":{"command":"rm -rf /engagements/acme/old"}}'
 
 # Stage 3: OPSEC ceiling. The guard resolves the ceiling from ambient state it

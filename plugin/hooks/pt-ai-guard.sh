@@ -14,9 +14,13 @@
 #
 #   Stage 2 — catastrophic recursive delete (PENDING #2/#5 payload). Blocks
 #     `rm -r…` whose target is the filesystem root, a top-level system dir, the
-#     home dir, or the /engagements evidence ROOT (a host bind — wiping it
-#     destroys real data, e.g. `rm -rf /engagements/*`). Specific deep paths
-#     stay allowed (`rm -rf /engagements/<id>/old`) so normal cleanup works.
+#     home dir, the /engagements evidence ROOT (a host bind — wiping it destroys
+#     real data, e.g. `rm -rf /engagements/*`), anything under /opt (where the
+#     reference trees, Ghidra and the build workspace live), or the opencode
+#     config dir (which holds this script's second copy). Specific deep paths
+#     under /engagements stay allowed (`rm -rf /engagements/<id>/old`) so normal
+#     evidence cleanup works — /opt has no such carve-out because agents only
+#     read there.
 #
 # Deliberately NOT here: filtering network traffic by destination (curl/nc/nmap
 # to "non-scope" hosts). A pentest agent's job is sending traffic to targets;
@@ -90,7 +94,23 @@ if [ "$ctx" != "read" ]; then
 # Boundaries allow a leading/trailing space or double-quote (single-quoted globs
 # don't expand, so they are harmless); residual quoting tricks can evade — this
 # is a guard, not a jail.
-TARGETS='(^|[[:space:]"])(/|/\*|/engagements(/\*|/)?|~/?\*?|\$\{?HOME\}?/?\*?|/home/vagrant(/\*|/)?|/(bin|boot|dev|etc|lib|lib64|opt|proc|root|run|sbin|srv|sys|usr|var)(/\*|/)?)([[:space:]"]|$)'
+# NOTE for future edits: nothing in this file may spell out the VM-absolute path of
+# the pt-ai reference tree (the "pt-ai" directory under /opt). build-plugin.sh:181
+# and test/plugin-validate.sh:101 fail the build on that literal, and this guard is
+# copied VERBATIM into plugin/ so it cannot be sed'd around. The /opt rule below is
+# written as a subtree match precisely so those trees are protected without naming
+# them — keep it that way.
+#
+# /opt is a subtree match, not a root match like the other system dirs: everything
+# pt-ai installs lives BELOW it (the agents/skills reference trees, the Ghidra
+# install, the Gradle dist and the ghidrasql/ghidra-rpc build workspace), and only
+# the first two are rsync-restored. Accepted cost: an agent can no longer clear the
+# Ghidra build workspace. The provisioner that does that is unaffected — it runs as
+# a root Vagrant shell provisioner, which never passes through this guard.
+# ~/.config/opencode holds the opencode copy of THIS script plus its plugin, so
+# without that rule the guard permits deleting itself; the Claude copy under
+# ~/.claude is already covered by the stage-1 credential rule above.
+TARGETS='(^|[[:space:]"])(/|/\*|/engagements(/\*|/)?|/opt(/[^[:space:]"]*)?|(~|\$\{?HOME\}?|/home/vagrant)/\.config/opencode(/[^[:space:]"]*)?|~/?\*?|\$\{?HOME\}?/?\*?|/home/vagrant(/\*|/)?|/(bin|boot|dev|etc|lib|lib64|proc|root|run|sbin|srv|sys|usr|var)(/\*|/)?)([[:space:]"]|$)'
 hit=$(printf '%s\n' "$cmd" | tr ';&|\n' '\n\n\n\n' | while IFS= read -r clause; do
     printf '%s' "$clause" | grep -Eq '(^|[[:space:]]|/)rm([[:space:]]|$)'  || continue
     printf '%s' "$clause" | grep -Eq '(-[[:alnum:]]*[rR]|--recursive)'     || continue
@@ -98,7 +118,7 @@ hit=$(printf '%s\n' "$cmd" | tr ';&|\n' '\n\n\n\n' | while IFS= read -r clause; 
     echo HIT
 done)
 if [ -n "$hit" ]; then
-    deny "Blocked by pt-ai guard: recursive delete targeting a protected path (filesystem root, a system dir, home, or the /engagements evidence root — a host bind). Delete a specific path under /engagements/<id>/ instead, or do bulk cleanup from the host."
+    deny "Blocked by pt-ai guard: recursive delete targeting a protected path (filesystem root, a system dir, home, anything under /opt, the opencode config dir, or the /engagements evidence root — a host bind). Delete a specific path under /engagements/<id>/ instead, or do bulk cleanup from the host."
 fi
 
 # --- Stage 3: OPSEC ceiling (PENDING #14) -----------------------------------
