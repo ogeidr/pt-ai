@@ -2,7 +2,7 @@
 # pt-ai-guard.sh — Claude Code PreToolUse(Bash) safety hook for pt-ai.
 #
 # The *automated* gate behind the per-command permission prompt — the runtime
-# backstop the security reviews kept asking for. Two stages, both DENY on match:
+# backstop the security reviews kept asking for. Three stages, all DENY on match:
 #
 #   Stage 1 — credential exfil (PENDING #1/#2). Blocks any command referencing
 #     the operator's LLM credential material, so an injected
@@ -21,6 +21,14 @@
 #     under /engagements stay allowed (`rm -rf /engagements/<id>/old`) so normal
 #     evidence cleanup works — /opt has no such carve-out because agents only
 #     read there.
+#
+#   Stage 3 — OPSEC ceiling (PENDING #14). Refuses a command noisier than the
+#     engagement's ceiling (/engagements/.opsec_ceiling, then $PT_AI_OPSEC_LIMIT,
+#     then MODERATE). Classification is PER CLAUSE on the same `;&|` split stage 2
+#     uses, and the loudest clause decides — so a noisy tool chained behind a
+#     quiet one is still caught. A clause led by a local read-only reader
+#     (cat/grep/rg/ripwire/…) is QUIET whatever its arguments spell, because a
+#     search pattern is data, not a command.
 #
 # Deliberately NOT here: filtering network traffic by destination (curl/nc/nmap
 # to "non-scope" hosts). A pentest agent's job is sending traffic to targets;
@@ -135,14 +143,72 @@ fi
 ceiling=$(printf '%s' "$ceiling" | tr '[:lower:]' '[:upper:]')
 _rank() { case "$1" in QUIET) echo 0 ;; LOUD) echo 2 ;; *) echo 1 ;; esac; }
 
-noise="MODERATE"
-case "$cmd" in
-    *nikto*|*masscan*|*responder*|*sqlmap*|*wpscan*|*nuclei*|*enum4linux*|*hydra*|*medusa*|*ncrack*|*patator*|*crackmapexec*|*netexec*|*" nxc "*|*--script*|*" -sS"*|*" -sU"*|*--min-rate*)
-        noise="LOUD" ;;
-    *whois*|*" dig "*|*nslookup*|*" host "*|*subfinder*|*theHarvester*|*" amass "*|*crt.sh*)
-        noise="QUIET" ;;
-esac
-if [ "$(_rank "$noise")" -gt "$(_rank "$ceiling")" ]; then
+# Classify PER CLAUSE, using the same `;&|` split stage 2 uses. Matching the
+# signature list against the WHOLE command string treated an argument as if it
+# were the command: `grep -rn sqlmap ./src`, `rg nuclei .`, `ripwire src
+# --grep=sqlmap` and even `cat notes-about-nikto.md` all classified LOUD and were
+# denied, though not one of them sends a packet. That misfire is worse than the
+# gap it closed: the documented way out is `echo LOUD > .opsec_ceiling`, so a
+# control that fires on reading a file teaches the operator to raise the ceiling
+# for the rest of the engagement.
+#
+# A clause led by a local read-only reader is QUIET regardless of what its
+# arguments spell, because a search PATTERN is data, not a command. Splitting
+# first is what keeps that safe: in `nikto -h http://t ; ripwire .` the nikto
+# clause is still scanned on its own and still classifies LOUD, so chaining a
+# noisy tool behind a quiet one does not launder it. The loudest clause wins.
+#
+# The reader list is deliberately short and holds only tools that cannot spawn a
+# process: no find/awk/sed/xargs/less (all of which can exec), and the exemption
+# is withdrawn from any clause carrying `$(`, a backtick, or a `--pre`-style
+# preprocessor flag (ripgrep's `--pre` runs an arbitrary command per file).
+#
+# IMPLEMENTATION NOTE for future edits: every `case` below lives in a FUNCTION,
+# never inline in the `noise_rank=$( … )` substitution. A case pattern's closing
+# `)` inside `$( )` unbalances the command-substitution parser — `sh -n` rejects
+# even `x=$(… case "$c" in *y*) echo ;; esac …)`. Functions are parsed at
+# definition time, outside the substitution, so they are immune. Keep it that way.
+_spawns_proc() {
+    # A reader that can launch another process does not get the exemption below:
+    # ripgrep's `--pre` runs an arbitrary command per file, and a substitution can
+    # hide anything. The markers are built here rather than written literally for
+    # the same parser reason described above.
+    _cs='$('; _bt=$(printf '\140')
+    case "$1" in
+        *"$_cs"*|*"$_bt"*|*--pre*) return 0 ;;
+    esac
+    return 1
+}
+_is_reader() {
+    # Local read-only tools only. Deliberately excludes find/awk/sed/xargs/less
+    # and any shell — all of them can exec, which would turn the exemption into a
+    # laundering route. A leading path (/usr/bin/grep) is stripped by the caller.
+    case "$1" in
+        cat|head|tail|grep|egrep|fgrep|rg|ripwire|strings|ls|wc) return 0 ;;
+    esac
+    return 1
+}
+_clause_rank() {
+    case "$1" in
+        *nikto*|*masscan*|*responder*|*sqlmap*|*wpscan*|*nuclei*|*enum4linux*|*hydra*|*medusa*|*ncrack*|*patator*|*crackmapexec*|*netexec*|*" nxc "*|*--script*|*" -sS"*|*" -sU"*|*--min-rate*)
+            echo 2 ;;
+        *whois*|*" dig "*|*nslookup*|*" host "*|*subfinder*|*theHarvester*|*" amass "*|*crt.sh*)
+            echo 0 ;;
+        *)  echo 1 ;;
+    esac
+}
+noise_rank=$(printf '%s\n' "$cmd" | tr ';&|\n' '\n\n\n\n' | while IFS= read -r clause; do
+    [ -n "$clause" ] || continue
+    if ! _spawns_proc "$clause"; then
+        verb=$(printf '%s' "$clause" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]].*$//' -e 's#.*/##')
+        if _is_reader "$verb"; then echo 0; continue; fi
+    fi
+    _clause_rank "$clause"
+done | sort -rn | head -1)
+# Empty only when the command had no clauses at all; MODERATE is the old default.
+[ -z "$noise_rank" ] && noise_rank=1
+case "$noise_rank" in 0) noise="QUIET" ;; 2) noise="LOUD" ;; *) noise="MODERATE" ;; esac
+if [ "$noise_rank" -gt "$(_rank "$ceiling")" ]; then
     deny "Blocked by pt-ai guard: OPSEC ceiling is $ceiling but this command classifies as $noise. Use a quieter alternative, or raise the ceiling for this step (e.g. 'echo $noise > /engagements/.opsec_ceiling', or export PT_AI_OPSEC_LIMIT=$noise)."
 fi
 
