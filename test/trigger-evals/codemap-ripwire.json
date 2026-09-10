@@ -1,0 +1,20 @@
+[
+  {"query": "client dropped their whole laravel app at /engagements/northwind-2026/source/portal and i've never seen this codebase before — before i start testing give me the lay of the land, what's actually central in there", "should_trigger": true},
+  {"query": "where does this app actually take user input? i need every place in the source they gave us (/engagements/acme/source/api) that reads request params, so i know what's worth fuzzing", "should_trigger": true},
+  {"query": "there's a method called validateToken somewhere in this java monorepo — it's huge, like 4k files under /engagements/fintech-q3/source — find it and show me what calls it", "should_trigger": true},
+  {"query": "we got read access to the client's repo for this greybox test. any hardcoded api keys, db passwords or aws creds committed anywhere in that source?", "should_trigger": true},
+  {"query": "just show me the body of checkAuth, i don't want to page through the whole 2000-line controller file to read one function", "should_trigger": true},
+  {"query": "source access came through for the internal billing service and the review call is tomorrow — i need to understand how it's put together first, which modules actually matter and how they hang together", "should_trigger": true},
+
+  {"query": "ok i've got this crackme in my engagement samples dir, /engagements/acme-2026/samples/crackme3 — can you decompile main, follow the xrefs to the password check, and then NOP out the jump once we find it so it always accepts?", "should_trigger": false},
+  {"query": "can you rename FUN_00401abc to parse_config, retype that local from int to char*, and give it a proper signature, then re-decompile so it reads cleaner?", "should_trigger": false},
+  {"query": "load this firmware blob and give me the top 25 functions by size, then join the strings table to whatever functions reference anything with 'http' or '/tmp' or 'aes' in it", "should_trigger": false},
+  {"query": "map the whole call graph of this binary — every caller/callee pair — and rank functions by how many callers they have", "should_trigger": false},
+  {"query": "check whether the app leaks source maps in prod — i want to know if any of the bundles under /static/js/ ship a .js.map alongside them", "should_trigger": false},
+  {"query": "here's the C source for the auth module (auth.c, ~400 lines) — review it for buffer overflows and injection bugs", "should_trigger": false},
+  {"query": "decompile this obfuscated JavaScript bundle from the target's web app and tell me what the token-signing logic does", "should_trigger": false},
+  {"query": "run this ELF in a sandbox and watch the syscalls and network traffic it makes at runtime", "should_trigger": false},
+  {"query": "i've got a memory dump from the compromised host — carve out any executables and credentials you can find", "should_trigger": false},
+  {"query": "what CVEs affect the openssl 1.0.2k this binary is statically linked against?", "should_trigger": false},
+  {"query": "generate the findings report for the acme engagement and calibrate the severities before you do", "should_trigger": false}
+]

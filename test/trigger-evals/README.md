@@ -1,6 +1,11 @@
-# Trigger evals — disasm skill pair
+# Trigger evals
 
-Trigger-accuracy fixtures for the two competing disassembly skills, `disasm-ghidra-rpc`
+Trigger-accuracy fixtures for the skills whose descriptions have to win — or deliberately
+lose — against a near neighbour.
+
+## The disasm pair
+
+Fixtures for the two competing disassembly skills, `disasm-ghidra-rpc`
 (interactive / step-by-step / patch / diff) and `disasm-ghidrasql` (relational / bulk /
 ranking / joins / set-based edits). Their descriptions are near-identical except for that
 axis, so these sets measure whether each description fires on its own queries and stays off
@@ -11,6 +16,29 @@ Each file is a list of `{ "query": ..., "should_trigger": bool }`. Every skill's
 near-misses (network recon on port 8081 — ghidrasql's own port —, C-source review, runtime
 sandboxing, memory-dump carving, pcap extraction, JS "decompile", report/severity, CVE
 lookup).
+
+## codemap-ripwire
+
+`codemap-ripwire` (source navigation via ripwire) shares the "analyse a thing the client
+gave us" space with the disasm pair, and the split it must hold is **source vs compiled
+binary**. Its `should_trigger: false` set therefore carries both disasm skills' ideal
+queries plus the same shared near-misses, and two that are specific to it:
+
+- **"does the app leak source maps at /static/js/*.js.map"** — `.map` files are a real
+  web-recon target and an established meaning of "source map". The skill was renamed
+  *away* from `source-map` for exactly this reason; the query is kept as the regression
+  test for that decision.
+- **"decompile this obfuscated JavaScript bundle and tell me what the token-signing logic
+  does"** — the hardest case in the set, and the one to argue about first. It is JS source,
+  which ripwire parses, so a keyword match says fire. It is scored `false` because a
+  minified bundle is one enormous line with no symbol structure to rank, and the ask is
+  semantic ("what does it do"), not locational ("where is it"). If a run shows this firing
+  and the operator judges that acceptable, flip it rather than reword the description.
+
+**Not yet runnable:** `skills/codemap-ripwire/` does not exist — see
+`features/ripwire-integration.md` §2.3. The fixture is committed ahead of the skill so the
+description is written against a fixed target instead of the set being tuned to whatever
+the description happens to do.
 
 ## Running
 
@@ -26,7 +54,7 @@ REPO="$(git rev-parse --show-toplevel)"
 # throwaway dir so it never writes command files into your real ~/.claude.
 WORK="$(mktemp -d)"; mkdir -p "$WORK/.claude"; cd "$WORK"
 
-for skill in disasm-ghidra-rpc disasm-ghidrasql; do
+for skill in disasm-ghidra-rpc disasm-ghidrasql codemap-ripwire; do
   PYTHONPATH="$SC" python3 -m scripts.run_eval \
     --eval-set "$REPO/test/trigger-evals/$skill.json" \
     --skill-path "$REPO/skills/$skill" \
@@ -49,9 +77,15 @@ present in reality). Treat the numbers as per-description precision/recall, not 
 |---|---|---|
 | disasm-ghidrasql | 6/6 | 11/11 |
 | disasm-ghidra-rpc | 5/6 | 9/11 |
+| codemap-ripwire | — | — (not run: skill not implemented) |
 
 ghidrasql was clean. ghidra-rpc's one miss was a single-draw flake (the same query fired in a
 separate check), and its two false fires were ghidrasql-domain bulk queries that ghidra-rpc's
 description already defers ("prefer /disasm-ghidrasql for bulk/relational") and that ghidrasql
 wins outright. Conclusion at the time: descriptions in good shape, no wording change applied.
 Re-run these if either description is edited.
+
+**Re-run the disasm pair when `codemap-ripwire` lands.** A third skill in the same space
+can pull their negatives, and the 2026-08-05 numbers above were measured with only two
+skills in existence. The line below that table already says to re-run on a description
+edit; adding a neighbour is the same kind of change.
