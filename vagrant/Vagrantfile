@@ -12,6 +12,10 @@ VM_CPUS         = ENV.fetch("VAGRANT_CPUS",     "4").to_i
 # download/build and the other reuses it.
 GHIDRASQL_ENABLED  = ENV.fetch("PTAI_SKIP_GHIDRASQL",  "").strip.empty?
 GHIDRA_RPC_ENABLED = ENV.fetch("PTAI_SKIP_GHIDRA_RPC", "").strip.empty?
+# ripwire — source navigation for whitebox work. Unlike the two above this one is
+# light (a single prebuilt binary, no build), but it keeps its own opt-out so the
+# toolchain stays composable.
+RIPWIRE_ENABLED    = ENV.fetch("PTAI_SKIP_RIPWIRE",    "").strip.empty?
 
 # Shared options for the one-way rsync trees below. A METHOD, not a constant:
 # config.vm.synced_folder mutates the options hash IN PLACE (vm.rb:300-302 stamps
@@ -172,5 +176,13 @@ Vagrant.configure("2") do |config|
   # Opt out with PTAI_SKIP_GHIDRA_RPC=1.
   if GHIDRA_RPC_ENABLED
     config.vm.provision "shell", path: "provision/08-ghidra-rpc.sh"
+  end
+
+  # ripwire — local, offline source-navigation CLI for whitebox / source-assisted
+  # engagements (ranked symbol maps, hit lists, single function bodies over a
+  # staged client source tree). One pinned prebuilt binary; no build, no Java.
+  # Opt out with PTAI_SKIP_RIPWIRE=1.
+  if RIPWIRE_ENABLED
+    config.vm.provision "shell", path: "provision/09-ripwire.sh"
   end
 end

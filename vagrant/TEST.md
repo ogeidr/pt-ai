@@ -145,6 +145,7 @@ Expected duration: 30–60 min. Milestones in order:
 | `06-cloud.sh` | pipx/unzip/gnupg + build deps installed, AWS CLI v2 GPG-verified + unpacked, trufflehog + gitleaks + kubeaudit binaries fetched, gcloud apt repo added, prowler + scoutsuite pipx venvs created |
 | `07-ghidrasql.sh` | Ghidra + ghidrasql built (skipped if `PTAI_SKIP_GHIDRASQL=1`; on aarch64 the native decompiler is built from source — slow) |
 | `08-ghidra-rpc.sh` | ghidra-rpc installed via `uv` (skipped if `PTAI_SKIP_GHIDRA_RPC=1`; reuses the Ghidra install + aarch64 decompiler from step 07) |
+| `09-ripwire.sh` | ripwire installed from a SHA-pinned prebuilt release (skipped if `PTAI_SKIP_RIPWIRE=1`; x64/arm64 only, and a light step — no build, no Java) |
 
 Completes with no `ERROR` lines and the shell prompt returns.
 

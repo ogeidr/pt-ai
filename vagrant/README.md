@@ -364,6 +364,7 @@ and/or `PTAI_SKIP_GHIDRA_RPC=1` (they are independent).
 | `PTAI_BOX` | `kalilinux/rolling` | Vagrant box. Any apt-family box; Kali-only steps auto-skip (use `kali-arm64` on Apple Silicon) |
 | `PTAI_SKIP_GHIDRASQL` | — | Set to any value to skip the heavy ghidrasql provisioner |
 | `PTAI_SKIP_GHIDRA_RPC` | — | Set to any value to skip the ghidra-rpc provisioner |
+| `PTAI_SKIP_RIPWIRE` | — | Set to any value to skip the ripwire provisioner (source navigation) |
 | `GHIDRA_RPC_REF` | `main` | ghidra-rpc source revision (tag/commit) to install |
 | `KALI_BOX` | — | Legacy alias for `PTAI_BOX` (still honored as a fallback) |
 | `VAGRANT_PROVIDER` | `vmware_desktop` | Set `virtualbox` to use VirtualBox (no plugin needed) |

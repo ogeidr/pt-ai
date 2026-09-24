@@ -33,6 +33,7 @@
 # ENV (guest mode)
 #   EXPECT_GHIDRASQL    1|0  whether ghidrasql should be installed (default: 1)
 #   EXPECT_GHIDRA_RPC   1|0  whether ghidra-rpc should be installed (default: 1)
+#   EXPECT_RIPWIRE      1|0  whether ripwire should be installed    (default: 1)
 #
 # OUTPUT
 #   test/results/<case>-provision.log   full `./pt-ai up` output
@@ -54,6 +55,7 @@ if [ "${1:-}" = "--assert" ]; then
 
     EXPECT_GHIDRASQL="${EXPECT_GHIDRASQL:-1}"
     EXPECT_GHIDRA_RPC="${EXPECT_GHIDRA_RPC:-1}"
+    EXPECT_RIPWIRE="${EXPECT_RIPWIRE:-1}"
 
     pass=0; fail=0
     ok(){ printf '  \033[32mPASS\033[0m %s\n' "$1"; pass=$((pass+1)); }
@@ -174,6 +176,24 @@ if [ "${1:-}" = "--assert" ]; then
         check "ghidra-rpc --version runs" bash -c '/usr/local/bin/ghidra-rpc --version'
     fi
 
+    if [ "$EXPECT_RIPWIRE" = 1 ]; then
+        echo
+        echo "[ripwire]"
+        check "ripwire binary present"  test -x /usr/local/bin/ripwire
+        check "ripwire --version runs"  bash -c '/usr/local/bin/ripwire --version'
+        # FUNCTIONAL, not just present. Presence + --help is what let ghidrasql
+        # regress to funcs=0 unnoticed, and here an exit code alone would not help
+        # either: ripwire returns 0 on an EMPTY tree, so a binary that runs but
+        # parses nothing looks identical to success. Require real extracted symbols
+        # from a Bash corpus that is always in the guest.
+        check "ripwire extracts symbols from a real tree" \
+            bash -c '/usr/local/bin/ripwire /vagrant/provision --top-k=5 2>/dev/null | grep -q '"'"'t="fn"'"'"''
+        # The runtime dependency the ELF actually names — a missing libstdc++6
+        # would surface as a confusing exec failure rather than a clear one.
+        check "ripwire links resolve (ldd)" \
+            bash -c '! ldd /usr/local/bin/ripwire 2>/dev/null | grep -q "not found"'
+    fi
+
     echo
     echo "== result: $pass passed, $fail failed =="
     [ "$fail" -eq 0 ]
@@ -235,7 +255,7 @@ run_case(){ # name box skip_ghidra expect_ghidra
 
   say "$name: running in-guest assertions → ${name}-assert.log"
   PTAI_BOX="$box" VAGRANT_PROVIDER="$PROVIDER" \
-      ./pt-ai ssh -c "EXPECT_GHIDRASQL=$expect EXPECT_GHIDRA_RPC=$expect bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
+      ./pt-ai ssh -c "EXPECT_GHIDRASQL=$expect EXPECT_GHIDRA_RPC=$expect EXPECT_RIPWIRE=1 bash $SELF_IN_GUEST --assert" 2>&1 | tee "$alog"
   local as_rc=${PIPESTATUS[0]}
 
   if [ "$as_rc" -eq 0 ]; then
