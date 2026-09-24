@@ -88,6 +88,21 @@ else
     assert_deny  "reader with a --pre preprocessor"  bash '{"tool_input":{"command":"rg --pre nikto pattern /engagements/acme"}}'
     # Tools that can exec are not on the reader list at all.
     assert_deny  "find -exec a loud tool"            bash '{"tool_input":{"command":"find /engagements -exec nikto -h {} ;"}}'
+    # Substitution forms that RUN a command while the clause still reads as a
+    # reader. Process substitution is the one that matters: plain bash, no exotic
+    # version, and it was DENY before the per-clause rewrite and ALLOW after —
+    # i.e. a live regression, caught by review rather than by these tests.
+    assert_deny  "process substitution <( )"         bash '{"tool_input":{"command":"grep x <(nikto -h http://t)"}}'
+    assert_deny  "process substitution >( )"         bash '{"tool_input":{"command":"cat >(nikto -h http://t)"}}'
+    assert_deny  "bash 5.3 funsub \${ }"             bash '{"tool_input":{"command":"cat ${ nikto -h http://t; }"}}'
+    # --pre was covered from the start; --hostname-bin is a SECOND ripgrep flag
+    # that executes a binary, which is why the guard matches -bin broadly rather
+    # than naming execute-flags one at a time.
+    assert_deny  "rg --hostname-bin runs a binary"   bash '{"tool_input":{"command":"rg --hostname-bin nikto p /x"}}'
+    assert_deny  "rg --hostname-bin= runs a binary"  bash '{"tool_input":{"command":"rg --hostname-bin=nikto p /x"}}'
+    # Negative control: plain ${VAR} expansion is NOT funsub and must stay exempt,
+    # or the exemption would be useless in any real shell command.
+    assert_allow "reader with plain \${VAR}"         bash '{"tool_input":{"command":"grep -rn sqlmap ${SRC}/app"}}'
     unset PT_AI_OPSEC_LIMIT
     # Raising the ceiling to LOUD must let the LOUD tool through (env-only path,
     # meaningful only when no ambient file forces a ceiling):

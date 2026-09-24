@@ -169,13 +169,30 @@ _rank() { case "$1" in QUIET) echo 0 ;; LOUD) echo 2 ;; *) echo 1 ;; esac; }
 # even `x=$(… case "$c" in *y*) echo ;; esac …)`. Functions are parsed at
 # definition time, outside the substitution, so they are immune. Keep it that way.
 _spawns_proc() {
-    # A reader that can launch another process does not get the exemption below:
-    # ripgrep's `--pre` runs an arbitrary command per file, and a substitution can
-    # hide anything. The markers are built here rather than written literally for
-    # the same parser reason described above.
-    _cs='$('; _bt=$(printf '\140')
+    # A reader that can launch another process does not get the exemption below.
+    # This list is FAIL-SAFE BY DESIGN: anything matching here simply loses the
+    # exemption and is classified on its full text like any other command, so a
+    # false positive costs nothing but a false negative is a bypass. When in
+    # doubt, add the pattern.
+    #
+    # Two of these were found by a review pass AFTER the first version shipped, and
+    # both were live bypasses — `grep x <(nikto -h http://t)` was DENY before the
+    # per-clause rewrite and ALLOW after it. Recording what they were, because the
+    # lesson is that enumerating substitution syntax is the losing side of this:
+    #   - PROCESS substitution `<( )` / `>( )`. Plain bash, no exotic version, and
+    #     it really does run the command. The original list only had `$(`.
+    #   - `--hostname-bin`, a second ripgrep flag that executes a binary (`--pre`
+    #     was the only one covered). Hence the broad `-bin` match rather than
+    #     naming flags one at a time.
+    # `${ ` / `${|` are bash 5.3 funsub; plain `${VAR}` stays exempt because the
+    # patterns require the space or the pipe.
+    #
+    # Markers are built as variables rather than written literally for the parser
+    # reason described above.
+    _cs='$('; _bt=$(printf '\140'); _ps='<('; _pso='>('; _fs='${ '; _fsp='${|'
     case "$1" in
-        *"$_cs"*|*"$_bt"*|*--pre*) return 0 ;;
+        *"$_cs"*|*"$_bt"*|*"$_ps"*|*"$_pso"*|*"$_fs"*|*"$_fsp"*|*--pre*|*-bin*)
+            return 0 ;;
     esac
     return 1
 }
