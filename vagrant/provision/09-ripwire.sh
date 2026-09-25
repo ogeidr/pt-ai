@@ -29,7 +29,7 @@ fi
 
 log() { printf '\n[09-ripwire] %s\n' "$*"; }
 
-RIPWIRE_VERSION="${RIPWIRE_VERSION:-0.5.0}"
+RIPWIRE_VERSION="${RIPWIRE_VERSION:-0.6.2}"
 RIPWIRE_DIR="/opt/ripwire-${RIPWIRE_VERSION}"
 BIN_DST="/usr/local/bin/ripwire"
 
@@ -46,8 +46,8 @@ BIN_DST="/usr/local/bin/ripwire"
 # work that way. Same shape, opposite reachability.) The same is true of every
 # other *_SHA256 in provision/. To exercise the gate, run the script in-guest:
 #   ./pt-ai ssh -c 'sudo RIPWIRE_SHA256_arm64=<wrong> bash /vagrant/provision/09-ripwire.sh'
-RIPWIRE_SHA256_arm64="${RIPWIRE_SHA256_arm64:-efe049b1645045e96751a51b1bc321b2d8653aa1f6ab5d7c2390eb3d49716bf0}"
-RIPWIRE_SHA256_x64="${RIPWIRE_SHA256_x64:-f06e9d7e55032e8e5c397405ed72a19d6e70767d28c8c617a925de4401779f50}"
+RIPWIRE_SHA256_arm64="${RIPWIRE_SHA256_arm64:-99754cfcfa2ec9cb51582e74cbd9fece6d8dce3523fc263881f278c56fd4d34a}"
+RIPWIRE_SHA256_x64="${RIPWIRE_SHA256_x64:-62ca4bf6dda09a23fe5829489232e64445ac80f42e51017614e31e201cc92b5a}"
 
 case "$(uname -m)" in
     x86_64)        rw_arch=x64;   rw_sha="$RIPWIRE_SHA256_x64" ;;
