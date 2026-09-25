@@ -35,10 +35,9 @@ queries plus the same shared near-misses, and two that are specific to it:
   semantic ("what does it do"), not locational ("where is it"). If a run shows this firing
   and the operator judges that acceptable, flip it rather than reword the description.
 
-**Not yet runnable:** `skills/codemap-ripwire/` does not exist — see
-`features/ripwire-integration.md` §2.3. The fixture is committed ahead of the skill so the
-description is written against a fixed target instead of the set being tuned to whatever
-the description happens to do.
+The skill landed 2026-09-25, so this set is now runnable. It was committed ahead of the
+skill on purpose: fixing the target before writing the description stops the eval set being
+tuned to whatever the description happens to do.
 
 ## Running
 
@@ -77,7 +76,7 @@ present in reality). Treat the numbers as per-description precision/recall, not 
 |---|---|---|
 | disasm-ghidrasql | 6/6 | 11/11 |
 | disasm-ghidra-rpc | 5/6 | 9/11 |
-| codemap-ripwire | — | — (not run: skill not implemented) |
+| codemap-ripwire | — | — (skill landed 2026-09-25; not yet run) |
 
 ghidrasql was clean. ghidra-rpc's one miss was a single-draw flake (the same query fired in a
 separate check), and its two false fires were ghidrasql-domain bulk queries that ghidra-rpc's
